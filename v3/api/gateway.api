@@ -1,1 +1,176 @@
 syntax = "v1"
+
+info (
+	title: "Beehive Blog v3 Gateway"
+	desc: "v3 网关 HTTP 契约：/auth 映射 identity RPC，/healthz /readyz /ws 为系统入口"
+	author: "Beehive"
+	version: "v3"
+)
+
+type (
+	AuthRegisterReq {
+		Username string `json:"username" validate:"required,min=3,max=64"`
+		Email    string `json:"email" validate:"required,email,max=320"`
+		Password string `json:"password" validate:"required,min=8,max=128"`
+		Nickname string `json:"nickname,optional" validate:"omitempty,max=128"`
+	}
+	AuthRegisterResp {
+		UserId       string `json:"user_id"`
+		Username     string `json:"username"`
+		Email        string `json:"email"`
+		Nickname     string `json:"nickname,optional"`
+		AvatarUrl    string `json:"avatar_url,optional"`
+		Role         string `json:"role"`
+		Status       string `json:"status"`
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int64  `json:"expires_in"`
+		TokenType    string `json:"token_type"`
+		SessionId    string `json:"session_id"`
+	}
+	AuthLoginReq {
+		LoginIdentifier string `json:"login_identifier" validate:"required,min=1,max=320"`
+		Password        string `json:"password" validate:"required,min=1,max=128"`
+		ClientType      string `json:"client_type,optional" validate:"omitempty,max=32"`
+		DeviceId        string `json:"device_id,optional" validate:"omitempty,max=128"`
+		DeviceName      string `json:"device_name,optional" validate:"omitempty,max=128"`
+		UserAgent       string `json:"user_agent,optional" validate:"omitempty,max=512"`
+		ClientIp        string `json:"client_ip,optional" validate:"omitempty,max=64"`
+	}
+	AuthLoginResp {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int64  `json:"expires_in"`
+		TokenType    string `json:"token_type"`
+		SessionId    string `json:"session_id"`
+		User         AuthUserProfile `json:"user"`
+		Session      AuthSessionView `json:"session"`
+	}
+	AuthUserProfile {
+		UserId    string `json:"user_id"`
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		Nickname  string `json:"nickname,optional"`
+		AvatarUrl string `json:"avatar_url,optional"`
+		Role      string `json:"role"`
+		Status    string `json:"status"`
+	}
+	AuthSessionView {
+		SessionId   string `json:"session_id"`
+		UserId      string `json:"user_id"`
+		AuthSource  string `json:"auth_source"`
+		ClientType  string `json:"client_type,optional"`
+		DeviceId    string `json:"device_id,optional"`
+		DeviceName  string `json:"device_name,optional"`
+		Status      string `json:"status"`
+		LastSeenAt  int64  `json:"last_seen_at,optional"`
+		ExpiresAt   int64  `json:"expires_at,optional"`
+	}
+	AuthSsoStartReq {
+		Provider    string `json:"provider" validate:"required,min=1,max=64"`
+		RedirectUri string `json:"redirect_uri" validate:"required,url,max=2048"`
+		State       string `json:"state,optional" validate:"omitempty,max=512"`
+	}
+	AuthSsoStartResp {
+		Provider string `json:"provider"`
+		AuthUrl  string `json:"auth_url"`
+		State    string `json:"state"`
+	}
+	AuthSsoCallbackReq {
+		Provider    string `json:"provider" validate:"required,min=1,max=64"`
+		Code        string `json:"code" validate:"required,min=1,max=4096"`
+		State       string `json:"state" validate:"required,min=1,max=512"`
+		RedirectUri string `json:"redirect_uri" validate:"required,url,max=2048"`
+		ClientType  string `json:"client_type,optional" validate:"omitempty,max=32"`
+		DeviceId    string `json:"device_id,optional" validate:"omitempty,max=128"`
+		DeviceName  string `json:"device_name,optional" validate:"omitempty,max=128"`
+		UserAgent   string `json:"user_agent,optional" validate:"omitempty,max=512"`
+		ClientIp    string `json:"client_ip,optional" validate:"omitempty,max=64"`
+	}
+	AuthSsoCallbackResp {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int64  `json:"expires_in"`
+		TokenType    string `json:"token_type"`
+		SessionId    string `json:"session_id"`
+		User         AuthUserProfile `json:"user"`
+		Session      AuthSessionView `json:"session"`
+	}
+	AuthRefreshReq {
+		RefreshToken string `json:"refresh_token" validate:"required,min=1,max=4096"`
+		ClientIp     string `json:"client_ip,optional" validate:"omitempty,max=64"`
+		UserAgent    string `json:"user_agent,optional" validate:"omitempty,max=512"`
+	}
+	AuthRefreshResp {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int64  `json:"expires_in"`
+		TokenType    string `json:"token_type"`
+		SessionId    string `json:"session_id"`
+		Session      AuthSessionView `json:"session"`
+	}
+	AuthLogoutReq {
+		SessionId    string `json:"session_id,optional" validate:"omitempty,max=64"`
+		RefreshToken string `json:"refresh_token,optional" validate:"omitempty,max=4096"`
+	}
+	AuthLogoutResp {
+		Ok bool `json:"ok"`
+	}
+	AuthMeReq {
+		Authorization string `header:"Authorization,optional" validate:"omitempty,max=4096"`
+	}
+	AuthMeResp {
+		User AuthUserProfile `json:"user"`
+	}
+	HealthzResp {
+		Status string `json:"status"`
+	}
+	ReadyzResp {
+		Status string `json:"status"`
+	}
+	WsStubResp {
+		Ok bool `json:"ok"`
+	}
+)
+
+@server (
+	prefix: /api/v3/auth
+	group: auth
+)
+service gateway {
+	@handler AuthRegister
+	post /register (AuthRegisterReq) returns (AuthRegisterResp)
+
+	@handler AuthLogin
+	post /login (AuthLoginReq) returns (AuthLoginResp)
+
+	@handler AuthSsoStart
+	post /sso/start (AuthSsoStartReq) returns (AuthSsoStartResp)
+
+	@handler AuthSsoCallback
+	post /sso/callback (AuthSsoCallbackReq) returns (AuthSsoCallbackResp)
+
+	@handler AuthRefresh
+	post /refresh (AuthRefreshReq) returns (AuthRefreshResp)
+
+	@handler AuthLogout
+	post /logout (AuthLogoutReq) returns (AuthLogoutResp)
+
+	@handler AuthMe
+	get /me (AuthMeReq) returns (AuthMeResp)
+}
+
+@server (
+	prefix: "/"
+	group: ops
+)
+service gateway {
+	@handler Healthz
+	get /healthz returns (HealthzResp)
+
+	@handler Readyz
+	get /readyz returns (ReadyzResp)
+
+	@handler Ws
+	get /ws returns (WsStubResp)
+}

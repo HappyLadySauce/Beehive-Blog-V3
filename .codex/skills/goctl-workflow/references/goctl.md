@@ -21,6 +21,16 @@ goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api\swagger --filename g
 
 Use this after gateway contract changes so API docs stay in sync.
 
+## Proto `go_package`
+
+In each `v3/proto/<service>.proto`, set for example:
+
+```protobuf
+option go_package = "services/<service>/pb";
+```
+
+Use paths relative to the repo root. Avoid full module paths in `go_package` (they can cause goctl to emit files under unintended `github.com/...` directories).
+
 ## Standard RPC generation
 
 Generate RPC code from `v3/proto/*.proto` and always include `--client=true`:

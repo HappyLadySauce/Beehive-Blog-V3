@@ -3,3 +3,201 @@ syntax = "proto3";
 package identity;
 
 option go_package = "services/identity/pb";
+
+// -----------------------------------------------------------------------------
+// 枚举：角色、账号状态、认证来源、会话状态（多会话 / 吊销）
+// -----------------------------------------------------------------------------
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_GUEST = 1;
+  ROLE_MEMBER = 2;
+  ROLE_ADMIN = 3;
+}
+
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_PENDING = 1;
+  ACCOUNT_STATUS_ACTIVE = 2;
+  ACCOUNT_STATUS_DISABLED = 3;
+  ACCOUNT_STATUS_LOCKED = 4;
+}
+
+enum AuthSource {
+  AUTH_SOURCE_UNSPECIFIED = 0;
+  AUTH_SOURCE_LOCAL = 1;
+  AUTH_SOURCE_SSO = 2;
+}
+
+enum SessionStatus {
+  SESSION_STATUS_UNSPECIFIED = 0;
+  SESSION_STATUS_ACTIVE = 1;
+  SESSION_STATUS_REVOKED = 2;
+  SESSION_STATUS_EXPIRED = 3;
+}
+
+// -----------------------------------------------------------------------------
+// 核心消息
+// -----------------------------------------------------------------------------
+
+message TokenPair {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+  string token_type = 4;
+  string session_id = 5;
+}
+
+message CurrentUser {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string nickname = 4;
+  string avatar_url = 5;
+  Role role = 6;
+  AccountStatus status = 7;
+}
+
+message SessionInfo {
+  string session_id = 1;
+  string user_id = 2;
+  AuthSource auth_source = 3;
+  string client_type = 4;
+  string device_id = 5;
+  string device_name = 6;
+  SessionStatus status = 7;
+  // Unix 时间戳（秒）
+  int64 last_seen_at = 8;
+  // Unix 时间戳（秒）
+  int64 expires_at = 9;
+}
+
+message FederatedIdentity {
+  string provider = 1;
+  string subject = 2;
+  string email = 3;
+  string display_name = 4;
+}
+
+// -----------------------------------------------------------------------------
+// RPC 请求 / 响应
+// -----------------------------------------------------------------------------
+
+message RegisterLocalUserRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+  string nickname = 4;
+}
+
+message RegisterLocalUserResponse {
+  CurrentUser current_user = 1;
+  TokenPair token_pair = 2;
+}
+
+message LoginLocalUserRequest {
+  // 登录标识：允许 username 或 email
+  string login_identifier = 1;
+  string password = 2;
+  string client_type = 3;
+  string device_id = 4;
+  string device_name = 5;
+  string user_agent = 6;
+  string client_ip = 7;
+}
+
+message LoginLocalUserResponse {
+  TokenPair token_pair = 1;
+  CurrentUser current_user = 2;
+  SessionInfo session_info = 3;
+}
+
+message StartSsoLoginRequest {
+  string provider = 1;
+  string redirect_uri = 2;
+  string state = 3;
+}
+
+message StartSsoLoginResponse {
+  string provider = 1;
+  string auth_url = 2;
+  string state = 3;
+}
+
+message FinishSsoLoginRequest {
+  string provider = 1;
+  string code = 2;
+  string state = 3;
+  string redirect_uri = 4;
+  string client_type = 5;
+  string device_id = 6;
+  string device_name = 7;
+  string user_agent = 8;
+  string client_ip = 9;
+}
+
+message FinishSsoLoginResponse {
+  TokenPair token_pair = 1;
+  CurrentUser current_user = 2;
+  SessionInfo session_info = 3;
+}
+
+message RefreshSessionTokenRequest {
+  string refresh_token = 1;
+  string client_ip = 2;
+  string user_agent = 3;
+}
+
+message RefreshSessionTokenResponse {
+  // refresh token 轮换：每次成功刷新返回新的 access + refresh
+  TokenPair token_pair = 1;
+  SessionInfo session_info = 2;
+}
+
+message LogoutSessionRequest {
+  // 按会话吊销；可选携带 refresh_token 以同时失效轮换链
+  string session_id = 1;
+  string refresh_token = 2;
+}
+
+message LogoutSessionResponse {
+  bool ok = 1;
+}
+
+message GetCurrentUserRequest {
+  string user_id = 1;
+}
+
+message GetCurrentUserResponse {
+  CurrentUser current_user = 1;
+}
+
+message IntrospectAccessTokenRequest {
+  string access_token = 1;
+}
+
+message IntrospectAccessTokenResponse {
+  bool active = 1;
+  string user_id = 2;
+  Role role = 3;
+  AccountStatus account_status = 4;
+  string session_id = 5;
+  AuthSource auth_source = 6;
+  // access token 过期时间，Unix 时间戳（秒）
+  int64 expires_at = 7;
+}
+
+// -----------------------------------------------------------------------------
+// Identity 服务
+// -----------------------------------------------------------------------------
+
+service Identity {
+  rpc RegisterLocalUser(RegisterLocalUserRequest) returns (RegisterLocalUserResponse);
+  rpc LoginLocalUser(LoginLocalUserRequest) returns (LoginLocalUserResponse);
+  rpc StartSsoLogin(StartSsoLoginRequest) returns (StartSsoLoginResponse);
+  rpc FinishSsoLogin(FinishSsoLoginRequest) returns (FinishSsoLoginResponse);
+  rpc RefreshSessionToken(RefreshSessionTokenRequest) returns (RefreshSessionTokenResponse);
+  rpc LogoutSession(LogoutSessionRequest) returns (LogoutSessionResponse);
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+  rpc IntrospectAccessToken(IntrospectAccessTokenRequest) returns (IntrospectAccessTokenResponse);
+}

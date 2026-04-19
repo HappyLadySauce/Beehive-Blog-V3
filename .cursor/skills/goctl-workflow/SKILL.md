@@ -64,6 +64,13 @@ For internal service-to-service calls:
 - include `--client=true`
 - treat proto as the source of truth
 
+**Proto `go_package`**
+
+- Use a path **relative to the repository root**, for example:  
+  `option go_package = "services/<service>/pb";`
+- Do **not** use the full Go module path inside `go_package` (for example `github.com/HappyLadySauce/Beehive-Blog-V3/services/...`).  
+  goctl/protoc output can mirror those segments as nested directories and land generated code in the wrong place.
+
 Expose RPC for stable business capabilities, not every table operation.
 
 If a capability has no clear existing service owner, create a new service contract instead of overloading gateway.

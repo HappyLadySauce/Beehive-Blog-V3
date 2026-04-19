@@ -65,6 +65,13 @@ For service-to-service changes:
 
 - edit `v3/proto/*.proto` first
 
+**Proto `go_package` (goctl and this repo layout)**
+
+- In `v3/proto/*.proto`, set `go_package` **relative to the repository root**, for example:  
+  `option go_package = "services/<service>/pb";` (identity: `services/identity/pb`).
+- Do **not** put the full Go module path in `go_package` (for example `github.com/HappyLadySauce/Beehive-Blog-V3/services/...`).  
+  Generators may treat those segments as directory names and write files under the wrong tree.
+
 Examples:
 
 - `v3/proto/identity.proto`
