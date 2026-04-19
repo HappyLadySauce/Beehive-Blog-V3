@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS comments (
     id BIGSERIAL PRIMARY KEY,
     content_id BIGINT NOT NULL REFERENCES content_items(id) ON DELETE CASCADE,
-    parent_comment_id BIGINT NULL REFERENCES comments(id) ON DELETE CASCADE,
+    parent_comment_id BIGINT NULL,
     author_user_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
     author_name VARCHAR(128) NOT NULL DEFAULT '',
     author_email VARCHAR(255) NOT NULL DEFAULT '',
@@ -10,7 +10,12 @@ CREATE TABLE IF NOT EXISTS comments (
     moderation_note TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT chk_comment_status CHECK (status IN ('visible', 'hidden', 'deleted'))
+    CONSTRAINT uq_comments_id_content UNIQUE (id, content_id),
+    CONSTRAINT chk_comment_status CHECK (status IN ('visible', 'hidden', 'deleted')),
+    CONSTRAINT fk_comments_parent_same_content
+        FOREIGN KEY (parent_comment_id, content_id)
+        REFERENCES comments(id, content_id)
+        ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_content ON comments(content_id, created_at DESC);

@@ -3,10 +3,11 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(64) NOT NULL UNIQUE,
     nickname VARCHAR(128) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    role VARCHAR(32) NOT NULL DEFAULT 'owner',
+    role VARCHAR(32) NOT NULL DEFAULT 'member',
     password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_users_role CHECK (role IN ('owner', 'admin', 'editor', 'member'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
