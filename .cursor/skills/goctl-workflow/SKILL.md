@@ -18,6 +18,10 @@ For this repository:
 - RPC generation must include `--client=true`
 - `gateway` should stay thin and transport-oriented
 - business orchestration belongs in the owning domain service
+- `etcd` continues through go-zero / `zrpc`
+- database access uses GORM, not go-zero model/sqlx
+- Redis access uses go-redis
+- MQ uses third-party RabbitMQ through `pkg/mq`
 
 ## Required Workflow
 
@@ -92,8 +96,18 @@ For this repository, prefer handwritten business logic in:
 - `services/*/internal/logic/`
 - `services/*/internal/server/`
 - `services/*/internal/svc/`
+- `services/*/internal/model/` for service-private data access
+- `pkg/*` for cross-service shared helpers and infrastructure wrappers
 
-Do not introduce `domain/` / `repository/` as a default rule unless the repository later adopts that structure intentionally.
+Current implementation boundaries:
+
+- `internal/config`: config structs only
+- `internal/svc`: dependency wiring only
+- `internal/model`: GORM entities / repositories / queries
+- `internal/logic`: business use case orchestration
+- `pkg/mq`: RabbitMQ publisher / consumer abstraction
+
+Do not use go-zero built-in database model/sqlx as the default path in this repository.
 
 ## Regeneration Rules
 

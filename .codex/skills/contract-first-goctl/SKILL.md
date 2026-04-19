@@ -38,6 +38,10 @@ This workflow assumes the current v3 architecture:
 - gateway does not carry business orchestration
 - business orchestration belongs in the primary domain service
 - if an interface has no clear domain owner, create a dedicated service instead of pushing orchestration into `gateway`
+- `etcd` continues through go-zero / `zrpc`
+- database access uses GORM
+- Redis access uses go-redis
+- MQ uses third-party RabbitMQ via `pkg/mq`
 
 ## Contract Update Rules
 
@@ -181,8 +185,20 @@ After regeneration, update business layers as needed:
 - `services/*/internal/logic/`
 - `services/*/internal/svc/`
 - `services/*/internal/server/`
+- `services/*/internal/model/`
 - `services/gateway/internal/handler/`
 - `services/gateway/internal/middleware/`
+
+Current repository implementation boundaries:
+
+- `internal/config`: config structs only
+- `internal/svc`: dependency initialization and wiring
+- `internal/model`: GORM entities / repositories / queries
+- `internal/logic`: use case orchestration only
+- `pkg/*`: shared helpers and infrastructure wrappers
+
+Do not introduce go-zero built-in database model/sqlx as the default implementation path.
+Do not introduce go-zero built-in MQ usage; use third-party RabbitMQ through `pkg/mq`.
 
 Put business orchestration in the primary domain service, not in `gateway`.
 

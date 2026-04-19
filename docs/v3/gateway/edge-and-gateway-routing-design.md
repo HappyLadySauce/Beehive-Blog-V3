@@ -162,6 +162,7 @@ gatewayId -> set(userId / connId)
 
 负责：
 
+- 通过 go-zero `zrpc` 体系承载实例注册与发现
 - 实例注册
 - lease 与 keepalive
 - 健康状态
@@ -184,6 +185,23 @@ gatewayId -> set(userId / connId)
 适合存储：
 
 - 高频变化的在线映射与会话态
+
+## 5.3 `RabbitMQ`
+
+第一阶段标准 MQ 固定为第三方 `RabbitMQ`。
+
+负责：
+
+- 异步事件投递
+- push 任务分发
+- `indexer` 消费链路
+- 后续跨服务解耦消息
+
+不负责：
+
+- gateway 实例注册
+- 用户在线态
+- 低频实例元数据
 
 ## 6. edge 路由算法
 
@@ -333,7 +351,7 @@ gatewayId -> set(userId / connId)
 
 ## 10.3 投递到目标 gateway
 
-推送组件将消息投递到目标 `gateway` 的 push channel。
+推送组件将消息通过 `RabbitMQ` 投递到目标 `gateway` 的 push channel 或消费队列。
 
 ## 10.4 本地下发
 
@@ -376,6 +394,7 @@ gatewayId -> set(userId / connId)
 - `gateway` 做透传、连接承载与推送
 - `etcd` 管实例注册与健康
 - `redis` 管用户路由与在线映射
+- `RabbitMQ` 管异步消息与推送任务
 - 路由顺序固定为“已有绑定 > 区域优先 > 健康优先 > 负载优先”
 - 所有在线映射必须带 TTL
 - 所有实例注册必须带 lease

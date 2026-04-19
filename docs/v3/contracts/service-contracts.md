@@ -385,6 +385,7 @@ gatewayId -> set(userId / connId)
 
 负责：
 
+- 通过 go-zero `zrpc` 体系承载服务注册与发现
 - gateway 实例注册
 - 租约续约
 - 实例健康状态
@@ -404,6 +405,30 @@ gatewayId -> set(userId / connId)
 
 - 实例发现与健康主存 `etcd`
 - 用户路由映射主存 `redis`
+
+### 9.3 `RabbitMQ`
+
+第一阶段标准 MQ 固定为第三方 `RabbitMQ`。
+
+负责：
+
+- 业务事件总线
+- 异步消费
+- `indexer` 任务投递
+- `realtime / push` 异步投递
+- 解耦型业务消息
+
+约束：
+
+- 不使用 go-zero 内置 MQ 方案
+- 统一通过 `pkg/mq` 封装接入
+- 服务侧只依赖 `svc` 注入的 publisher / consumer
+
+统一边界：
+
+- `etcd`：找服务
+- `redis`：找连接与在线态
+- `RabbitMQ`：传事件和任务
 
 ## 10. 连接与失效回收规则
 

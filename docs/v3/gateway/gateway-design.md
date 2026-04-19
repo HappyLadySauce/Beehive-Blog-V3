@@ -113,8 +113,7 @@ Client / Web / Studio / Agent
                             v
                     +---------------+
                     | Event Bus     |
-                    | Redis Stream  |
-                    | -> NATS/Kafka |
+                    | RabbitMQ      |
                     +-------+-------+
                             |
                             v
@@ -251,6 +250,7 @@ v3 不再使用 `facade`、`aggregate`、`route manifest` 作为推荐方案。
 
 `etcd`：
 
+- 通过 go-zero `zrpc` 体系承载服务注册与发现
 - gateway 实例注册
 - lease / keepalive
 - 健康状态
@@ -262,6 +262,23 @@ v3 不再使用 `facade`、`aggregate`、`route manifest` 作为推荐方案。
 - `conn -> gateway`
 - `gateway -> online users`
 - 高频在线态映射与 TTL 失效
+
+### 8.4 `RabbitMQ`
+
+第一阶段标准 MQ 固定为第三方 `RabbitMQ`。
+
+负责：
+
+- 业务事件总线
+- `indexer` / `review` / `worker` 异步消费
+- `realtime / push` 异步投递
+- 后续跨服务解耦型消息
+
+不负责：
+
+- 实例注册发现
+- 高频在线态
+- 低频实例元数据
 
 ## 9. 路由状态模型
 
