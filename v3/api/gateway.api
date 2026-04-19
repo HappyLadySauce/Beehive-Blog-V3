@@ -109,8 +109,9 @@ type (
 	AuthLogoutResp {
 		Ok bool `json:"ok"`
 	}
+	// 受保护接口：须携带 Bearer access token（与中间件语义一致，避免契约与实现/文档脱节）
 	AuthMeReq {
-		Authorization string `header:"Authorization,optional" validate:"omitempty,max=4096"`
+		Authorization string `header:"Authorization" validate:"required"`
 	}
 	AuthMeResp {
 		User AuthUserProfile `json:"user"`

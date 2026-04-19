@@ -18,7 +18,9 @@ CREATE TABLE identity.federated_identities (
   raw_profile JSONB NULL,
   last_login_at TIMESTAMPTZ NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT chk_identity_federated_provider CHECK (provider IN ('qq', 'wechat', 'github')),
+  CONSTRAINT chk_identity_federated_provider_subject_type CHECK (provider_subject_type IN ('openid', 'unionid', 'github_user_id'))
 );
 
 CREATE UNIQUE INDEX ux_identity_federated_provider_subject ON identity.federated_identities (provider, provider_subject);

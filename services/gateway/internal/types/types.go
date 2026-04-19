@@ -32,7 +32,7 @@ type AuthLogoutResp struct {
 }
 
 type AuthMeReq struct {
-	Authorization string `header:"Authorization,optional" validate:"omitempty,max=4096"`
+	Authorization string `header:"Authorization" validate:"required"`
 }
 
 type AuthMeResp struct {

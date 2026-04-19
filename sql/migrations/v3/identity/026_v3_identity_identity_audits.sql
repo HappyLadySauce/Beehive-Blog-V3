@@ -13,7 +13,9 @@ CREATE TABLE identity.identity_audits (
   user_agent TEXT NULL,
   detail JSONB NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT chk_identity_audits_result CHECK (result IN ('success', 'failure'))
+  CONSTRAINT chk_identity_audits_result CHECK (result IN ('success', 'failure')),
+  CONSTRAINT chk_identity_audits_provider CHECK (provider IS NULL OR provider IN ('qq', 'wechat', 'github')),
+  CONSTRAINT chk_identity_audits_auth_source CHECK (auth_source IS NULL OR auth_source IN ('local', 'sso'))
 );
 
 CREATE INDEX idx_identity_audits_user_created ON identity.identity_audits (user_id, created_at DESC);
