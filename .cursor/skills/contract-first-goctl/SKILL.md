@@ -117,12 +117,13 @@ goctl api go -api .\v3\api\gateway.api -dir services\gateway
 After gateway API contract changes, also regenerate Swagger:
 
 ```powershell
-goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api\swagger --filename gateway --yaml
+goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api --filename gateway --yaml
 ```
 
 Notes:
 
 - `goctl api swagger` requires a sufficiently new `goctl` version
+- Swagger writes **`v3/api/gateway.yaml`** next to **`v3/api/gateway.api`** (same directory; do not use a nested `swagger/` folder)
 - keep Swagger generation tied to the same `v3/api/gateway.api` contract
 - if the repository later prefers json instead of yaml, update the repository standard consistently
 
@@ -199,7 +200,7 @@ If no primary domain owner exists, create a new service instead of composing ins
 3. Confirm the related `v3/proto/*.proto` files match the required backend RPC capability.
 4. Confirm regenerated gateway handlers/types compile against current code.
 5. Confirm regenerated RPC stubs compile against current service code.
-6. Confirm Swagger output is regenerated from the same `v3/api/gateway.api`.
+6. Confirm `v3/api/gateway.yaml` is regenerated from the same `v3/api/gateway.api`.
 7. Confirm `gateway` remains a transport layer and does not gain new business orchestration.
 8. Run compile or test checks where possible, for example:
    - `go test ./services/...`

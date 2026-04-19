@@ -1,9 +1,9 @@
 syntax = "v1"
 
 info (
-	title: "Beehive Blog v3 Gateway"
-	desc: "v3 网关 HTTP 契约：/auth 映射 identity RPC，/healthz /readyz /ws 为系统入口"
-	author: "Beehive"
+	title:   "Beehive Blog v3 Gateway"
+	desc:    "v3 网关 HTTP 契约：/auth 映射 identity RPC，/healthz /readyz /ws 为系统入口"
+	author:  "Beehive"
 	version: "v3"
 )
 
@@ -38,11 +38,11 @@ type (
 		ClientIp        string `json:"client_ip,optional" validate:"omitempty,max=64"`
 	}
 	AuthLoginResp {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-		ExpiresIn    int64  `json:"expires_in"`
-		TokenType    string `json:"token_type"`
-		SessionId    string `json:"session_id"`
+		AccessToken  string          `json:"access_token"`
+		RefreshToken string          `json:"refresh_token"`
+		ExpiresIn    int64           `json:"expires_in"`
+		TokenType    string          `json:"token_type"`
+		SessionId    string          `json:"session_id"`
 		User         AuthUserProfile `json:"user"`
 		Session      AuthSessionView `json:"session"`
 	}
@@ -56,15 +56,15 @@ type (
 		Status    string `json:"status"`
 	}
 	AuthSessionView {
-		SessionId   string `json:"session_id"`
-		UserId      string `json:"user_id"`
-		AuthSource  string `json:"auth_source"`
-		ClientType  string `json:"client_type,optional"`
-		DeviceId    string `json:"device_id,optional"`
-		DeviceName  string `json:"device_name,optional"`
-		Status      string `json:"status"`
-		LastSeenAt  int64  `json:"last_seen_at,optional"`
-		ExpiresAt   int64  `json:"expires_at,optional"`
+		SessionId  string `json:"session_id"`
+		UserId     string `json:"user_id"`
+		AuthSource string `json:"auth_source"`
+		ClientType string `json:"client_type,optional"`
+		DeviceId   string `json:"device_id,optional"`
+		DeviceName string `json:"device_name,optional"`
+		Status     string `json:"status"`
+		LastSeenAt int64  `json:"last_seen_at,optional"`
+		ExpiresAt  int64  `json:"expires_at,optional"`
 	}
 	AuthSsoStartReq {
 		Provider    string `json:"provider" validate:"required,min=1,max=64"`
@@ -88,11 +88,11 @@ type (
 		ClientIp    string `json:"client_ip,optional" validate:"omitempty,max=64"`
 	}
 	AuthSsoCallbackResp {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-		ExpiresIn    int64  `json:"expires_in"`
-		TokenType    string `json:"token_type"`
-		SessionId    string `json:"session_id"`
+		AccessToken  string          `json:"access_token"`
+		RefreshToken string          `json:"refresh_token"`
+		ExpiresIn    int64           `json:"expires_in"`
+		TokenType    string          `json:"token_type"`
+		SessionId    string          `json:"session_id"`
 		User         AuthUserProfile `json:"user"`
 		Session      AuthSessionView `json:"session"`
 	}
@@ -102,11 +102,11 @@ type (
 		UserAgent    string `json:"user_agent,optional" validate:"omitempty,max=512"`
 	}
 	AuthRefreshResp {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-		ExpiresIn    int64  `json:"expires_in"`
-		TokenType    string `json:"token_type"`
-		SessionId    string `json:"session_id"`
+		AccessToken  string          `json:"access_token"`
+		RefreshToken string          `json:"refresh_token"`
+		ExpiresIn    int64           `json:"expires_in"`
+		TokenType    string          `json:"token_type"`
+		SessionId    string          `json:"session_id"`
 		Session      AuthSessionView `json:"session"`
 	}
 	AuthLogoutReq {
@@ -135,7 +135,7 @@ type (
 
 @server (
 	prefix: /api/v3/auth
-	group: auth
+	group:  auth
 )
 service gateway {
 	@handler AuthRegister
@@ -162,7 +162,7 @@ service gateway {
 
 @server (
 	prefix: "/"
-	group: ops
+	group:  ops
 )
 service gateway {
 	@handler Healthz
@@ -174,3 +174,4 @@ service gateway {
 	@handler Ws
 	get /ws returns (WsStubResp)
 }
+

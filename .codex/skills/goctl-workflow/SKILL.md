@@ -42,7 +42,7 @@ Standard command:
 ```powershell
 goctl api validate -api .\v3\api\gateway.api
 goctl api go -api .\v3\api\gateway.api -dir services\gateway
-goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api\swagger --filename gateway --yaml
+goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api --filename gateway --yaml
 ```
 
 The gateway should:

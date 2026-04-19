@@ -16,10 +16,10 @@ Use this when gateway HTTP contracts change.
 Generate Swagger from `v3/api/gateway.api`:
 
 ```powershell
-goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api\swagger --filename gateway --yaml
+goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api --filename gateway --yaml
 ```
 
-Use this after gateway contract changes so API docs stay in sync.
+Use this after gateway contract changes so API docs stay in sync. Output file: `v3/api/gateway.yaml` (same folder as `gateway.api`).
 
 ## Proto `go_package`
 
