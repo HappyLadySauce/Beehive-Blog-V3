@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package identity;
+
+option go_package = "services/identity/pb";

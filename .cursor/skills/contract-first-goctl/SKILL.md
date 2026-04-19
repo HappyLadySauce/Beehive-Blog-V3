@@ -1,6 +1,6 @@
 ---
 name: contract-first-goctl
-description: Enforce the Beehive Blog v3 contract-first workflow. Use when adding or modifying gateway HTTP contracts or internal RPC contracts so work always follows this order: edit `api/*.api` or `proto/*.proto`, regenerate skeletons with `goctl`, then adjust generated and handwritten code.
+description: Enforce the Beehive Blog v3 contract-first workflow. Use when adding or modifying gateway HTTP contracts or internal RPC contracts so work always follows this order: edit `v3/api/*.api` or `v3/proto/*.proto`, regenerate skeletons with `goctl`, then adjust generated and handwritten code.
 ---
 
 # Contract-First goctl Workflow
@@ -18,6 +18,17 @@ Always follow this order:
 
 Never start by editing generated transport files first.
 
+## v3 Repository Standard
+
+This repository currently uses the following contract locations and generation style:
+
+- gateway HTTP contract: `v3/api/gateway.api`
+- backend RPC contracts: `v3/proto/*.proto`
+- RPC generation target: `services/<service>`
+- RPC generation command must include `--client=true`
+
+Treat this as the repository standard unless the repository is explicitly changed later.
+
 ## v3 Architecture Assumptions
 
 This workflow assumes the current v3 architecture:
@@ -34,7 +45,7 @@ This workflow assumes the current v3 architecture:
 
 For gateway-facing HTTP changes:
 
-- edit `api/gateway.api` first
+- edit `v3/api/gateway.api` first
 
 Use `gateway.api` only for routes that `gateway` really exposes.
 
@@ -42,7 +53,8 @@ Under the current v3 design, this means:
 
 - public HTTP routes
 - studio HTTP routes
-- gateway-owned health / websocket entry routes
+- gateway-owned health routes
+- websocket entry routes
 
 Do not treat `gateway.api` as a place for business orchestration design.  
 It is the external HTTP contract source of truth.
@@ -51,53 +63,75 @@ It is the external HTTP contract source of truth.
 
 For service-to-service changes:
 
-- edit `proto/*.proto` first
+- edit `v3/proto/*.proto` first
 
 Examples:
 
-- `proto/identity.proto`
-- `proto/content.proto`
-- `proto/search.proto`
+- `v3/proto/identity.proto`
+- `v3/proto/content.proto`
+- `v3/proto/search.proto`
 
 If a new business capability has no clear existing owner, create a new dedicated service contract first:
 
-- `proto/dashboard.proto`
-- `proto/query.proto`
-- `proto/composite.proto`
+- `v3/proto/dashboard.proto`
+- `v3/proto/query.proto`
+- `v3/proto/composite.proto`
 
 ### Required sequencing
 
 When an HTTP endpoint needs a new backend capability:
 
-1. edit `proto/<service>.proto`
+1. edit `v3/proto/<service>.proto`
 2. regenerate that RPC service
-3. edit `api/gateway.api`
+3. edit `v3/api/gateway.api`
 4. regenerate gateway skeleton
 5. finish handwritten logic and wiring
 
 ## Regeneration Commands
 
-Use `goctl` directly. Do not rely on repo-local wrapper scripts unless they are later added to the repository.
+Use `goctl` directly and follow the repository standard exactly.
+
+### Gateway API validation
+
+Before generation, validate the API contract:
+
+```powershell
+goctl api validate -api .\v3\api\gateway.api
+```
 
 ### Gateway API generation
 
 ```powershell
-goctl api go -api .\api\gateway.api -dir .\services\gateway
+goctl api go -api .\v3\api\gateway.api -dir services\gateway
 ```
+
+### Gateway Swagger generation
+
+After gateway API contract changes, also regenerate Swagger:
+
+```powershell
+goctl api swagger --api .\v3\api\gateway.api --dir .\v3\api\swagger --filename gateway --yaml
+```
+
+Notes:
+
+- `goctl api swagger` requires a sufficiently new `goctl` version
+- keep Swagger generation tied to the same `v3/api/gateway.api` contract
+- if the repository later prefers json instead of yaml, update the repository standard consistently
 
 ### RPC generation
 
 Example pattern:
 
 ```powershell
-goctl rpc protoc .\proto\identity.proto --go_out=. --go-grpc_out=. --zrpc_out=.\services\identity
+goctl rpc protoc .\v3\proto\identity.proto --go_out=. --go-grpc_out=. --zrpc_out=services\identity --client=true
 ```
 
 Repeat per service:
 
 ```powershell
-goctl rpc protoc .\proto\content.proto --go_out=. --go-grpc_out=. --zrpc_out=.\services\content
-goctl rpc protoc .\proto\search.proto --go_out=. --go-grpc_out=. --zrpc_out=.\services\search
+goctl rpc protoc .\v3\proto\content.proto --go_out=. --go-grpc_out=. --zrpc_out=services\content --client=true
+goctl rpc protoc .\v3\proto\search.proto --go_out=. --go-grpc_out=. --zrpc_out=services\search --client=true
 ```
 
 If `protoc` is not installed or unavailable, stop and fix the local toolchain first.
@@ -120,6 +154,14 @@ Under this repository's workflow, the normal sequence is:
 2. run `goctl`
 3. edit generated code as needed
 4. edit handwritten business code
+
+For gateway contract changes, the full sequence becomes:
+
+1. edit `v3/api/gateway.api`
+2. run `goctl api validate`
+3. run `goctl api go`
+4. run `goctl api swagger`
+5. edit generated and handwritten code
 
 Do not manually keep old generated glue alive if the new contract changes names or shapes.  
 Adjust the generated code and the surrounding business code to match the new contract cleanly.
@@ -145,12 +187,14 @@ If no primary domain owner exists, create a new service instead of composing ins
 
 ## Verification Checklist
 
-1. Confirm `api/gateway.api` matches the intended public HTTP surface.
-2. Confirm the related `proto/*.proto` files match the required backend RPC capability.
-3. Confirm regenerated gateway handlers/types compile against current code.
-4. Confirm regenerated RPC stubs compile against current service code.
-5. Confirm `gateway` remains a transport layer and does not gain new business orchestration.
-6. Run compile or test checks where possible, for example:
+1. Confirm `v3/api/gateway.api` passes `goctl api validate`.
+2. Confirm `v3/api/gateway.api` matches the intended public HTTP surface.
+3. Confirm the related `v3/proto/*.proto` files match the required backend RPC capability.
+4. Confirm regenerated gateway handlers/types compile against current code.
+5. Confirm regenerated RPC stubs compile against current service code.
+6. Confirm Swagger output is regenerated from the same `v3/api/gateway.api`.
+7. Confirm `gateway` remains a transport layer and does not gain new business orchestration.
+8. Run compile or test checks where possible, for example:
    - `go test ./services/...`
    - or scoped package tests for the touched services
 
