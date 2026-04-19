@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -25,21 +24,21 @@ type ServiceContext struct {
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	if err := c.Validate(); err != nil {
-		panic(fmt.Errorf("identity 配置校验失败: %w", err))
+		panic(fmt.Errorf("identity service context validation failed: %w", err))
 	}
 
 	db, sqlDB, err := newPostgres(c.Postgres)
 	if err != nil {
-		panic(fmt.Errorf("初始化 PostgreSQL 失败: %w", err))
+		panic(fmt.Errorf("initialize PostgreSQL failed: %w", err))
 	}
 
 	rdb, err := newRedis(c.StateRedis)
 	if err != nil {
 		_ = sqlDB.Close()
-		panic(fmt.Errorf("初始化 Redis 失败: %w", err))
+		panic(fmt.Errorf("initialize Redis failed: %w", err))
 	}
 
-	logx.Infof("identity 基础设施初始化完成: postgres=%s:%d redis=%s:%d",
+	logx.Infof("identity infrastructure initialized: postgres=%s:%d redis=%s:%d",
 		c.Postgres.Host, c.Postgres.Port, c.StateRedis.Host, c.StateRedis.Port)
 
 	return &ServiceContext{
@@ -53,20 +52,19 @@ func NewServiceContext(c config.Config) *ServiceContext {
 func newPostgres(c config.PostgresConf) (*gorm.DB, *sql.DB, error) {
 	pg := withPostgresDefaults(c)
 
-	dsnURL := &url.URL{
-		Scheme: "postgres",
-		User:   url.UserPassword(pg.User, pg.Password),
-		Host:   fmt.Sprintf("%s:%d", pg.Host, pg.Port),
-		Path:   pg.DBName,
-	}
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s connect_timeout=%d",
+		pg.Host,
+		pg.Port,
+		pg.User,
+		pg.Password,
+		pg.DBName,
+		pg.SSLMode,
+		pg.TimeZone,
+		pg.ConnectTimeoutSeconds,
+	)
 
-	query := dsnURL.Query()
-	query.Set("sslmode", pg.SSLMode)
-	query.Set("TimeZone", pg.TimeZone)
-	query.Set("connect_timeout", fmt.Sprintf("%d", pg.ConnectTimeoutSeconds))
-	dsnURL.RawQuery = query.Encode()
-
-	db, err := gorm.Open(postgres.Open(dsnURL.String()), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, nil, err
 	}

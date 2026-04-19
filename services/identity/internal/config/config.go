@@ -73,22 +73,22 @@ type OAuthProviderConf struct {
 
 func (c Config) Validate() error {
 	if strings.TrimSpace(c.Postgres.Host) == "" {
-		return fmt.Errorf("Postgres.Host 不能为空")
+		return fmt.Errorf("Postgres.Host is required")
 	}
 	if strings.TrimSpace(c.Postgres.User) == "" {
-		return fmt.Errorf("Postgres.User 不能为空")
+		return fmt.Errorf("Postgres.User is required")
 	}
 	if strings.TrimSpace(c.Postgres.DBName) == "" {
-		return fmt.Errorf("Postgres.DBName 不能为空")
+		return fmt.Errorf("Postgres.DBName is required")
 	}
 	if strings.TrimSpace(c.StateRedis.Host) == "" {
-		return fmt.Errorf("StateRedis.Host 不能为空")
+		return fmt.Errorf("StateRedis.Host is required")
 	}
 	if strings.TrimSpace(c.Security.AccessTokenSecret) == "" {
-		return fmt.Errorf("Security.AccessTokenSecret 不能为空")
+		return fmt.Errorf("Security.AccessTokenSecret is required")
 	}
 	if c.Security.RefreshTokenTTLSeconds <= c.Security.AccessTokenTTLSeconds {
-		return fmt.Errorf("Security.RefreshTokenTTLSeconds 必须大于 Security.AccessTokenTTLSeconds")
+		return fmt.Errorf("Security.RefreshTokenTTLSeconds must be greater than Security.AccessTokenTTLSeconds")
 	}
 	if err := validateOptionalURL("SSO.CallbackBaseURL", c.SSO.CallbackBaseURL); err != nil {
 		return err
@@ -111,13 +111,13 @@ func validateOAuthProvider(path string, conf OAuthProviderConf) error {
 		return nil
 	}
 	if strings.TrimSpace(conf.ClientID) == "" {
-		return fmt.Errorf("%s.ClientID 不能为空", path)
+		return fmt.Errorf("%s.ClientID is required", path)
 	}
 	if strings.TrimSpace(conf.ClientSecret) == "" {
-		return fmt.Errorf("%s.ClientSecret 不能为空", path)
+		return fmt.Errorf("%s.ClientSecret is required", path)
 	}
 	if strings.TrimSpace(conf.RedirectURL) == "" {
-		return fmt.Errorf("%s.RedirectURL 不能为空", path)
+		return fmt.Errorf("%s.RedirectURL is required", path)
 	}
 
 	return validateOptionalURL(path+".RedirectURL", conf.RedirectURL)
@@ -131,10 +131,10 @@ func validateOptionalURL(path, raw string) error {
 
 	parsed, err := url.Parse(raw)
 	if err != nil {
-		return fmt.Errorf("%s 不是合法 URL: %w", path, err)
+		return fmt.Errorf("%s is not a valid URL: %w", path, err)
 	}
 	if parsed.Scheme == "" || parsed.Host == "" {
-		return fmt.Errorf("%s 必须包含合法的 scheme 和 host", path)
+		return fmt.Errorf("%s must contain a valid scheme and host", path)
 	}
 
 	return nil
