@@ -2,7 +2,7 @@ name: beehive-blog-v3
 services:
   postgresql:
     image: postgres:16
-    container_name: beehive-postgres
+    container_name: beehive-postgres-v3
     restart: unless-stopped
     environment:
       POSTGRES_USER: Beehive-Blog-V3
@@ -21,11 +21,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - beehive-network
+      - beehive-network-v3
 
   redis:
     image: redis:8-alpine
-    container_name: beehive-redis
+    container_name: beehive-redis-v3
     restart: unless-stopped
     command: redis-server --appendonly yes
     ports:
@@ -38,11 +38,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - beehive-network
+      - beehive-network-v3
 
   etcd:
     image: quay.io/coreos/etcd:v3.5.17
-    container_name: beehive-etcd
+    container_name: beehive-etcd-v3
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -53,21 +53,21 @@ services:
       - ../../data/etcd:/etcd-data
     command:
       - etcd
-      - --name=beehive-etcd
+      - --name=beehive-etcd-v3
       - --data-dir=/etcd-data
       - --listen-client-urls=http://0.0.0.0:2379
       - --advertise-client-urls=http://127.0.0.1:2379
       - --listen-peer-urls=http://0.0.0.0:2380
       - --initial-advertise-peer-urls=http://127.0.0.1:2380
-      - --initial-cluster=beehive-etcd=http://127.0.0.1:2380
+      - --initial-cluster=beehive-etcd-v3=http://127.0.0.1:2380
     healthcheck:
       test: ["CMD", "etcdctl", "--endpoints=http://127.0.0.1:2379", "endpoint", "health"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - beehive-network
+      - beehive-network-v3
 
 networks:
-  beehive-network:
+  beehive-network-v3:
     driver: bridge

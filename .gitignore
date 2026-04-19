@@ -1,0 +1,7 @@
+.vscode/
+
+data/
+design/
+uploads/
+
+.env
