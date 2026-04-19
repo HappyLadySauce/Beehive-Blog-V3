@@ -9,6 +9,7 @@
 - [Identity 服务设计](./identity/identity-service-design.md)
 - [Identity 领域模型](./identity/identity-domain-model.md)
 - [Identity API 与 Proto 设计](./identity/identity-api-and-proto-design.md)
+- [Identity 数据库设计](./identity/identity-database-design.md)
 
 当前约定：
 
