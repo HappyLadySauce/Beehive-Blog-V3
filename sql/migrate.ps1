@@ -1,4 +1,4 @@
-# Beehive-Blog 数据库迁移入口（Windows PowerShell）
+# Beehive-Blog-V3 数据库迁移入口（Windows PowerShell）
 #
 # 全覆盖（默认）：-Mode versioned
 #   每个 .sql 文件在一个事务内整段执行，schema_migrations 记录 checksum，适合空库或严格与仓库一致。
@@ -30,7 +30,7 @@ if (-not $Dsn) {
 }
 
 $goArgs = @(
-    'run', './scripts/db/migrate/main.go',
+    'run', './sql/migrate/main.go',
     '-dsn', $Dsn,
     '-dir', $MigrationsDir,
     '-mode', $Mode
