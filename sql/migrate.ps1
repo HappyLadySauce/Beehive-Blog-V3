@@ -9,18 +9,36 @@
 #
 # 用法（在仓库根目录执行亦可）:
 #   .\sql\migrate.ps1
+#     默认仅 sql/migrations/v3（递归，如 v3/identity/*.sql），不跑 v2。
+#   .\sql\migrate.ps1 -MigrationsScope all
+#     扫描 sql/migrations 下全部版本（v2 + v3）。
+#   .\sql\migrate.ps1 -MigrationsScope v2
+#     仅 sql/migrations/v2。
 #   .\sql\migrate.ps1 -Mode adaptive -Verbose
 #   .\sql\migrate.ps1 -Dsn 'postgres://user:pass@host:5432/dbname?sslmode=disable'
+#   .\sql\migrate.ps1 -Force
+#     迁移文件改过、与库内 checksum 不一致时仍执行并覆盖 schema_migrations。
+#   .\sql\migrate.ps1 -Reapply -Mode adaptive
+#     已应用过的迁移再跑一遍（多为 DML；含 CREATE 时常需 adaptive）。
 
 param(
     [ValidateSet('versioned', 'adaptive')][string]$Mode = 'versioned',
     [string]$Dsn = '',
+    [ValidateSet('v3', 'v2', 'all')][string]$MigrationsScope = 'v3',
+    [switch]$Force,
+    [switch]$Reapply,
     [switch]$Verbose
 )
 
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$MigrationsDir = Join-Path $RepoRoot 'sql\migrations'
+$MigrationsCatalog = Join-Path $RepoRoot 'sql\migrations'
+$MigrationsDir = $MigrationsCatalog
+switch ($MigrationsScope) {
+    'v2' { $MigrationsDir = Join-Path $MigrationsDir 'v2' }
+    'v3' { $MigrationsDir = Join-Path $MigrationsDir 'v3' }
+    'all' { }
+}
 
 if (-not $Dsn) {
     $Dsn = $env:DB_DSN
@@ -33,10 +51,17 @@ $goArgs = @(
     'run', './sql/migrate/main.go',
     '-dsn', $Dsn,
     '-dir', $MigrationsDir,
+    '-catalog', $MigrationsCatalog,
     '-mode', $Mode
 )
 if ($Verbose) {
     $goArgs += '-v'
+}
+if ($Force) {
+    $goArgs += '-force'
+}
+if ($Reapply) {
+    $goArgs += '-reapply'
 }
 
 Push-Location $RepoRoot

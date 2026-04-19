@@ -3,6 +3,11 @@
 // 模式说明：
 //   - versioned（默认，全覆盖）：每个迁移文件在一个事务中原子执行，并记录 checksum。
 //   - adaptive（适应）：按 SQL 语句执行；仅跳过“对象已存在”类错误。
+//
+// 覆盖 / 重跑：
+//   - -force：迁移文件与库内 checksum 不一致时仍执行，并覆盖 schema_migrations（改过 SQL 后用）。
+//   - -reapply：checksum 一致也再执行一遍（多用于 DML；DDL 在 versioned 下常失败，可改用 adaptive）。
+//   亦可手工 DELETE FROM schema_migrations WHERE version = '...' 后照常 migrate。
 package main
 
 import (
@@ -48,8 +53,11 @@ func main() {
 func run() error {
 	var (
 		dsn           = flag.String("dsn", envOrDefault("DB_DSN", defaultDSN), "PostgreSQL DSN")
-		migrationsDir = flag.String("dir", "sql/migrations", "迁移 SQL 所在目录（相对当前工作目录或绝对路径）")
+		migrationsDir = flag.String("dir", "sql/migrations", "迁移 SQL 扫描根目录（递归）")
+		catalogDir    = flag.String("catalog", "", "写入 schema_migrations.version 的路径根（默认与 -dir 相同）。仅扫描子目录时应设为仓库 sql/migrations，使 version 恒为 v3/identity/020_... 等形式")
 		mode          = flag.String("mode", modeVersioned, "迁移模式：versioned=全覆盖（整文件原子）；adaptive=适应（按语句，仅跳过已存在类错误）")
+		force         = flag.Bool("force", false, "checksum 与库不一致时仍执行并覆盖记录（改过迁移文件后使用）")
+		reapply       = flag.Bool("reapply", false, "已应用且 checksum 一致时也再执行（危险；DDL 建议配合 -mode adaptive）")
 		verbose       = flag.Bool("v", false, "adaptive 模式下打印被跳过的语句错误")
 	)
 	flag.Parse()
@@ -59,7 +67,11 @@ func run() error {
 		return fmt.Errorf("unknown -mode %q (use versioned or adaptive)", *mode)
 	}
 
-	files, err := listMigrationFiles(*migrationsDir)
+	catalog := strings.TrimSpace(*catalogDir)
+	if catalog == "" {
+		catalog = *migrationsDir
+	}
+	files, err := listMigrationFiles(*migrationsDir, catalog)
 	if err != nil {
 		return err
 	}
@@ -89,13 +101,16 @@ func run() error {
 	defer unlockMigrations(db)
 
 	for _, mf := range files {
-		applied, err := isApplied(ctx, db, mf.Version, mf.Checksum)
+		applied, err := isApplied(ctx, db, mf.Version, mf.Checksum, *force)
 		if err != nil {
 			return err
 		}
-		if applied {
+		if applied && !*reapply {
 			fmt.Printf("skip %s\n", mf.Version)
 			continue
+		}
+		if applied && *reapply {
+			fmt.Fprintf(os.Stderr, "warning: re-applying %s (--reapply)\n", mf.Version)
 		}
 
 		switch m {
@@ -124,7 +139,7 @@ func applyVersioned(ctx context.Context, db *sql.DB, version, checksum, body str
 	if _, err = tx.ExecContext(ctx, body); err != nil {
 		return fmt.Errorf("apply %s failed: %w", version, err)
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO schema_migrations(version, checksum) VALUES ($1, $2)`, version, checksum); err != nil {
+	if err = recordSchemaMigration(ctx, tx, version, checksum); err != nil {
 		return fmt.Errorf("record %s failed: %w", version, err)
 	}
 	return tx.Commit()
@@ -155,10 +170,17 @@ func applyAdaptive(ctx context.Context, db *sql.DB, version, checksum, body stri
 		}
 	}
 
-	if _, err = tx.ExecContext(ctx, `INSERT INTO schema_migrations(version, checksum) VALUES ($1, $2)`, version, checksum); err != nil {
+	if err = recordSchemaMigration(ctx, tx, version, checksum); err != nil {
 		return fmt.Errorf("record %s failed: %w", version, err)
 	}
 	return tx.Commit()
+}
+
+func recordSchemaMigration(ctx context.Context, tx *sql.Tx, version, checksum string) error {
+	_, err := tx.ExecContext(ctx, `
+INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)
+ON CONFLICT (version) DO UPDATE SET checksum = EXCLUDED.checksum, applied_at = NOW()`, version, checksum)
+	return err
 }
 
 // adaptiveSkipSQLSTATE 仅包含“对象重复定义”场景。
@@ -365,34 +387,58 @@ func unlockMigrations(db *sql.DB) {
 	_, _ = db.ExecContext(ctx, `SELECT pg_advisory_unlock($1)`, migrateLockID)
 }
 
-func listMigrationFiles(dir string) ([]migrationFile, error) {
-	entries, err := os.ReadDir(dir)
+func listMigrationFiles(dir, catalog string) ([]migrationFile, error) {
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+	absCatalog, err := filepath.Abs(catalog)
 	if err != nil {
 		return nil, err
 	}
 
-	names := make([]string, 0, len(entries))
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
+	var relPaths []string
+	err = filepath.WalkDir(absDir, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
 		}
-		name := e.Name()
-		if strings.HasSuffix(strings.ToLower(name), ".sql") && len(name) >= 8 && name[0] >= '0' && name[0] <= '9' {
-			names = append(names, name)
+		if d.IsDir() {
+			return nil
 		}
+		name := d.Name()
+		if !strings.HasSuffix(strings.ToLower(name), ".sql") {
+			return nil
+		}
+		if len(name) < 8 || name[0] < '0' || name[0] > '9' {
+			return nil
+		}
+		rel, err := filepath.Rel(absDir, path)
+		if err != nil {
+			return err
+		}
+		relPaths = append(relPaths, rel)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	sort.Strings(names)
+	sort.Strings(relPaths)
 
-	files := make([]migrationFile, 0, len(names))
-	for _, name := range names {
-		path := filepath.Join(dir, name)
+	files := make([]migrationFile, 0, len(relPaths))
+	for _, rel := range relPaths {
+		path := filepath.Join(absDir, rel)
 		bodyBytes, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
+		relSlash := filepath.ToSlash(rel)
+		version, err := migrationVersionKey(absCatalog, path)
+		if err != nil {
+			return nil, err
+		}
 		files = append(files, migrationFile{
-			Name:     name,
-			Version:  strings.TrimSuffix(name, filepath.Ext(name)),
+			Name:     relSlash,
+			Version:  version,
 			Path:     path,
 			Body:     string(bodyBytes),
 			Checksum: sha256Hex(bodyBytes),
@@ -401,7 +447,18 @@ func listMigrationFiles(dir string) ([]migrationFile, error) {
 	return files, nil
 }
 
-func isApplied(ctx context.Context, db *sql.DB, version, checksum string) (bool, error) {
+func migrationVersionKey(catalogRoot, fileAbs string) (string, error) {
+	rel, err := filepath.Rel(catalogRoot, fileAbs)
+	if err != nil {
+		return "", err
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("migration file %s is not under -catalog %s", fileAbs, catalogRoot)
+	}
+	return strings.TrimSuffix(filepath.ToSlash(rel), ".sql"), nil
+}
+
+func isApplied(ctx context.Context, db *sql.DB, version, checksum string, force bool) (bool, error) {
 	var existing string
 	err := db.QueryRowContext(ctx, `SELECT checksum FROM schema_migrations WHERE version = $1`, version).Scan(&existing)
 	if err != nil {
@@ -411,7 +468,11 @@ func isApplied(ctx context.Context, db *sql.DB, version, checksum string) (bool,
 		return false, err
 	}
 	if existing != checksum {
-		return false, fmt.Errorf("migration %s checksum mismatch (recorded vs file); 请检查是否手工改过迁移文件或需重建库", version)
+		if force {
+			fmt.Fprintf(os.Stderr, "warning: %s: checksum mismatch, re-applying (--force)\n", version)
+			return false, nil
+		}
+		return false, fmt.Errorf("migration %s checksum mismatch (recorded vs file); 使用 -force 覆盖执行或删除 schema_migrations 对应行", version)
 	}
 	return true, nil
 }
