@@ -1,0 +1,4 @@
+interface:
+  display_name: "Contract-First goctl"
+  short_description: "Change API/proto first, then regenerate and implement"
+  default_prompt: "Use $contract-first-goctl to apply contract-first API/RPC changes in this repo."

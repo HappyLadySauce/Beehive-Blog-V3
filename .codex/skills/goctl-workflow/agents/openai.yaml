@@ -1,0 +1,4 @@
+interface:
+  display_name: "goctl Workflow"
+  short_description: "Scaffold and operate go-zero services with goctl"
+  default_prompt: "Use $goctl-workflow to scaffold a go-zero service and explain the generated files."
