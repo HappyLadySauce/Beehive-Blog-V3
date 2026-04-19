@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/config"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/driver/postgres"
@@ -20,6 +21,7 @@ type ServiceContext struct {
 	DB     *gorm.DB
 	SQLDB  *sql.DB
 	Redis  *redis.Client
+	Store  *repo.Store
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -46,6 +48,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		DB:     db,
 		SQLDB:  sqlDB,
 		Redis:  rdb,
+		Store:  repo.NewStore(db),
 	}
 }
 

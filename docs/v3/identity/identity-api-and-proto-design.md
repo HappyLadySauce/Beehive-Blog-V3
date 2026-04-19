@@ -2,14 +2,14 @@
 
 ## 1. 目标
 
-本文件用于定义 `identity` 第一阶段的 RPC 契约目标，并据此反推 `gateway.api` 第一批 `/auth/*` 接口。
+本文件定义 `identity` 第一阶段的 RPC 契约目标，并据此反推 `gateway.api` 第一批 `/auth/*` 接口。
 
-目标：
+当前第三阶段已经收口为：
 
-- 固定 `identity.proto` 第一版接口集合
-- 固定关键消息类型
-- 固定 token 与会话相关语义
-- 固定 `gateway` 如何映射这些能力
+- 本地认证主链路完整实现
+- SSO 继续采用统一抽象
+- 实际对外开放的 SSO provider 仅为 `GitHub`
+- `QQ/WeChat` 当前仅保留建模、配置与授权地址辅助，不开放登录入口
 
 ## 2. 设计原则
 
@@ -27,7 +27,7 @@
 
 ### 2.2 gateway.api 只表达对外 HTTP 契约
 
-`gateway.api` 应直接映射到 `identity` 提供的能力。
+`gateway.api` 直接映射 `identity` 提供的能力。
 
 `gateway` 负责：
 
@@ -36,27 +36,41 @@
 - RPC 调用
 - 错误包装
 
-不负责：
+`gateway` 不负责：
 
 - 授权裁决
 - 业务编排
 
 ### 2.3 SSO 采用两步抽象
 
-第一阶段不绑定具体 provider SDK 到 proto 层，而是抽象为：
+proto 层继续抽象为：
 
 - `StartSsoLogin`
 - `FinishSsoLogin`
 
-这样后续接任何 provider 都能保持 proto 稳定。
+这样后续接其他 provider 时，无需修改 proto 结构。
+
+### 2.4 第三阶段只开放 GitHub SSO
+
+当前实现状态固定为：
+
+- `GitHub`：完整实现并开放
+- `QQ`：仅保留抽象、配置与授权地址辅助，不开放登录入口
+- `WeChat`：仅保留抽象、配置与授权地址辅助，不开放登录入口
+
+实现行为固定为：
+
+- `StartSsoLogin` 对 `QQ/WeChat` 返回 `sso_provider_not_ready`
+- `FinishSsoLogin` 当前只完成 `GitHub` 的回调交换与平台会话建立
 
 ## 3. 第一版 RPC 集合
 
-## 3.1 `RegisterLocalUser`
+### 3.1 `RegisterLocalUser`
 
 作用：
 
 - 创建本地账号用户
+- 注册成功后直接建立平台会话
 
 输入语义：
 
@@ -67,14 +81,11 @@
 
 输出语义：
 
-- `user`
-- 可选直接返回 `token_pair`
+- `current_user`
+- `token_pair`
+- `session_info`
 
-第一阶段建议：
-
-- 注册成功后直接返回 `token_pair + current_user`
-
-## 3.2 `LoginLocalUser`
+### 3.2 `LoginLocalUser`
 
 作用：
 
@@ -88,11 +99,11 @@
 - `device_id`
 - `device_name`
 - `user_agent`
-- `client_ip`
 
 说明：
 
 - `login_identifier` 允许传 `username` 或 `email`
+- 终端真实 IP 由 `gateway` 从连接 / 可信代理头解析后，通过 gRPC metadata 传给 `identity`
 
 输出语义：
 
@@ -100,11 +111,12 @@
 - `current_user`
 - `session_info`
 
-## 3.3 `StartSsoLogin`
+### 3.3 `StartSsoLogin`
 
 作用：
 
 - 发起 SSO 登录流程
+- 第三阶段当前仅真正开放 `GitHub`
 
 输入语义：
 
@@ -118,11 +130,12 @@
 - `auth_url`
 - `state`
 
-## 3.4 `FinishSsoLogin`
+### 3.4 `FinishSsoLogin`
 
 作用：
 
 - 完成 SSO 回调交换与用户会话建立
+- 第三阶段当前仅真正完成 `GitHub`
 
 输入语义：
 
@@ -134,7 +147,10 @@
 - `device_id`
 - `device_name`
 - `user_agent`
-- `client_ip`
+
+说明：
+
+- 终端真实 IP 由 `gateway` 从连接 / 可信代理头解析后，通过 gRPC metadata 传给 `identity`
 
 输出语义：
 
@@ -142,7 +158,7 @@
 - `current_user`
 - `session_info`
 
-## 3.5 `RefreshSessionToken`
+### 3.5 `RefreshSessionToken`
 
 作用：
 
@@ -151,7 +167,6 @@
 输入语义：
 
 - `refresh_token`
-- `client_ip`
 - `user_agent`
 
 输出语义：
@@ -161,14 +176,14 @@
 
 约束：
 
-- 第一阶段支持 refresh token 轮换
+- refresh token 采用轮换策略
 - 若会话已吊销、账号不可用或 token 过期，应返回明确错误
 
-## 3.6 `LogoutSession`
+### 3.6 `LogoutSession`
 
 作用：
 
-- 登出并吊销当前会话或指定会话
+- 登出并吊销当前会话
 
 输入语义：
 
@@ -179,12 +194,11 @@
 
 - 操作结果
 
-第一阶段建议：
+说明：
 
-- 默认按当前会话登出
-- 后续可扩展“登出全部设备”
+- `session_id` 须由可信调用方在调用 RPC 前从 access token 上下文中解析并填入
 
-## 3.7 `GetCurrentUser`
+### 3.7 `GetCurrentUser`
 
 作用：
 
@@ -193,13 +207,12 @@
 输入语义：
 
 - `user_id`
-- 或由 `gateway` 传入认证后的身份上下文
 
 输出语义：
 
 - `current_user`
 
-## 3.8 `IntrospectAccessToken`
+### 3.8 `IntrospectAccessToken`
 
 作用：
 
@@ -227,30 +240,31 @@
 说明：
 
 - 这是内部认证基础能力，不直接作为公网 HTTP 接口暴露
+- `gateway` 依赖该 RPC 完成 access token 的标准化校验
 
 ## 4. 第一版核心消息模型
 
-## 4.1 `Role`
+### 4.1 `Role`
 
 - `ROLE_GUEST`
 - `ROLE_MEMBER`
 - `ROLE_ADMIN`
 
-## 4.2 `AccountStatus`
+### 4.2 `AccountStatus`
 
 - `ACCOUNT_STATUS_PENDING`
 - `ACCOUNT_STATUS_ACTIVE`
 - `ACCOUNT_STATUS_DISABLED`
 - `ACCOUNT_STATUS_LOCKED`
 
-## 4.3 `AuthSource`
+### 4.3 `AuthSource`
 
 - `AUTH_SOURCE_LOCAL`
 - `AUTH_SOURCE_SSO`
 
-## 4.4 `TokenPair`
+### 4.4 `TokenPair`
 
-建议字段：
+字段：
 
 - `access_token`
 - `refresh_token`
@@ -258,9 +272,9 @@
 - `session_id`
 - `token_type`
 
-## 4.5 `CurrentUser`
+### 4.5 `CurrentUser`
 
-建议字段：
+字段：
 
 - `user_id`
 - `username`
@@ -270,9 +284,9 @@
 - `role`
 - `status`
 
-## 4.6 `SessionInfo`
+### 4.6 `SessionInfo`
 
-建议字段：
+字段：
 
 - `session_id`
 - `user_id`
@@ -284,9 +298,9 @@
 - `last_seen_at`
 - `expires_at`
 
-## 4.7 `FederatedIdentity`
+### 4.7 `FederatedIdentity`
 
-建议字段：
+字段：
 
 - `provider`
 - `subject`
@@ -295,7 +309,7 @@
 
 ## 5. 错误语义建议
 
-第一阶段建议至少统一以下错误语义：
+第一阶段至少统一以下错误语义：
 
 - `invalid_credentials`
 - `account_disabled`
@@ -306,6 +320,7 @@
 - `session_revoked`
 - `refresh_token_expired`
 - `sso_provider_not_supported`
+- `sso_provider_not_ready`
 - `sso_state_invalid`
 
 ## 6. 反推 gateway.api
@@ -320,7 +335,7 @@
 - `POST /api/v3/auth/logout`
 - `GET /api/v3/auth/me`
 
-映射关系建议：
+映射关系：
 
 - `/auth/register` -> `RegisterLocalUser`
 - `/auth/login` -> `LoginLocalUser`
@@ -334,5 +349,6 @@
 
 ## 7. 当前结论
 
-`identity.proto` 第一版应围绕“本地账号 + SSO 并存、多会话、可吊销 refresh token、标准化 token introspection”来设计。  
+`identity.proto` 第一版围绕“本地账号 + SSO 并存、多会话、可吊销 refresh token、标准化 token introspection”来设计。  
+第三阶段实际对外开放的 SSO provider 为 `GitHub`，`QQ/WeChat` 仅保留抽象与模型准备。  
 `gateway.api` 第一版则只需要把这组能力清晰地映射成 `/api/v3/auth/*` 对外接口。

@@ -27,12 +27,21 @@
 ### `services/<svc>/internal/model`
 
 - 只放服务私有数据访问层
-- 包括：
-  - GORM entity
-  - repository
-  - query 封装
-  - 事务辅助
+- 默认进一步拆分为：
+  - `internal/model/entity`
+  - `internal/model/repo`
 - 不放 HTTP DTO、RPC DTO、handler 参数结构
+
+#### `services/<svc>/internal/model/entity`
+
+- 只放 GORM 表结构映射
+- 一个表结构一个文件优先
+
+#### `services/<svc>/internal/model/repo`
+
+- 只放 repository、store、query 封装、事务辅助
+- `logic` 通过 `repo.Store` 访问数据库
+- 不在 `logic` 中直接出现主要 CRUD
 
 ### `services/<svc>/internal/logic`
 
@@ -40,6 +49,7 @@
 - 一条 RPC 或一个 HTTP 用例对应一个 logic
 - logic 只消费 `svc.ServiceContext` 暴露的依赖
 - 不直接 new 数据库连接、Redis 连接或第三方 provider client
+- 不直接执行主要数据库 CRUD
 
 ### `services/<svc>/internal/handler` / `server`
 
@@ -87,9 +97,11 @@
 
 ### `identity`
 
-- 使用 `internal/model` 承载账户、会话、refresh token、SSO 绑定、审计等持久化访问
+- 使用 `internal/model/entity` 承载账户、会话、refresh token、SSO 绑定、审计等表结构映射
+- 使用 `internal/model/repo` 承载账户、会话、refresh token、SSO 绑定、审计等持久化访问
 - 认证、token、会话、SSO 逻辑放在 `internal/logic`
 - 配置结构和配置校验放在 `internal/config`
+- 第三阶段实际开放的 SSO provider 只有 `GitHub`
 
 ### `gateway`
 
@@ -134,6 +146,7 @@ logx.Errorf("failed to refresh session token, user_id=%s session_id=%s: %v", use
 ## 禁止项
 
 - 不在 `logic` 中直接初始化 DB / Redis / MQ 连接
+- 不在 `logic` 中直接执行主要数据库 CRUD
 - 不在 `gateway` 中直接访问 PostgreSQL
 - 不把服务私有 repository 放到 `pkg`
 - 不把业务编排写进 `handler`
