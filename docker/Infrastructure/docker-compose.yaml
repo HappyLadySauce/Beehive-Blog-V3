@@ -1,0 +1,73 @@
+name: beehive-blog-v3
+services:
+  postgresql:
+    image: postgres:16
+    container_name: beehive-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: Beehive-Blog-V3
+      POSTGRES_PASSWORD: Beehive-Blog-V3
+      POSTGRES_DB: Beehive-Blog-V3
+      TZ: Asia/Shanghai
+      PGTZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../../data/postgres:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U Beehive-Blog-V3 -d Beehive-Blog-V3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - beehive-network
+
+  redis:
+    image: redis:8-alpine
+    container_name: beehive-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - ../../data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - beehive-network
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.17
+    container_name: beehive-etcd
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - ../../data/etcd:/etcd-data
+    command:
+      - etcd
+      - --name=beehive-etcd
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://127.0.0.1:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://127.0.0.1:2380
+      - --initial-cluster=beehive-etcd=http://127.0.0.1:2380
+    healthcheck:
+      test: ["CMD", "etcdctl", "--endpoints=http://127.0.0.1:2379", "endpoint", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - beehive-network
+
+networks:
+  beehive-network:
+    driver: bridge
