@@ -14,7 +14,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MIGRATIONS="${ROOT}/sql/migrations"
 MODE="${MODE:-versioned}"
-DSN="${DB_DSN:-postgres://Beehive-Blog:Beehive-Blog@127.0.0.1:5432/Beehive-Blog?sslmode=disable}"
+DSN="${DB_DSN:-postgres://Beehive-Blog-V3:Beehive-Blog-V3@127.0.0.1:5432/Beehive-Blog-V3?sslmode=disable}"
 
 GO_ARGS=(run ./scripts/db/migrate/main.go -dsn "$DSN" -dir "$MIGRATIONS" -mode "$MODE")
 if [[ "${VERBOSE:-}" == "1" ]]; then

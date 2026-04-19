@@ -26,7 +26,7 @@ if (-not $Dsn) {
     $Dsn = $env:DB_DSN
 }
 if (-not $Dsn) {
-    $Dsn = 'postgres://Beehive-Blog:Beehive-Blog@127.0.0.1:5432/Beehive-Blog?sslmode=disable'
+    $Dsn = 'postgres://Beehive-Blog-V3:Beehive-Blog-V3@127.0.0.1:5432/Beehive-Blog-V3?sslmode=disable'
 }
 
 $goArgs = @(

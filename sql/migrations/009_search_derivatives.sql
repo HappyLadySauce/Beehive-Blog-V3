@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS search_documents (
     indexed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (content_id)
+    UNIQUE (content_id, language)
 );
 
 CREATE INDEX IF NOT EXISTS idx_search_documents_content ON search_documents(content_id);
