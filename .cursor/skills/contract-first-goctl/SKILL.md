@@ -197,6 +197,23 @@ Current repository implementation boundaries:
 - `internal/logic`: use case orchestration only
 - `pkg/*`: shared helpers and infrastructure wrappers
 
+## Config Struct Rules
+
+New service configs should follow the repository config conventions instead of marking every field as optional.
+
+Rules:
+
+- use go-zero `conf` tags for structural constraints
+- prefer `default`, `range`, and `options` where values have safe defaults or fixed bounds
+- use `optional` only for fields that are truly optional
+- keep handwritten `Validate()` for security and cross-field checks
+
+Examples of logic that must stay in `Validate()`:
+
+- required secrets
+- `refresh token ttl > access token ttl`
+- enabled OAuth provider requires `ClientID`, `ClientSecret`, and `RedirectURL`
+
 Do not introduce go-zero built-in database model/sqlx as the default implementation path.
 Do not introduce go-zero built-in MQ usage; use third-party RabbitMQ through `pkg/mq`.
 

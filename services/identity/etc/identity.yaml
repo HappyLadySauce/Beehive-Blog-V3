@@ -4,3 +4,60 @@ Etcd:
   Hosts:
   - 127.0.0.1:2379
   Key: identity.rpc
+
+Postgres:
+  Host: 127.0.0.1
+  Port: 5432
+  User: Beehive-Blog-V3
+  Password: Beehive-Blog-V3
+  DBName: Beehive-Blog-V3
+  SSLMode: disable
+  TimeZone: Asia/Shanghai
+  ConnectTimeoutSeconds: 5
+  MaxOpenConns: 20
+  MaxIdleConns: 10
+  ConnMaxLifetimeSeconds: 1800
+  ConnMaxIdleTimeSeconds: 600
+
+StateRedis:
+  Host: 127.0.0.1
+  Port: 6379
+  Username: ""
+  Password: ""
+  DB: 0
+  EnableTLS: false
+  DialTimeoutSeconds: 3
+  ReadTimeoutSeconds: 3
+  WriteTimeoutSeconds: 3
+  PoolTimeoutSeconds: 4
+  MaxRetries: 2
+  PoolSize: 10
+  MinIdleConns: 2
+
+Security:
+  AccessTokenSecret: "replace-me-with-a-long-random-secret"
+  AccessTokenTTLSeconds: 900
+  RefreshTokenTTLSeconds: 2592000
+  StateTTLSeconds: 600
+  PasswordHashCost: 12
+
+SSO:
+  CallbackBaseURL: "http://localhost:8888"
+  QQ:
+    Enabled: false
+    ClientID: ""
+    ClientSecret: ""
+    RedirectURL: ""
+    Scopes: []
+  WeChat:
+    Enabled: false
+    ClientID: ""
+    ClientSecret: ""
+    RedirectURL: ""
+    Scopes: []
+  GitHub:
+    Enabled: false
+    ClientID: ""
+    ClientSecret: ""
+    RedirectURL: ""
+    Scopes: []

@@ -109,6 +109,34 @@ Current implementation boundaries:
 
 Do not use go-zero built-in database model/sqlx as the default path in this repository.
 
+## Configuration Rules
+
+For this repository, config structs should not default to `json:",optional"` for every field.
+
+Use go-zero `conf` tags for structural validation:
+
+- `optional`
+- `default=...`
+- `range=...`
+- `options=...`
+- `env=...`
+
+Use tags for:
+
+- default values
+- numeric ranges
+- enum options
+- true optionality
+
+Keep handwritten `Validate()` methods for:
+
+- security-critical required fields
+- cross-field constraints
+- provider-specific completeness checks
+- URL and secret validation
+
+The baseline example is `services/identity/internal/config/config.go`.
+
 ## Regeneration Rules
 
 - Regenerate from `v3/api/*.api` or `v3/proto/*.proto`, not from edited generated files

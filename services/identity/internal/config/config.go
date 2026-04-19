@@ -1,7 +1,141 @@
 package config
 
-import "github.com/zeromicro/go-zero/zrpc"
+import (
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/zeromicro/go-zero/zrpc"
+)
 
 type Config struct {
 	zrpc.RpcServerConf
+
+	Postgres   PostgresConf `json:"Postgres"`
+	StateRedis RedisConf    `json:"StateRedis"`
+	Security   SecurityConf `json:"Security"`
+	SSO        SSOConf      `json:"SSO,optional"`
+}
+
+type RedisConf struct {
+	Host                string `json:"Host"`
+	Port                int    `json:"Port,default=6379,range=[1:65536)"`
+	Username            string `json:"Username,optional"`
+	Password            string `json:"Password,optional"`
+	DB                  int    `json:"DB,default=0,range=[0:65536)"`
+	EnableTLS           bool   `json:"EnableTLS,optional"`
+	DialTimeoutSeconds  int    `json:"DialTimeoutSeconds,default=3,range=[1:61)"`
+	ReadTimeoutSeconds  int    `json:"ReadTimeoutSeconds,default=3,range=[1:61)"`
+	WriteTimeoutSeconds int    `json:"WriteTimeoutSeconds,default=3,range=[1:61)"`
+	PoolTimeoutSeconds  int    `json:"PoolTimeoutSeconds,default=4,range=[1:121)"`
+	MaxRetries          int    `json:"MaxRetries,default=1,range=[0:11)"`
+	PoolSize            int    `json:"PoolSize,default=10,range=[1:201)"`
+	MinIdleConns        int    `json:"MinIdleConns,default=0,range=[0:201)"`
+}
+
+type PostgresConf struct {
+	Host                   string `json:"Host"`
+	Port                   int    `json:"Port,default=5432,range=[1:65536)"`
+	User                   string `json:"User"`
+	Password               string `json:"Password,optional"`
+	DBName                 string `json:"DBName"`
+	SSLMode                string `json:"SSLMode,default=disable,options=[disable,require,verify-ca,verify-full]"`
+	TimeZone               string `json:"TimeZone,default=Asia/Shanghai"`
+	ConnectTimeoutSeconds  int    `json:"ConnectTimeoutSeconds,default=5,range=[1:61)"`
+	MaxOpenConns           int    `json:"MaxOpenConns,default=20,range=[1:201)"`
+	MaxIdleConns           int    `json:"MaxIdleConns,default=10,range=[0:201)"`
+	ConnMaxLifetimeSeconds int    `json:"ConnMaxLifetimeSeconds,default=1800,range=[1:86401)"`
+	ConnMaxIdleTimeSeconds int    `json:"ConnMaxIdleTimeSeconds,default=600,range=[1:86401)"`
+}
+
+type SecurityConf struct {
+	AccessTokenSecret      string `json:"AccessTokenSecret"`
+	AccessTokenTTLSeconds  int64  `json:"AccessTokenTTLSeconds,default=900,range=[60:86401)"`
+	RefreshTokenTTLSeconds int64  `json:"RefreshTokenTTLSeconds,default=2592000,range=[3600:7776001)"`
+	StateTTLSeconds        int64  `json:"StateTTLSeconds,default=600,range=[60:86401)"`
+	PasswordHashCost       int    `json:"PasswordHashCost,default=12,range=[10:17)"`
+}
+
+type SSOConf struct {
+	CallbackBaseURL string            `json:"CallbackBaseURL,optional"`
+	QQ              OAuthProviderConf `json:"QQ,optional"`
+	WeChat          OAuthProviderConf `json:"WeChat,optional"`
+	GitHub          OAuthProviderConf `json:"GitHub,optional"`
+}
+
+type OAuthProviderConf struct {
+	Enabled      bool     `json:"Enabled,optional"`
+	ClientID     string   `json:"ClientID,optional"`
+	ClientSecret string   `json:"ClientSecret,optional"`
+	RedirectURL  string   `json:"RedirectURL,optional"`
+	Scopes       []string `json:"Scopes,optional"`
+}
+
+func (c Config) Validate() error {
+	if strings.TrimSpace(c.Postgres.Host) == "" {
+		return fmt.Errorf("Postgres.Host 不能为空")
+	}
+	if strings.TrimSpace(c.Postgres.User) == "" {
+		return fmt.Errorf("Postgres.User 不能为空")
+	}
+	if strings.TrimSpace(c.Postgres.DBName) == "" {
+		return fmt.Errorf("Postgres.DBName 不能为空")
+	}
+	if strings.TrimSpace(c.StateRedis.Host) == "" {
+		return fmt.Errorf("StateRedis.Host 不能为空")
+	}
+	if strings.TrimSpace(c.Security.AccessTokenSecret) == "" {
+		return fmt.Errorf("Security.AccessTokenSecret 不能为空")
+	}
+	if c.Security.RefreshTokenTTLSeconds <= c.Security.AccessTokenTTLSeconds {
+		return fmt.Errorf("Security.RefreshTokenTTLSeconds 必须大于 Security.AccessTokenTTLSeconds")
+	}
+	if err := validateOptionalURL("SSO.CallbackBaseURL", c.SSO.CallbackBaseURL); err != nil {
+		return err
+	}
+	if err := validateOAuthProvider("SSO.QQ", c.SSO.QQ); err != nil {
+		return err
+	}
+	if err := validateOAuthProvider("SSO.WeChat", c.SSO.WeChat); err != nil {
+		return err
+	}
+	if err := validateOAuthProvider("SSO.GitHub", c.SSO.GitHub); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateOAuthProvider(path string, conf OAuthProviderConf) error {
+	if !conf.Enabled {
+		return nil
+	}
+	if strings.TrimSpace(conf.ClientID) == "" {
+		return fmt.Errorf("%s.ClientID 不能为空", path)
+	}
+	if strings.TrimSpace(conf.ClientSecret) == "" {
+		return fmt.Errorf("%s.ClientSecret 不能为空", path)
+	}
+	if strings.TrimSpace(conf.RedirectURL) == "" {
+		return fmt.Errorf("%s.RedirectURL 不能为空", path)
+	}
+
+	return validateOptionalURL(path+".RedirectURL", conf.RedirectURL)
+}
+
+func validateOptionalURL(path, raw string) error {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("%s 不是合法 URL: %w", path, err)
+	}
+	if parsed.Scheme == "" || parsed.Host == "" {
+		return fmt.Errorf("%s 必须包含合法的 scheme 和 host", path)
+	}
+
+	return nil
 }
