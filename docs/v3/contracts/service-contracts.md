@@ -24,29 +24,40 @@
 
 不再提供业务 HTTP 层。
 
-### 2.3 契约归属 RPC 服务，HTTP 映射归 gateway
-
-业务能力契约优先归 RPC 服务自身。
+### 2.3 gateway 只做 HTTP / WS 接入
 
 `gateway` 只维护：
 
 - 对外 HTTP / WS 入口
-- HTTP 到 RPC 的映射
-- 聚合接口
-- 实时接入与推送能力
+- 透传路由
+- 鉴权、限流、错误包装
+- 连接、会话、推送能力
 
-### 2.4 单一数据归属
+不承担业务编排。
+
+### 2.4 业务编排优先下沉到领域服务
+
+如果接口有明确业务主语，则完整视图由主领域服务返回。
+
+该服务可以依赖其他服务完成 RPC 编排。
+
+### 2.5 无主语接口单独成服务
+
+如果接口没有明确业务主语，不强行塞入已有服务。
+
+直接新开微服务承接，例如：
+
+- `dashboard-service`
+- `query-service`
+- `composite-service`
+
+### 2.6 单一数据归属
 
 每类核心数据只能有一个主归属服务。
 
 其他服务可以缓存、索引、投影，但不能成为真相源。
 
-### 2.5 同步与异步分离
-
-- 查询、写入、鉴权等同步交互走 HTTP -> Gateway -> RPC
-- 索引更新、通知推送、AI 后处理等异步任务走事件总线
-
-### 2.6 实时通道独立
+### 2.7 实时通道独立
 
 `WebSocket` 视为独立接入能力，由 `gateway` 内的 realtime 模块负责。
 
@@ -66,7 +77,8 @@ v3 第一阶段建议收口为以下模块：
 
 - `realtime` 在部署上可以先内嵌在 `gateway` 进程中
 - 在逻辑边界上，仍然按独立模块建模
-- 后续再补 `review`、`agent`、`notification`
+- 后续按需要新增 `review`、`agent`、`notification`
+- 无主语接口优先单独建服务，而不是回灌到 `gateway`
 
 ## 4. 总体调用关系
 
@@ -91,15 +103,15 @@ Public Web / Studio / External Apps / Agent
          +-----------+-----------+
          |           |           |
          v           v           v
-      indexer    realtime    notification
+      indexer    realtime   dashboard/query
 ```
 
 规则：
 
 - 普通 HTTP 请求：`Client -> Gateway -> RPC Service`
 - WebSocket 接入：`Client -> Edge -> Gateway`
-- 异步派生能力统一走 `event bus`
-- 推送：`Business/Event -> Realtime/Push -> Gateway -> Client`
+- 业务编排：`主领域服务 -> 依赖服务`
+- 推送：`Business/Event -> Gateway -> Client`
 
 ## 5. 服务职责边界
 
@@ -123,7 +135,7 @@ Public Web / Studio / External Apps / Agent
 - 不承载业务 HTTP 接口
 - 不维护业务主数据
 - 不维持长连接
-- 不承担业务消息分发
+- 不承担业务编排
 
 ## 5.2 `gateway`
 
@@ -134,24 +146,25 @@ Public Web / Studio / External Apps / Agent
 ### 职责
 
 - 对外业务 HTTP / WS 入口
-- route manifest 装配 `proxy/facade`
-- 承载 `aggregate`
+- 透传路由
+- 鉴权、限流、错误包装
 - 管理连接、用户会话、推送与限流
-- trace、日志、错误包装
+- trace、日志
 
 ### 不负责
 
 - 不直接访问数据库
 - 不承载身份、内容、搜索等领域真相
-- 不让所有接口都进入手写逻辑
+- 不承担业务编排
+- 不承接无主语接口的聚合实现
 
 ### 典型接口归属
 
-- `GET /api/v3/auth/me`
-- `GET /healthz`
-- `GET /readyz`
-- `GET /api/v3/ws/connect`
-- 聚合 dashboard 接口
+- `/api/v3/auth/*`
+- `/api/v3/content/*`
+- `/api/v3/search/*`
+- `/healthz`
+- `/ws`
 
 ## 5.3 `identity`
 
@@ -175,15 +188,6 @@ Public Web / Studio / External Apps / Agent
 - `refresh_token`
 - `agent_client`
 - `identity_audit`
-
-### 暴露能力
-
-- `Register`
-- `Login`
-- `RefreshToken`
-- `Logout`
-- `GetCurrentUser`
-- `ValidateAccessToken`
 
 ## 5.4 `content`
 
@@ -210,17 +214,6 @@ Public Web / Studio / External Apps / Agent
 - `comment`
 - 各类 profile 表
 
-### 暴露能力
-
-- `CreateContent`
-- `UpdateContent`
-- `GetContent`
-- `ListContents`
-- `GetPublicContent`
-- `UpdateContentStatus`
-- `UpdateVisibility`
-- `UpdateAiAccess`
-
 ## 5.5 `search`
 
 ### 角色
@@ -241,13 +234,6 @@ Public Web / Studio / External Apps / Agent
 - `content_chunk`
 - `content_summary`
 
-### 暴露能力
-
-- `Search`
-- `Suggest`
-- `Related`
-- `GetIndexedDocument`
-
 ## 5.6 `indexer`
 
 ### 角色
@@ -261,21 +247,6 @@ Public Web / Studio / External Apps / Agent
 - 生成切片与摘要
 - 回写检索副本
 - 发布索引完成事件
-
-### 消费事件
-
-- `content.created`
-- `content.updated`
-- `content.deleted`
-- `content.status_changed`
-- `content.visibility_changed`
-- `content.revision_created`
-
-### 发布事件
-
-- `search.indexed`
-- `chunk.generated`
-- `summary.generated`
 
 ## 5.7 `realtime`
 
@@ -296,71 +267,83 @@ Public Web / Studio / External Apps / Agent
 - 订阅关系管理
 - 心跳保活
 - 消息下发
-- 广播范围控制
 
-### 不负责
+## 5.8 `dashboard/query/composite service`
 
-- 不生成业务消息
-- 不持久化业务主数据
-- 不替代消息队列
+### 角色
 
-## 6. 接口契约与分类规则
+- 无明确业务主语接口的专用服务
 
-## 6.1 三类模型
+### 适用场景
 
-`gateway` 的对外 HTTP 接口固定分为：
+- Dashboard
+- 平台级查询
+- 跨多个领域但不适合归属任一现有服务的组合视图
 
-- `proxy`
-- `facade`
-- `aggregate`
+### 原则
 
-### `proxy`
+- 不放在 `gateway`
+- 不强行塞进最接近的旧服务
+- 直接独立成服务
 
-- 一个 HTTP 接口对应一个 RPC
-- 无额外业务编排
+## 6. 业务编排原则
 
-### `facade`
+## 6.1 主领域服务返回完整视图
 
-- 最终只调用一个服务
-- 需要 DTO/分页/上下文适配
+如果接口有明确业务主语，则由主领域服务负责完整响应。
 
-### `aggregate`
+例如：
 
-- 一个 HTTP 接口调用多个 RPC
-- 存在明显编排逻辑
+- 订单完整信息 -> `order-service`
+- 内容完整信息 -> `content-service`
+- 用户资料完整视图 -> `user-service`
 
-## 6.2 新增接口决策规则
+该服务可以通过 RPC 依赖其他服务补全数据。
 
-新增一个 HTTP 接口时按下面顺序判断：
+## 6.2 为什么允许服务内编排
 
-1. 是否只调用 1 个 RPC
-2. 是否不需要跨服务编排
-3. 是否不需要网关层业务决策
-4. 是否只需要轻量 DTO / 上下文适配
+这样做的好处：
 
-如果成立，则归 `proxy/facade`。  
-否则归 `aggregate`。
+- `gateway` 保持薄接入层
+- 业务规则集中在领域内部
+- 领域服务能复用完整视图逻辑
+- 接入层与业务层解耦更清晰
 
-## 6.3 route manifest
+## 7. 服务依赖约束
 
-单服务接口通过 `route manifest` 声明：
+## 7.1 允许单向依赖
 
-- `method`
-- `path`
-- `kind`
-- `service`
-- `rpc`
-- `auth`
-- `handler`（仅 `aggregate` 需要）
+允许：
 
-规则：
+- `A -> B`
+- `A -> B -> C`
 
-- `proxy/facade` 由 gateway 启动时自动装配
-- `aggregate` 仅绑定手写 handler
+前提是依赖图保持单向。
 
-## 7. 用户路由与实例路由状态模型
+## 7.2 禁止循环依赖
 
-## 7.1 gateway registry
+明确禁止：
+
+- `A -> B -> A`
+- `A -> B -> C -> A`
+
+## 7.3 禁止原因
+
+循环依赖会带来：
+
+- 级联故障更严重
+- 领域边界模糊
+- 变更与联调成本升高
+- 隐藏递归或重复调用
+- 发布与排障复杂度上升
+
+结论：
+
+**服务间 RPC 调用允许存在，但必须形成单向图。**
+
+## 8. 用户路由与实例路由状态模型
+
+## 8.1 gateway registry
 
 ```text
 gatewayId -> {
@@ -374,7 +357,7 @@ gatewayId -> {
 }
 ```
 
-## 7.2 user route
+## 8.2 user route
 
 ```text
 userId -> {
@@ -384,21 +367,21 @@ userId -> {
 }
 ```
 
-## 7.3 connection route
+## 8.3 connection route
 
 ```text
 connId -> gatewayId
 ```
 
-## 7.4 gateway online index
+## 8.4 gateway online index
 
 ```text
 gatewayId -> set(userId / connId)
 ```
 
-## 8. etcd 与 redis 分工
+## 9. etcd 与 redis 分工
 
-### 8.1 `etcd`
+### 9.1 `etcd`
 
 负责：
 
@@ -407,7 +390,7 @@ gatewayId -> set(userId / connId)
 - 实例健康状态
 - 权重、机房、区域、容量信息
 
-### 8.2 `redis`
+### 9.2 `redis`
 
 负责：
 
@@ -421,21 +404,6 @@ gatewayId -> set(userId / connId)
 
 - 实例发现与健康主存 `etcd`
 - 用户路由映射主存 `redis`
-
-## 9. 路由策略顺序
-
-`edge` 的选路策略固定为：
-
-1. 已有绑定优先
-2. 区域 / 延迟优先
-3. 健康优先
-4. 负载优先
-
-说明：
-
-- 有有效绑定时优先回原 gateway
-- 无绑定时优先选择同 region / zone 的健康实例
-- 候选实例中再比较连接数、容量、错误率、权重
 
 ## 10. 连接与失效回收规则
 
@@ -477,7 +445,19 @@ Client
   -> Client
 ```
 
-## 11.2 WebSocket
+## 11.2 业务编排
+
+```text
+Client
+  -> Gateway
+  -> 主领域服务
+  -> 依赖服务
+  -> 主领域服务
+  -> Gateway
+  -> Client
+```
+
+## 11.3 WebSocket
 
 ```text
 Client
@@ -485,24 +465,12 @@ Client
   -> Gateway
 ```
 
-## 11.3 推送
+## 11.4 推送
 
 ```text
 Business Service / Worker
-  -> Event Bus / Push
   -> Gateway
   -> Client
-```
-
-## 11.4 内容更新到索引
-
-```text
-Client
-  -> Gateway
-  -> Content RPC
-  -> Event Bus
-  -> Indexer
-  -> Search RPC
 ```
 
 ## 12. 错误处理边界
@@ -556,11 +524,12 @@ Client
 
 v3 第一阶段服务契约最终收口为：
 
-**一个边缘接入层 `edge`，一个统一业务出口 `gateway`，三个核心 RPC 服务 `identity/content/search`，一个异步索引模块 `indexer`，一个实时模块 `realtime`。**
+**一个边缘接入层 `edge`，一个统一业务出口 `gateway`，若干纯 RPC 业务服务，以及一个实时模块 `realtime`。**
 
 其中：
 
 - 后端服务纯 RPC
-- 单服务接口走 `proxy/facade`
-- 聚合接口走 `aggregate`
+- `gateway` 只做透传与接入治理
+- 业务编排优先下沉到主领域服务
+- 无主语接口直接单独建服务
 - 多实例路由由 `edge + etcd + redis` 协同完成

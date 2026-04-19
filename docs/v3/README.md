@@ -12,3 +12,7 @@
 - `v2` 仅作为历史方案与参考资料
 - 新的架构决策、接口设计、部署方案统一写入 `v3`
 - `edge/gateway/routing` 相关决策以 `v3` 文档为唯一准绳
+- `gateway-design.md` 的正式口径是“透传型 gateway”
+- `service-contracts.md` 的正式口径是“服务内编排优先”
+- `edge-and-gateway-routing-design.md` 的正式口径是“边缘选路 + 多 gateway 连接承载”
+- `v3` 文档中不再使用 `facade`、`aggregate`、`route manifest` 作为推荐方案
