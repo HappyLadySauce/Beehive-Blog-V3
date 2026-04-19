@@ -197,6 +197,16 @@ Current repository implementation boundaries:
 - `internal/logic`: use case orchestration only
 - `pkg/*`: shared helpers and infrastructure wrappers
 
+## Comment And Log Rules
+
+When editing handwritten code in this repository:
+
+- use bilingual comments
+- place the English comment above the Chinese comment
+- use English only for runtime logs
+
+Do not leave long Chinese-only runtime log messages in production code.
+
 ## Config Struct Rules
 
 New service configs should follow the repository config conventions instead of marking every field as optional.

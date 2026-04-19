@@ -98,6 +98,39 @@
 - 通过 RPC 调用后端服务
 - 如需要鉴权中间件，统一收口到 `internal/middleware`
 
+## 注释与日志规范
+
+### 注释规范
+
+- 代码注释统一采用中英双语
+- 英文注释写在上方，中文注释写在下方
+- 函数、方法、结构体、接口、关键业务分支、复杂数据流都应补充双语注释
+- 简单赋值、明显语义的单行代码不强制加注释，避免噪音
+
+推荐格式：
+
+```go
+// Create a new session and persist the refresh token hash.
+// 创建新会话并持久化 refresh token 哈希。
+func CreateSession() {}
+```
+
+### 日志规范
+
+- 运行时日志统一使用英文
+- 日志内容应面向排障和监控，不写中英文混合消息
+- 错误日志优先包含：
+  - 行为
+  - 关键标识
+  - 失败原因
+- 不在日志中输出密码、token 明文、客户端密钥等敏感信息
+
+推荐格式：
+
+```go
+logx.Errorf("failed to refresh session token, user_id=%s session_id=%s: %v", userID, sessionID, err)
+```
+
 ## 禁止项
 
 - 不在 `logic` 中直接初始化 DB / Redis / MQ 连接

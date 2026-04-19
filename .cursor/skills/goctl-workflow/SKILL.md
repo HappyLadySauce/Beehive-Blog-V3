@@ -109,6 +109,26 @@ Current implementation boundaries:
 
 Do not use go-zero built-in database model/sqlx as the default path in this repository.
 
+## Comment And Log Rules
+
+Use bilingual comments in code:
+
+- English comment first
+- Chinese comment second
+
+Recommended format:
+
+```go
+// Build the current user context from the validated token claims.
+// 根据已校验的 token claims 构建当前用户上下文。
+```
+
+Use English only for runtime logs.
+
+- keep log messages operational and searchable
+- do not mix Chinese into runtime logs
+- do not print secrets, raw tokens, or passwords
+
 ## Configuration Rules
 
 For this repository, config structs should not default to `json:",optional"` for every field.
