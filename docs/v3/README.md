@@ -2,9 +2,9 @@
 
 当前 v3 文档包括：
 
-- [Gateway 设计](./gateway-design.md)
-- [服务契约设计](./service-contracts.md)
-- [Edge 与 Gateway 路由设计](./edge-and-gateway-routing-design.md)
+- [Gateway 设计](./gateway/gateway-design.md)
+- [服务契约设计](./contracts/service-contracts.md)
+- [Edge 与 Gateway 路由设计](./gateway/edge-and-gateway-routing-design.md)
 
 当前约定：
 
