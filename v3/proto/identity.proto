@@ -81,6 +81,8 @@ message FederatedIdentity {
 
 // -----------------------------------------------------------------------------
 // RPC 请求 / 响应
+// 说明：终端真实 IP 由 gateway 从连接 / 可信代理头解析后，通过 gRPC metadata 传给
+// identity（不在下列 message 中携带，避免公网自报）。
 // -----------------------------------------------------------------------------
 
 message RegisterLocalUserRequest {
@@ -93,6 +95,7 @@ message RegisterLocalUserRequest {
 message RegisterLocalUserResponse {
   CurrentUser current_user = 1;
   TokenPair token_pair = 2;
+  SessionInfo session_info = 3;
 }
 
 message LoginLocalUserRequest {
@@ -103,7 +106,8 @@ message LoginLocalUserRequest {
   string device_id = 4;
   string device_name = 5;
   string user_agent = 6;
-  string client_ip = 7;
+  reserved 7;
+  reserved "client_ip";
 }
 
 message LoginLocalUserResponse {
@@ -133,7 +137,8 @@ message FinishSsoLoginRequest {
   string device_id = 6;
   string device_name = 7;
   string user_agent = 8;
-  string client_ip = 9;
+  reserved 9;
+  reserved "client_ip";
 }
 
 message FinishSsoLoginResponse {
@@ -144,7 +149,8 @@ message FinishSsoLoginResponse {
 
 message RefreshSessionTokenRequest {
   string refresh_token = 1;
-  string client_ip = 2;
+  reserved 2;
+  reserved "client_ip";
   string user_agent = 3;
 }
 
@@ -154,8 +160,9 @@ message RefreshSessionTokenResponse {
   SessionInfo session_info = 2;
 }
 
+// LogoutSession：session_id 须由可信调用方（gateway）在调用 RPC 前从 access token
+// 上下文中解析并填入，用于“当前会话登出”；refresh_token 可选，用于同时吊销轮换链。
 message LogoutSessionRequest {
-  // 按会话吊销；可选携带 refresh_token 以同时失效轮换链
   string session_id = 1;
   string refresh_token = 2;
 }

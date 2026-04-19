@@ -1,0 +1,533 @@
+basePath: /
+consumes:
+- application/json
+info:
+  title: Beehive Blog v3 Gateway
+  version: v3
+paths:
+  /api/v3/auth/login:
+    post:
+      consumes:
+      - application/json
+      operationId: authAuthLogin
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            client_type:
+              type: string
+            device_id:
+              type: string
+            device_name:
+              type: string
+            login_identifier:
+              type: string
+            password:
+              type: string
+            user_agent:
+              type: string
+          required:
+          - login_identifier
+          - password
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              access_token:
+                type: string
+              expires_in:
+                type: integer
+              refresh_token:
+                type: string
+              session:
+                properties:
+                  auth_source:
+                    type: string
+                  client_type:
+                    type: string
+                  device_id:
+                    type: string
+                  device_name:
+                    type: string
+                  expires_at:
+                    type: integer
+                  last_seen_at:
+                    type: integer
+                  session_id:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                required:
+                - session_id
+                - user_id
+                - auth_source
+                - status
+                type: object
+              session_id:
+                type: string
+              token_type:
+                type: string
+              user:
+                properties:
+                  avatar_url:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                type: object
+            type: object
+      schemes:
+      - https
+      summary: AuthLogin
+  /api/v3/auth/logout:
+    post:
+      consumes:
+      - application/json
+      operationId: authAuthLogout
+      parameters:
+      - in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                type: boolean
+            type: object
+      schemes:
+      - https
+      summary: AuthLogout
+  /api/v3/auth/me:
+    get:
+      operationId: authAuthMe
+      parameters:
+      - in: header
+        name: Authorization
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                type: object
+            type: object
+      schemes:
+      - https
+      summary: AuthMe
+  /api/v3/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      operationId: authAuthRefresh
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+            user_agent:
+              type: string
+          required:
+          - refresh_token
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              access_token:
+                type: string
+              expires_in:
+                type: integer
+              refresh_token:
+                type: string
+              session:
+                properties:
+                  auth_source:
+                    type: string
+                  client_type:
+                    type: string
+                  device_id:
+                    type: string
+                  device_name:
+                    type: string
+                  expires_at:
+                    type: integer
+                  last_seen_at:
+                    type: integer
+                  session_id:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                required:
+                - session_id
+                - user_id
+                - auth_source
+                - status
+                type: object
+              session_id:
+                type: string
+              token_type:
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: AuthRefresh
+  /api/v3/auth/register:
+    post:
+      consumes:
+      - application/json
+      operationId: authAuthRegister
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            nickname:
+              type: string
+            password:
+              type: string
+            username:
+              type: string
+          required:
+          - username
+          - email
+          - password
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              access_token:
+                type: string
+              expires_in:
+                type: integer
+              refresh_token:
+                type: string
+              session:
+                properties:
+                  auth_source:
+                    type: string
+                  client_type:
+                    type: string
+                  device_id:
+                    type: string
+                  device_name:
+                    type: string
+                  expires_at:
+                    type: integer
+                  last_seen_at:
+                    type: integer
+                  session_id:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                required:
+                - session_id
+                - user_id
+                - auth_source
+                - status
+                type: object
+              session_id:
+                type: string
+              token_type:
+                type: string
+              user:
+                properties:
+                  avatar_url:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                type: object
+            type: object
+      schemes:
+      - https
+      summary: AuthRegister
+  /api/v3/auth/sso/callback:
+    post:
+      consumes:
+      - application/json
+      operationId: authAuthSsoCallback
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            client_type:
+              type: string
+            code:
+              type: string
+            device_id:
+              type: string
+            device_name:
+              type: string
+            provider:
+              type: string
+            redirect_uri:
+              type: string
+            state:
+              type: string
+            user_agent:
+              type: string
+          required:
+          - provider
+          - code
+          - state
+          - redirect_uri
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              access_token:
+                type: string
+              expires_in:
+                type: integer
+              refresh_token:
+                type: string
+              session:
+                properties:
+                  auth_source:
+                    type: string
+                  client_type:
+                    type: string
+                  device_id:
+                    type: string
+                  device_name:
+                    type: string
+                  expires_at:
+                    type: integer
+                  last_seen_at:
+                    type: integer
+                  session_id:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                required:
+                - session_id
+                - user_id
+                - auth_source
+                - status
+                type: object
+              session_id:
+                type: string
+              token_type:
+                type: string
+              user:
+                properties:
+                  avatar_url:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                type: object
+            type: object
+      schemes:
+      - https
+      summary: AuthSsoCallback
+  /api/v3/auth/sso/start:
+    post:
+      consumes:
+      - application/json
+      operationId: authAuthSsoStart
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            provider:
+              type: string
+            redirect_uri:
+              type: string
+            state:
+              type: string
+          required:
+          - provider
+          - redirect_uri
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              auth_url:
+                type: string
+              provider:
+                type: string
+              state:
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: AuthSsoStart
+  /healthz:
+    get:
+      operationId: opsHealthz
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: Healthz
+  /readyz:
+    get:
+      operationId: opsReadyz
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: Readyz
+  /ws:
+    get:
+      operationId: opsWs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                type: boolean
+            type: object
+      schemes:
+      - https
+      summary: Ws
+produces:
+- application/json
+schemes:
+- https
+swagger: "2.0"
+x-date: "2026-04-19 19:39:05"
+x-description: This is a goctl generated swagger file.
+x-github: https://github.com/zeromicro/go-zero
+x-go-zero-doc: https://go-zero.dev/
+x-goctl-version: 1.10.1
