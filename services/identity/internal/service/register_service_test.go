@@ -2,9 +2,11 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 )
 
@@ -53,7 +55,7 @@ func TestRegisterServiceExecute(t *testing.T) {
 			Email:    "alice2@example.com",
 			Password: "password123",
 		})
-		if !service.IsKind(err, service.ErrorKindAlreadyExists) {
+		if !errors.Is(err, errs.E(errs.CodeIdentityUsernameAlreadyExists)) {
 			t.Fatalf("expected already exists error, got %v", err)
 		}
 	})
@@ -76,7 +78,7 @@ func TestRegisterServiceExecute(t *testing.T) {
 			Email:    "alice@example.com",
 			Password: "password123",
 		})
-		if !service.IsKind(err, service.ErrorKindAlreadyExists) {
+		if !errors.Is(err, errs.E(errs.CodeIdentityEmailAlreadyExists)) {
 			t.Fatalf("expected already exists error, got %v", err)
 		}
 	})
@@ -90,7 +92,7 @@ func TestRegisterServiceExecute(t *testing.T) {
 			Email:    "alice@example.com",
 			Password: "password123",
 		})
-		if !service.IsKind(err, service.ErrorKindInvalidArgument) {
+		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
 			t.Fatalf("expected invalid argument error, got %v", err)
 		}
 	})
@@ -104,7 +106,7 @@ func TestRegisterServiceExecute(t *testing.T) {
 			Email:    "alice-at-example.com",
 			Password: "password123",
 		})
-		if !service.IsKind(err, service.ErrorKindInvalidArgument) {
+		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
 			t.Fatalf("expected invalid argument error, got %v", err)
 		}
 	})
@@ -118,7 +120,7 @@ func TestRegisterServiceExecute(t *testing.T) {
 			Email:    "alice@example.com",
 			Password: "short",
 		})
-		if !service.IsKind(err, service.ErrorKindInvalidArgument) {
+		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
 			t.Fatalf("expected invalid argument error, got %v", err)
 		}
 	})

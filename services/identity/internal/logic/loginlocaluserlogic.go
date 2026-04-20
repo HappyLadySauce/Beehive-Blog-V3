@@ -4,27 +4,27 @@ import (
 	"context"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type LoginLocalUserLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewLoginLocalUserLogic creates a LoginLocalUserLogic instance.
 // NewLoginLocalUserLogic 创建 LoginLocalUserLogic 实例。
 func NewLoginLocalUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLocalUserLogic {
+	logCtx := withLogContext(ctx)
 	return &LoginLocalUserLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 
@@ -44,7 +44,11 @@ func (l *LoginLocalUserLogic) LoginLocalUser(in *pb.LoginLocalUserRequest) (*pb.
 		return nil, toStatusError(err, "login local user failed")
 	}
 
-	l.Infof("local login succeeded: user_id=%d session_id=%d", result.User.ID, result.Session.ID)
+	l.logger.Info(
+		"identity_login_local_user_succeeded",
+		logs.Int64("user_id", result.User.ID),
+		logs.Int64("session_id", result.Session.ID),
+	)
 
 	return &pb.LoginLocalUserResponse{
 		TokenPair: auth.NewTokenPair(

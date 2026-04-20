@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityprovider "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth/provider"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
-	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/gorm"
 )
 
@@ -21,10 +22,11 @@ var githubUsernameSanitizer = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 // Dependencies defines the infrastructure and helper set used by services.
 // Dependencies 定义 service 层使用的基础设施与 helper 集合。
 type Dependencies struct {
-	Config    config.Config
-	Store     *repo.Store
-	Providers *identityprovider.Registry
-	Clock     func() time.Time
+	Config         config.Config
+	Store          *repo.Store
+	Providers      *identityprovider.Registry
+	Clock          func() time.Time
+	CheckReadiness func(ctx context.Context) error
 }
 
 // auditInput describes a single identity audit write.
@@ -43,7 +45,7 @@ type auditInput struct {
 
 // newDependencies creates normalized service dependencies.
 // newDependencies 创建规范化后的 service 依赖集合。
-func newDependencies(c config.Config, store *repo.Store, providers *identityprovider.Registry) Dependencies {
+func newDependencies(c config.Config, store *repo.Store, providers *identityprovider.Registry, readinessChecker func(ctx context.Context) error) Dependencies {
 	return Dependencies{
 		Config:    c,
 		Store:     store,
@@ -51,6 +53,7 @@ func newDependencies(c config.Config, store *repo.Store, providers *identityprov
 		Clock: func() time.Time {
 			return time.Now().UTC()
 		},
+		CheckReadiness: readinessChecker,
 	}
 }
 
@@ -88,13 +91,13 @@ func validateActiveUserStatus(accountStatus string) error {
 	case auth.UserStatusActive:
 		return nil
 	case auth.UserStatusPending:
-		return NewError(ErrorKindFailedPrecondition, "account_pending", nil)
+		return errs.New(errs.CodeIdentityAccountPending, "account pending")
 	case auth.UserStatusDisabled:
-		return NewError(ErrorKindFailedPrecondition, "account_disabled", nil)
+		return errs.New(errs.CodeIdentityAccountDisabled, "account disabled")
 	case auth.UserStatusLocked:
-		return NewError(ErrorKindFailedPrecondition, "account_locked", nil)
+		return errs.New(errs.CodeIdentityAccountLocked, "account locked")
 	default:
-		return NewError(ErrorKindFailedPrecondition, "account_status_invalid", nil)
+		return errs.New(errs.CodeIdentityInvalidArgument, "account status is invalid")
 	}
 }
 
@@ -117,7 +120,12 @@ func writeAudit(ctx context.Context, store *repo.Store, input auditInput) {
 		Detail:     input.Detail,
 	}
 	if err := store.IdentityAudits.Create(ctx, record); err != nil {
-		logx.WithContext(ctx).Errorf("identity audit write failed: event=%s result=%s err=%v", input.EventType, input.Result, err)
+		logs.Ctx(ctx).Error(
+			"identity_audit_write_failed",
+			err,
+			logs.String("event", input.EventType),
+			logs.String("result", input.Result),
+		)
 	}
 }
 

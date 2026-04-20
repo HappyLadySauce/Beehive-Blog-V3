@@ -26,6 +26,8 @@ type (
 	LoginLocalUserResponse        = pb.LoginLocalUserResponse
 	LogoutSessionRequest          = pb.LogoutSessionRequest
 	LogoutSessionResponse         = pb.LogoutSessionResponse
+	PingRequest                   = pb.PingRequest
+	PingResponse                  = pb.PingResponse
 	RefreshSessionTokenRequest    = pb.RefreshSessionTokenRequest
 	RefreshSessionTokenResponse   = pb.RefreshSessionTokenResponse
 	RegisterLocalUserRequest      = pb.RegisterLocalUserRequest
@@ -44,6 +46,7 @@ type (
 		LogoutSession(ctx context.Context, in *LogoutSessionRequest, opts ...grpc.CallOption) (*LogoutSessionResponse, error)
 		GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
 		IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error)
+		Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	}
 
 	defaultIdentity struct {
@@ -95,4 +98,9 @@ func (m *defaultIdentity) GetCurrentUser(ctx context.Context, in *GetCurrentUser
 func (m *defaultIdentity) IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error) {
 	client := pb.NewIdentityClient(m.cli.Conn())
 	return client.IntrospectAccessToken(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.Ping(ctx, in, opts...)
 }

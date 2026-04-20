@@ -2,9 +2,11 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/testkit"
 )
@@ -33,7 +35,7 @@ func TestCurrentUserServiceExecute(t *testing.T) {
 		svc := service.NewCurrentUserService(deps)
 
 		_, err := svc.Execute(context.Background(), service.GetCurrentUserInput{UserID: 9999})
-		if !service.IsKind(err, service.ErrorKindNotFound) {
+		if !errors.Is(err, errs.E(errs.CodeIdentityUserNotFound)) {
 			t.Fatalf("expected not found error, got %v", err)
 		}
 	})

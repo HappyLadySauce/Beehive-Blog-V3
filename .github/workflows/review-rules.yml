@@ -1,0 +1,31 @@
+name: review-rules
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  review-rules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify review rule tool
+        run: go test ./tools/reviewrules
+
+      - name: Run review rule scan
+        run: go run ./tools/reviewrules

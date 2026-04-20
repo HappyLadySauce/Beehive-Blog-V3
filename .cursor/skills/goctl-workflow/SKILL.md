@@ -128,6 +128,11 @@ Use English only for runtime logs.
 - keep log messages operational and searchable
 - do not mix Chinese into runtime logs
 - do not print secrets, raw tokens, or passwords
+- handwritten business code must use `pkg/logs`
+- do not introduce direct `logx` imports or calls outside `pkg/logs`
+- prefer `errors.Is(err, errs.E(...))` for business error matching
+- do not add `errs.IsCode(...)` as the primary matching style in new code
+- do not branch on `err.Error()`, gRPC message text, or SQL error text
 
 ## Configuration Rules
 
@@ -194,3 +199,4 @@ After generation:
 5. Verify gateway still acts as transport only.
 6. Verify backend services remain pure RPC.
 7. Build or test the affected services before moving on.
+8. Run `go run ./tools/reviewrules` for handwritten business code changes.

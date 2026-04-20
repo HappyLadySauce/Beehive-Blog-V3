@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
 )
@@ -23,7 +24,7 @@ func NewIntrospectService(deps Dependencies) *IntrospectService {
 // Execute 结合 JWT claims 与数据库状态校验 access token。
 func (s *IntrospectService) Execute(ctx context.Context, in IntrospectAccessTokenInput) (*IntrospectionResult, error) {
 	if in.AccessToken == "" {
-		return nil, NewError(ErrorKindInvalidArgument, "access_token is required", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "access_token is required")
 	}
 
 	claims, err := auth.ParseAccessToken(s.deps.Config.Security.AccessTokenSecret, in.AccessToken)

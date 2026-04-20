@@ -204,6 +204,11 @@ When editing handwritten code in this repository:
 - use bilingual comments
 - place the English comment above the Chinese comment
 - use English only for runtime logs
+- use `pkg/logs` for handwritten business code logs
+- do not introduce direct `logx` imports or calls outside `pkg/logs`
+- prefer `errors.Is(err, errs.E(...))` for business error matching
+- do not add `errs.IsCode(...)` as the primary matching style in new code
+- do not branch on `err.Error()`, gRPC message text, or SQL error text
 
 Do not leave long Chinese-only runtime log messages in production code.
 
@@ -248,5 +253,6 @@ If no primary domain owner exists, create a new service instead of composing ins
 8. Run compile or test checks where possible, for example:
    - `go test ./services/...`
    - or scoped package tests for the touched services
+9. Run `go run ./tools/reviewrules` for handwritten business code changes.
 
 If local environment limitations prevent full verification, still validate contract shape, generation success, and the affected service compile scope as far as possible.

@@ -3,11 +3,13 @@ package service_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
@@ -80,8 +82,8 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 			State:       "state-1",
 			RedirectURI: deps.Config.SSO.QQ.RedirectURL,
 		})
-		if !service.IsKind(err, service.ErrorKindUnimplemented) {
-			t.Fatalf("expected unimplemented error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentitySSOProviderNotReady)) {
+			t.Fatalf("expected provider not ready error, got %v", err)
 		}
 	})
 
@@ -123,8 +125,8 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 			State:       "missing-state",
 			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
 		})
-		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
-			t.Fatalf("expected unauthenticated error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentitySSOStateInvalid)) {
+			t.Fatalf("expected invalid sso state error, got %v", err)
 		}
 	})
 
@@ -170,8 +172,8 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 			State:       "state-consumed",
 			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
 		})
-		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
-			t.Fatalf("expected unauthenticated error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentitySSOStateInvalid)) {
+			t.Fatalf("expected invalid sso state error, got %v", err)
 		}
 	})
 
@@ -188,8 +190,8 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 			State:       "state-disabled",
 			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
 		})
-		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
-			t.Fatalf("expected failed precondition error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentitySSOProviderDisabled)) {
+			t.Fatalf("expected provider disabled error, got %v", err)
 		}
 	})
 
@@ -231,8 +233,8 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 			State:       "state-bad-profile",
 			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
 		})
-		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
-			t.Fatalf("expected unauthenticated error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidCredentials)) {
+			t.Fatalf("expected invalid credentials error, got %v", err)
 		}
 	})
 

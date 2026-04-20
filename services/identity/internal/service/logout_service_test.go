@@ -2,9 +2,11 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/testkit"
@@ -48,7 +50,7 @@ func TestLogoutServiceExecute(t *testing.T) {
 		svc := service.NewLogoutService(deps)
 
 		err := svc.Execute(context.Background(), service.LogoutSessionInput{SessionID: 9999})
-		if !service.IsKind(err, service.ErrorKindNotFound) {
+		if !errors.Is(err, errs.E(errs.CodeIdentitySessionNotFound)) {
 			t.Fatalf("expected not found error, got %v", err)
 		}
 	})

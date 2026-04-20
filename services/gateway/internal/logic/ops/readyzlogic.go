@@ -5,29 +5,50 @@ package ops
 
 import (
 	"context"
+	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type ReadyzLogic struct {
-	logx.Logger
+	logger *logs.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
 func NewReadyzLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ReadyzLogic {
 	return &ReadyzLogic{
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
 func (l *ReadyzLogic) Readyz() (resp *types.ReadyzResp, err error) {
-	// todo: add your logic here and delete this line
+	if l.svcCtx == nil || l.svcCtx.IdentityProbe == nil {
+		l.logger.Error(
+			"readyz_check",
+			errs.New(errs.CodeGatewayNotReady, "service is not ready"),
+			logs.String("dependency", "identity"),
+			logs.String("reason", "probe_not_initialized"),
+		)
+		return &types.ReadyzResp{Status: "not_ready"}, errs.New(errs.CodeGatewayNotReady, "service is not ready")
+	}
 
-	return
+	probeCtx, cancel := context.WithTimeout(l.ctx, 2*time.Second)
+	defer cancel()
+
+	if err := l.svcCtx.IdentityProbe.Check(probeCtx); err != nil {
+		l.logger.Error(
+			"readyz_check",
+			err,
+			logs.String("dependency", "identity"),
+		)
+		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
+	}
+
+	return &types.ReadyzResp{Status: "ready"}, nil
 }

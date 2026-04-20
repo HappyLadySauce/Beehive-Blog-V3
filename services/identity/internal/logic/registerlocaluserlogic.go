@@ -4,26 +4,27 @@ import (
 	"context"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type RegisterLocalUserLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewRegisterLocalUserLogic creates a RegisterLocalUserLogic instance.
 // NewRegisterLocalUserLogic 创建 RegisterLocalUserLogic 实例。
 func NewRegisterLocalUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RegisterLocalUserLogic {
+	logCtx := withLogContext(ctx)
 	return &RegisterLocalUserLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 
@@ -41,7 +42,11 @@ func (l *RegisterLocalUserLogic) RegisterLocalUser(in *pb.RegisterLocalUserReque
 		return nil, toStatusError(err, "register local user failed")
 	}
 
-	l.Infof("local registration succeeded: user_id=%d username=%s", result.User.ID, result.User.Username)
+	l.logger.Info(
+		"identity_register_local_user_succeeded",
+		logs.Int64("user_id", result.User.ID),
+		logs.String("username", result.User.Username),
+	)
 
 	return &pb.RegisterLocalUserResponse{
 		CurrentUser: auth.ToCurrentUser(result.User),

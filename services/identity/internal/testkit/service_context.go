@@ -1,6 +1,7 @@
 package testkit
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -102,7 +103,8 @@ func NewServiceContext(t *testing.T) *svc.ServiceContext {
 	store := NewStore(t)
 	redisClient := RedisClient(t)
 	providers := NewProviderRegistry(conf)
-	services := identityservice.NewManager(conf, store, providers)
+	readinessChecker := func(_ context.Context) error { return nil }
+	services := identityservice.NewManager(conf, store, providers, readinessChecker)
 
 	return &svc.ServiceContext{
 		Config:    conf,

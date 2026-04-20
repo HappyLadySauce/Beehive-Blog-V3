@@ -6,28 +6,35 @@ package auth
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
+	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
+	identityerrors "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type AuthSsoCallbackLogic struct {
-	logx.Logger
+	logger *logs.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
 func NewAuthSsoCallbackLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AuthSsoCallbackLogic {
 	return &AuthSsoCallbackLogic{
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
 func (l *AuthSsoCallbackLogic) AuthSsoCallback(req *types.AuthSsoCallbackReq) (resp *types.AuthSsoCallbackResp, err error) {
-	// todo: add your logic here and delete this line
+	rpcResp, rpcErr := l.svcCtx.IdentityClient.FinishSsoLogin(
+		rpcContextWithMeta(l.ctx),
+		identityadapter.BuildSsoCallbackRequest(req),
+	)
+	if rpcErr != nil {
+		return nil, identityerrors.MapUpstreamError(l.ctx, "auth_sso_callback", "/api/v3/auth/sso/callback", rpcErr)
+	}
 
-	return
+	return identityadapter.ToSsoCallbackResponse(rpcResp), nil
 }

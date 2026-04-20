@@ -45,7 +45,7 @@ func TestStartSsoLoginRejectsProvidersThatAreNotReady(t *testing.T) {
 	logic := NewStartSsoLoginLogic(context.Background(), &svc.ServiceContext{
 		Config:    conf,
 		Providers: providers,
-		Services:  identityservice.NewManager(conf, nil, providers),
+		Services:  identityservice.NewManager(conf, nil, providers, nil),
 	})
 
 	_, err := logic.StartSsoLogin(&pb.StartSsoLoginRequest{
@@ -64,7 +64,7 @@ func TestStartSsoLoginRejectsProvidersThatAreNotReady(t *testing.T) {
 	if st.Code() != codes.FailedPrecondition {
 		t.Fatalf("expected failed precondition, got %s", st.Code())
 	}
-	if st.Message() != "sso_provider_not_ready" {
-		t.Fatalf("expected sso_provider_not_ready, got %s", st.Message())
+	if st.Message() != "sso provider is not ready" {
+		t.Fatalf("expected sso provider is not ready, got %s", st.Message())
 	}
 }

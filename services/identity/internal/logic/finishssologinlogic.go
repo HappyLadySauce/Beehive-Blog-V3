@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // FinishSsoLoginLogic handles SSO callback completion.
@@ -16,16 +16,17 @@ import (
 type FinishSsoLoginLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewFinishSsoLoginLogic creates a FinishSsoLoginLogic instance.
 // NewFinishSsoLoginLogic 创建 FinishSsoLoginLogic 实例。
 func NewFinishSsoLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FinishSsoLoginLogic {
+	logCtx := withLogContext(ctx)
 	return &FinishSsoLoginLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 
@@ -47,7 +48,11 @@ func (l *FinishSsoLoginLogic) FinishSsoLogin(in *pb.FinishSsoLoginRequest) (*pb.
 		return nil, toStatusError(err, "finish sso login failed")
 	}
 
-	l.Infof("sso finish succeeded: user_id=%d session_id=%d", result.User.ID, result.Session.ID)
+	l.logger.Info(
+		"identity_finish_sso_login_succeeded",
+		logs.Int64("user_id", result.User.ID),
+		logs.Int64("session_id", result.Session.ID),
+	)
 
 	return &pb.FinishSsoLoginResponse{
 		TokenPair: auth.NewTokenPair(

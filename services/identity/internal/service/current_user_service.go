@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
 )
 
@@ -22,13 +23,13 @@ func NewCurrentUserService(deps Dependencies) *CurrentUserService {
 // Execute 返回可信当前用户快照。
 func (s *CurrentUserService) Execute(ctx context.Context, in GetCurrentUserInput) (*CurrentUserResult, error) {
 	if in.UserID <= 0 {
-		return nil, NewError(ErrorKindInvalidArgument, "user_id is invalid", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "user_id is invalid")
 	}
 
 	user, err := s.deps.Store.Users.GetByID(ctx, in.UserID)
 	if err != nil {
 		if repo.IsNotFound(err) {
-			return nil, NewError(ErrorKindNotFound, "user not found", nil)
+			return nil, errs.New(errs.CodeIdentityUserNotFound, "user not found")
 		}
 		return nil, err
 	}

@@ -1556,6 +1556,102 @@ func (x *IntrospectAccessTokenResponse) GetExpiresAt() int64 {
 	return 0
 }
 
+type PingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PingRequest) Reset() {
+	*x = PingRequest{}
+	mi := &file_v3_proto_identity_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingRequest) ProtoMessage() {}
+
+func (x *PingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_identity_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
+func (*PingRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_identity_proto_rawDescGZIP(), []int{20}
+}
+
+type PingResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Service       string                 `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`
+	Version       string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PingResponse) Reset() {
+	*x = PingResponse{}
+	mi := &file_v3_proto_identity_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingResponse) ProtoMessage() {}
+
+func (x *PingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_identity_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
+func (*PingResponse) Descriptor() ([]byte, []int) {
+	return file_v3_proto_identity_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *PingResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *PingResponse) GetService() string {
+	if x != nil {
+		return x.Service
+	}
+	return ""
+}
+
+func (x *PingResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
 var File_v3_proto_identity_proto protoreflect.FileDescriptor
 
 const file_v3_proto_identity_proto_rawDesc = "" +
@@ -1681,7 +1777,12 @@ const file_v3_proto_identity_proto_rawDesc = "" +
 	"\vauth_source\x18\x06 \x01(\x0e2\x14.identity.AuthSourceR\n" +
 	"authSource\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\a \x01(\x03R\texpiresAt*M\n" +
+	"expires_at\x18\a \x01(\x03R\texpiresAt\"\r\n" +
+	"\vPingRequest\"R\n" +
+	"\fPingResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x18\n" +
+	"\aservice\x18\x02 \x01(\tR\aservice\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\tR\aversion*M\n" +
 	"\x04Role\x12\x14\n" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -1704,7 +1805,7 @@ const file_v3_proto_identity_proto_rawDesc = "" +
 	"\x1aSESSION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SESSION_STATUS_ACTIVE\x10\x01\x12\x1a\n" +
 	"\x16SESSION_STATUS_REVOKED\x10\x02\x12\x1a\n" +
-	"\x16SESSION_STATUS_EXPIRED\x10\x032\xd9\x05\n" +
+	"\x16SESSION_STATUS_EXPIRED\x10\x032\x90\x06\n" +
 	"\bIdentity\x12\\\n" +
 	"\x11RegisterLocalUser\x12\".identity.RegisterLocalUserRequest\x1a#.identity.RegisterLocalUserResponse\x12S\n" +
 	"\x0eLoginLocalUser\x12\x1f.identity.LoginLocalUserRequest\x1a .identity.LoginLocalUserResponse\x12P\n" +
@@ -1713,7 +1814,8 @@ const file_v3_proto_identity_proto_rawDesc = "" +
 	"\x13RefreshSessionToken\x12$.identity.RefreshSessionTokenRequest\x1a%.identity.RefreshSessionTokenResponse\x12P\n" +
 	"\rLogoutSession\x12\x1e.identity.LogoutSessionRequest\x1a\x1f.identity.LogoutSessionResponse\x12S\n" +
 	"\x0eGetCurrentUser\x12\x1f.identity.GetCurrentUserRequest\x1a .identity.GetCurrentUserResponse\x12h\n" +
-	"\x15IntrospectAccessToken\x12&.identity.IntrospectAccessTokenRequest\x1a'.identity.IntrospectAccessTokenResponseB\x16Z\x14services/identity/pbb\x06proto3"
+	"\x15IntrospectAccessToken\x12&.identity.IntrospectAccessTokenRequest\x1a'.identity.IntrospectAccessTokenResponse\x125\n" +
+	"\x04Ping\x12\x15.identity.PingRequest\x1a\x16.identity.PingResponseB\x16Z\x14services/identity/pbb\x06proto3"
 
 var (
 	file_v3_proto_identity_proto_rawDescOnce sync.Once
@@ -1728,7 +1830,7 @@ func file_v3_proto_identity_proto_rawDescGZIP() []byte {
 }
 
 var file_v3_proto_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_v3_proto_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_v3_proto_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_v3_proto_identity_proto_goTypes = []any{
 	(Role)(0),                             // 0: identity.Role
 	(AccountStatus)(0),                    // 1: identity.AccountStatus
@@ -1754,6 +1856,8 @@ var file_v3_proto_identity_proto_goTypes = []any{
 	(*GetCurrentUserResponse)(nil),        // 21: identity.GetCurrentUserResponse
 	(*IntrospectAccessTokenRequest)(nil),  // 22: identity.IntrospectAccessTokenRequest
 	(*IntrospectAccessTokenResponse)(nil), // 23: identity.IntrospectAccessTokenResponse
+	(*PingRequest)(nil),                   // 24: identity.PingRequest
+	(*PingResponse)(nil),                  // 25: identity.PingResponse
 }
 var file_v3_proto_identity_proto_depIdxs = []int32{
 	0,  // 0: identity.CurrentUser.role:type_name -> identity.Role
@@ -1783,16 +1887,18 @@ var file_v3_proto_identity_proto_depIdxs = []int32{
 	18, // 24: identity.Identity.LogoutSession:input_type -> identity.LogoutSessionRequest
 	20, // 25: identity.Identity.GetCurrentUser:input_type -> identity.GetCurrentUserRequest
 	22, // 26: identity.Identity.IntrospectAccessToken:input_type -> identity.IntrospectAccessTokenRequest
-	9,  // 27: identity.Identity.RegisterLocalUser:output_type -> identity.RegisterLocalUserResponse
-	11, // 28: identity.Identity.LoginLocalUser:output_type -> identity.LoginLocalUserResponse
-	13, // 29: identity.Identity.StartSsoLogin:output_type -> identity.StartSsoLoginResponse
-	15, // 30: identity.Identity.FinishSsoLogin:output_type -> identity.FinishSsoLoginResponse
-	17, // 31: identity.Identity.RefreshSessionToken:output_type -> identity.RefreshSessionTokenResponse
-	19, // 32: identity.Identity.LogoutSession:output_type -> identity.LogoutSessionResponse
-	21, // 33: identity.Identity.GetCurrentUser:output_type -> identity.GetCurrentUserResponse
-	23, // 34: identity.Identity.IntrospectAccessToken:output_type -> identity.IntrospectAccessTokenResponse
-	27, // [27:35] is the sub-list for method output_type
-	19, // [19:27] is the sub-list for method input_type
+	24, // 27: identity.Identity.Ping:input_type -> identity.PingRequest
+	9,  // 28: identity.Identity.RegisterLocalUser:output_type -> identity.RegisterLocalUserResponse
+	11, // 29: identity.Identity.LoginLocalUser:output_type -> identity.LoginLocalUserResponse
+	13, // 30: identity.Identity.StartSsoLogin:output_type -> identity.StartSsoLoginResponse
+	15, // 31: identity.Identity.FinishSsoLogin:output_type -> identity.FinishSsoLoginResponse
+	17, // 32: identity.Identity.RefreshSessionToken:output_type -> identity.RefreshSessionTokenResponse
+	19, // 33: identity.Identity.LogoutSession:output_type -> identity.LogoutSessionResponse
+	21, // 34: identity.Identity.GetCurrentUser:output_type -> identity.GetCurrentUserResponse
+	23, // 35: identity.Identity.IntrospectAccessToken:output_type -> identity.IntrospectAccessTokenResponse
+	25, // 36: identity.Identity.Ping:output_type -> identity.PingResponse
+	28, // [28:37] is the sub-list for method output_type
+	19, // [19:28] is the sub-list for method input_type
 	19, // [19:19] is the sub-list for extension type_name
 	19, // [19:19] is the sub-list for extension extendee
 	0,  // [0:19] is the sub-list for field type_name
@@ -1809,7 +1915,7 @@ func file_v3_proto_identity_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v3_proto_identity_proto_rawDesc), len(file_v3_proto_identity_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   20,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

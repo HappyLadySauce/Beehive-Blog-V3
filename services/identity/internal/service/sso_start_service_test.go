@@ -2,9 +2,11 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 )
@@ -41,8 +43,8 @@ func TestSSOStartServiceExecute(t *testing.T) {
 			RedirectURI: deps.Config.SSO.QQ.RedirectURL,
 			State:       "fixed-state",
 		})
-		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
-			t.Fatalf("expected failed precondition error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentitySSOProviderNotReady)) {
+			t.Fatalf("expected provider not ready error, got %v", err)
 		}
 	})
 
@@ -55,7 +57,7 @@ func TestSSOStartServiceExecute(t *testing.T) {
 			RedirectURI: "https://example.com/other/callback",
 			State:       "fixed-state",
 		})
-		if !service.IsKind(err, service.ErrorKindInvalidArgument) {
+		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
 			t.Fatalf("expected invalid argument error, got %v", err)
 		}
 	})

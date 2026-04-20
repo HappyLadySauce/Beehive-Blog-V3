@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	identityprovider "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth/provider"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -50,10 +50,32 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		identityprovider.NewQQClient(c.SSO.QQ),
 		identityprovider.NewWeChatClient(c.SSO.WeChat),
 	)
-	services := identityservice.NewManager(c, store, providers)
+	readinessChecker := func(ctx context.Context) error {
+		if sqlDB == nil {
+			return fmt.Errorf("postgres connection is not initialized")
+		}
+		if err := sqlDB.PingContext(ctx); err != nil {
+			return fmt.Errorf("postgres readiness probe failed: %w", err)
+		}
+		if rdb == nil {
+			return fmt.Errorf("redis client is not initialized")
+		}
+		if err := rdb.Ping(ctx).Err(); err != nil {
+			return fmt.Errorf("redis readiness probe failed: %w", err)
+		}
 
-	logx.Infof("identity infrastructure initialized: postgres=%s:%d redis=%s:%d providers=%d",
-		c.Postgres.Host, c.Postgres.Port, c.StateRedis.Host, c.StateRedis.Port, providers.Len())
+		return nil
+	}
+	services := identityservice.NewManager(c, store, providers, readinessChecker)
+
+	logs.Ctx(context.Background()).Info(
+		"identity_infrastructure_initialized",
+		logs.String("postgres_host", c.Postgres.Host),
+		logs.Int("postgres_port", c.Postgres.Port),
+		logs.String("redis_host", c.StateRedis.Host),
+		logs.Int("redis_port", c.StateRedis.Port),
+		logs.Int("providers", providers.Len()),
+	)
 
 	return &ServiceContext{
 		Config:    c,

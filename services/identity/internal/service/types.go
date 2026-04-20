@@ -39,6 +39,14 @@ type StartSSOResult struct {
 	State    string
 }
 
+// PingResult contains identity readiness information.
+// PingResult 包含 identity 就绪信息。
+type PingResult struct {
+	OK      bool
+	Service string
+	Version string
+}
+
 // RegisterLocalUserInput describes local registration input.
 // RegisterLocalUserInput 描述本地注册输入。
 type RegisterLocalUserInput struct {

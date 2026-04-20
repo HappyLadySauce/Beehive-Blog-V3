@@ -194,6 +194,14 @@ message IntrospectAccessTokenResponse {
   int64 expires_at = 7;
 }
 
+message PingRequest {}
+
+message PingResponse {
+  bool ok = 1;
+  string service = 2;
+  string version = 3;
+}
+
 // -----------------------------------------------------------------------------
 // Identity 服务
 // -----------------------------------------------------------------------------
@@ -207,4 +215,5 @@ service Identity {
   rpc LogoutSession(LogoutSessionRequest) returns (LogoutSessionResponse);
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
   rpc IntrospectAccessToken(IntrospectAccessTokenRequest) returns (IntrospectAccessTokenResponse);
+  rpc Ping(PingRequest) returns (PingResponse);
 }

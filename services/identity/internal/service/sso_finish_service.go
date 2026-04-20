@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityprovider "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth/provider"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
@@ -28,35 +29,35 @@ func NewSSOFinishService(deps Dependencies) *SSOFinishService {
 func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*AuthResult, error) {
 	providerName, err := auth.NormalizeProvider(in.Provider)
 	if err != nil {
-		return nil, NewError(ErrorKindInvalidArgument, "unsupported provider", err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "unsupported provider")
 	}
 
 	callbackProvider, ok := s.deps.Providers.GetCallback(providerName)
 	if !ok {
-		return nil, NewError(ErrorKindUnimplemented, "sso_provider_not_ready", nil)
+		return nil, errs.New(errs.CodeIdentitySSOProviderNotReady, "sso provider is not ready")
 	}
 	if !callbackProvider.Enabled() {
-		return nil, NewError(ErrorKindFailedPrecondition, "sso_provider_disabled", nil)
+		return nil, errs.New(errs.CodeIdentitySSOProviderDisabled, "sso provider is disabled")
 	}
 	if !callbackProvider.LoginReady() {
-		return nil, NewError(ErrorKindFailedPrecondition, "sso_provider_not_ready", nil)
+		return nil, errs.New(errs.CodeIdentitySSOProviderNotReady, "sso provider is not ready")
 	}
 	if strings.TrimSpace(in.Code) == "" || strings.TrimSpace(in.State) == "" {
-		return nil, NewError(ErrorKindInvalidArgument, "code and state are required", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "code and state are required")
 	}
 
 	redirectURI := strings.TrimSpace(in.RedirectURI)
 	if redirectURI == "" || redirectURI != strings.TrimSpace(callbackProvider.RedirectURL()) {
-		return nil, NewError(ErrorKindInvalidArgument, "redirect_uri does not match configured provider redirect", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "redirect_uri does not match configured provider redirect")
 	}
 
 	providerAccessToken, err := callbackProvider.ExchangeCode(ctx, in.Code, redirectURI)
 	if err != nil {
-		return nil, NewError(ErrorKindUnauthenticated, "exchange provider code failed", err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidCredentials, "exchange provider code failed")
 	}
 	profile, _, err := callbackProvider.FetchProfile(ctx, providerAccessToken)
 	if err != nil {
-		return nil, NewError(ErrorKindUnauthenticated, "fetch provider profile failed", err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidCredentials, "fetch provider profile failed")
 	}
 
 	now := s.deps.Clock()
@@ -73,15 +74,15 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 		stateRow, err := store.OAuthLoginStates.GetForUpdateByProviderState(ctx, providerName, strings.TrimSpace(in.State))
 		if err != nil {
 			if repo.IsNotFound(err) {
-				return NewError(ErrorKindUnauthenticated, "sso_state_invalid", nil)
+				return errs.New(errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
 			}
 			return err
 		}
 		if stateRow.ConsumedAt != nil || stateRow.ExpiresAt.Before(now) {
-			return NewError(ErrorKindUnauthenticated, "sso_state_invalid", nil)
+			return errs.New(errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
 		}
 		if stateRow.RedirectURI != redirectURI {
-			return NewError(ErrorKindInvalidArgument, "redirect_uri mismatch", nil)
+			return errs.New(errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
 		}
 
 		fed, err := store.FederatedIdentities.GetByProviderSubject(ctx, providerName, profile.Subject)

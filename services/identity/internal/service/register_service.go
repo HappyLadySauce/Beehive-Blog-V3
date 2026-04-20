@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
@@ -27,28 +28,28 @@ func NewRegisterService(deps Dependencies) *RegisterService {
 func (s *RegisterService) Execute(ctx context.Context, in RegisterLocalUserInput) (*AuthResult, error) {
 	username, err := auth.NormalizeUsername(in.Username)
 	if err != nil {
-		return nil, NewError(ErrorKindInvalidArgument, err.Error(), err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
 	}
 	email, err := auth.NormalizeEmail(in.Email)
 	if err != nil {
-		return nil, NewError(ErrorKindInvalidArgument, err.Error(), err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
 	}
 	nickname, err := auth.NormalizeNickname(in.Nickname)
 	if err != nil {
-		return nil, NewError(ErrorKindInvalidArgument, err.Error(), err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
 	}
 	if err := auth.ValidatePassword(in.Password); err != nil {
-		return nil, NewError(ErrorKindInvalidArgument, err.Error(), err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
 	}
 
 	if _, err := s.deps.Store.Users.GetByUsername(ctx, username); err == nil {
-		return nil, NewError(ErrorKindAlreadyExists, "username already exists", nil)
+		return nil, errs.New(errs.CodeIdentityUsernameAlreadyExists, "username already exists")
 	} else if !repo.IsNotFound(err) {
 		return nil, err
 	}
 	if email != "" {
 		if _, err := s.deps.Store.Users.GetByEmail(ctx, email); err == nil {
-			return nil, NewError(ErrorKindAlreadyExists, "email already exists", nil)
+			return nil, errs.New(errs.CodeIdentityEmailAlreadyExists, "email already exists")
 		} else if !repo.IsNotFound(err) {
 			return nil, err
 		}
@@ -130,7 +131,7 @@ func (s *RegisterService) Execute(ctx context.Context, in RegisterLocalUserInput
 	})
 	if err != nil {
 		if repo.IsUniqueViolation(err) {
-			return nil, NewError(ErrorKindAlreadyExists, "username or email already exists", err)
+			return nil, errs.Wrap(err, errs.CodeIdentityEmailAlreadyExists, "username or email already exists")
 		}
 		return nil, err
 	}

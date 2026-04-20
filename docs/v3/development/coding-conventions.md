@@ -82,6 +82,7 @@
 - 例如：
   - `pkg/auth`
   - `pkg/errs`
+  - `pkg/logs`
   - `pkg/ctxmeta`
   - `pkg/xgorm`
   - `pkg/xredis`
@@ -90,12 +91,26 @@
 
 ## 技术栈边界
 
+## 错误模型规范
+
+- 全项目统一使用 `pkg/errs` 作为领域错误真相源
+- 业务错误码使用六位整数错误码，具体规则见 `docs/v3/development/error-code-specification.md`
+- `service` 或核心业务层只返回领域错误，不直接返回 HTTP 状态码或 gRPC 状态码
+- HTTP 输出统一通过 `pkg/errs/httpx`
+- gRPC 输出统一通过 `pkg/errs/grpcx`
+- 不再为单个服务维护私有错误模型
+- 业务错误匹配优先使用 `errors.Is(err, errs.E(code))`
+- `errs.IsCode(err, code)` 只作为辅助函数保留
+- 需要提取丰富错误信息时，使用 `errs.Parse(err)` 或 `errors.As`
+- `errors.Join` 只允许用于诊断聚合，不允许直接作为客户端主错误返回
+- 禁止使用 `err.Error()`、`strings.Contains(err.Error(), ...)`、gRPC message、SQL message 作为业务分支判断依据
+
 ### 保留 go-zero 的范围
 
 - HTTP / RPC 骨架
 - `zrpc`
 - `etcd` 注册发现集成
-- 日志
+- 日志后端
 - 错误码与服务基础壳
 - 配置加载
 
@@ -158,17 +173,40 @@ func CreateSession() {}
 ### 日志规范
 
 - 运行时日志统一使用英文
+- 项目业务代码统一通过 `pkg/logs` 写日志，不直接调用 `logx`
 - 日志内容应面向排障和监控，不写中英文混合消息
+- `action` 是日志必填概念
 - 错误日志优先包含：
   - 行为
+  - `request_id`
+  - 业务错误码
   - 关键标识
   - 失败原因
 - 不在日志中输出密码、token 明文、客户端密钥等敏感信息
+- 结构化字段优先使用 `logs.String`、`logs.Int64`、`logs.Any`
+- `logx` 只允许出现在 `pkg/logs` 或后续明确批准的底层适配层中
+
+### Code Review Rules
+
+- 后续手写业务代码必须优先使用 `errors.Is(err, errs.E(...))` 进行业务错误匹配
+- 后续手写业务代码必须统一使用 `pkg/logs`
+- 禁止新增直接 `logx` 导入与调用
+- 禁止新增 `errs.IsCode(` 作为主错误匹配写法
+- 禁止新增基于错误字符串的业务分支判断
+- 提交前应执行：
+  - `go run ./tools/reviewrules`
+  - 或 `./scripts/check-review-rules.ps1`
+- GitHub Actions 默认执行同一套 review rule 检查，新增违规代码会直接失败
 
 推荐格式：
 
 ```go
-logx.Errorf("failed to refresh session token, user_id=%s session_id=%s: %v", userID, sessionID, err)
+logs.Ctx(ctx).Error(
+    "refresh_session_token_failed",
+    err,
+    logs.UserID(userID),
+    logs.SessionID(sessionID),
+)
 ```
 
 ## 禁止项

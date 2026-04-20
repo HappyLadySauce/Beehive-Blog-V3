@@ -17,8 +17,8 @@ func ReadyzHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		resp, err := l.Readyz()
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
+			return
 		}
+		httpx.OkJsonCtx(r.Context(), w, resp)
 	}
 }

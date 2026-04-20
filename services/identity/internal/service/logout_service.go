@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
 )
@@ -23,7 +24,7 @@ func NewLogoutService(deps Dependencies) *LogoutService {
 // Execute 吊销目标会话及其 refresh tokens。
 func (s *LogoutService) Execute(ctx context.Context, in LogoutSessionInput) error {
 	if in.SessionID <= 0 {
-		return NewError(ErrorKindInvalidArgument, "session_id is invalid", nil)
+		return errs.New(errs.CodeIdentityInvalidArgument, "session_id is invalid")
 	}
 
 	now := s.deps.Clock()
@@ -31,7 +32,7 @@ func (s *LogoutService) Execute(ctx context.Context, in LogoutSessionInput) erro
 		session, err := store.UserSessions.GetForUpdateByID(ctx, in.SessionID)
 		if err != nil {
 			if repo.IsNotFound(err) {
-				return NewError(ErrorKindNotFound, "session not found", nil)
+				return errs.New(errs.CodeIdentitySessionNotFound, "session not found")
 			}
 			return err
 		}

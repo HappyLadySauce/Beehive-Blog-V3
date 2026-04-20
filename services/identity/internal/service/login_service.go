@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
@@ -27,16 +28,16 @@ func NewLoginService(deps Dependencies) *LoginService {
 func (s *LoginService) Execute(ctx context.Context, in LoginLocalUserInput) (*AuthResult, error) {
 	identifier, err := auth.NormalizeLoginIdentifier(in.LoginIdentifier)
 	if err != nil {
-		return nil, NewError(ErrorKindInvalidArgument, err.Error(), err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
 	}
 	if strings.TrimSpace(in.Password) == "" {
-		return nil, NewError(ErrorKindInvalidArgument, "password is required", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "password is required")
 	}
 
 	user, err := s.deps.Store.Users.FindByLoginIdentifier(ctx, identifier)
 	if err != nil {
 		if repo.IsNotFound(err) {
-			return nil, NewError(ErrorKindUnauthenticated, "invalid_credentials", nil)
+			return nil, errs.New(errs.CodeIdentityInvalidCredentials, "invalid credentials")
 		}
 		return nil, err
 	}
@@ -47,12 +48,12 @@ func (s *LoginService) Execute(ctx context.Context, in LoginLocalUserInput) (*Au
 	credential, err := s.deps.Store.CredentialLocals.GetByUserID(ctx, user.ID)
 	if err != nil {
 		if repo.IsNotFound(err) {
-			return nil, NewError(ErrorKindUnauthenticated, "invalid_credentials", nil)
+			return nil, errs.New(errs.CodeIdentityInvalidCredentials, "invalid credentials")
 		}
 		return nil, err
 	}
 	if err := auth.VerifyPassword(credential.PasswordHash, in.Password); err != nil {
-		return nil, NewError(ErrorKindUnauthenticated, "invalid_credentials", err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidCredentials, "invalid credentials")
 	}
 
 	now := s.deps.Clock()

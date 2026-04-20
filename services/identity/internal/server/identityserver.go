@@ -62,3 +62,8 @@ func (s *IdentityServer) IntrospectAccessToken(ctx context.Context, in *pb.Intro
 	l := logic.NewIntrospectAccessTokenLogic(ctx, s.svcCtx)
 	return l.IntrospectAccessToken(in)
 }
+
+func (s *IdentityServer) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, error) {
+	l := logic.NewPingLogic(ctx, s.svcCtx)
+	return l.Ping(in)
+}

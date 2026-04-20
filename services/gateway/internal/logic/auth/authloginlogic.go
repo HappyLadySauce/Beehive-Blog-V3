@@ -6,28 +6,35 @@ package auth
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
+	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
+	identityerrors "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type AuthLoginLogic struct {
-	logx.Logger
+	logger *logs.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
 func NewAuthLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AuthLoginLogic {
 	return &AuthLoginLogic{
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
 func (l *AuthLoginLogic) AuthLogin(req *types.AuthLoginReq) (resp *types.AuthLoginResp, err error) {
-	// todo: add your logic here and delete this line
+	rpcResp, rpcErr := l.svcCtx.IdentityClient.LoginLocalUser(
+		rpcContextWithMeta(l.ctx),
+		identityadapter.BuildLoginRequest(req),
+	)
+	if rpcErr != nil {
+		return nil, identityerrors.MapUpstreamError(l.ctx, "auth_login", "/api/v3/auth/login", rpcErr)
+	}
 
-	return
+	return identityadapter.ToLoginResponse(rpcResp), nil
 }

@@ -4,15 +4,20 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
+	errhttpx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/httpx"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/middleware"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"
+	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 var configFile = flag.String("f", "etc/gateway.yaml", "the config file")
@@ -22,6 +27,16 @@ func main() {
 
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
+	httpx.SetErrorHandlerCtx(func(ctx context.Context, err error) (int, any) {
+		requestID := ""
+		if requestMeta, ok := middleware.RequestMetaFrom(ctx); ok {
+			requestID = requestMeta.RequestID
+		}
+		if errs.Parse(err) == nil {
+			err = errs.New(errs.CodeGatewayBadRequest, "bad request")
+		}
+		return errhttpx.BuildResponse(err, requestID)
+	})
 
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()

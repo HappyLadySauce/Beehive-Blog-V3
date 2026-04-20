@@ -2,9 +2,11 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
@@ -78,8 +80,8 @@ func TestLoginServiceExecute(t *testing.T) {
 			LoginIdentifier: user.Username,
 			Password:        "password123",
 		})
-		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
-			t.Fatalf("expected failed precondition error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityAccountDisabled)) {
+			t.Fatalf("expected account disabled error, got %v", err)
 		}
 	})
 
@@ -97,8 +99,8 @@ func TestLoginServiceExecute(t *testing.T) {
 			LoginIdentifier: user.Username,
 			Password:        "wrong-password",
 		})
-		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
-			t.Fatalf("expected unauthenticated error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidCredentials)) {
+			t.Fatalf("expected invalid credentials error, got %v", err)
 		}
 	})
 
@@ -118,8 +120,8 @@ func TestLoginServiceExecute(t *testing.T) {
 			LoginIdentifier: user.Username,
 			Password:        "password123",
 		})
-		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
-			t.Fatalf("expected failed precondition error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityAccountPending)) {
+			t.Fatalf("expected account pending error, got %v", err)
 		}
 	})
 
@@ -139,8 +141,8 @@ func TestLoginServiceExecute(t *testing.T) {
 			LoginIdentifier: user.Username,
 			Password:        "password123",
 		})
-		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
-			t.Fatalf("expected failed precondition error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityAccountLocked)) {
+			t.Fatalf("expected account locked error, got %v", err)
 		}
 	})
 }

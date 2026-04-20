@@ -3,27 +3,27 @@ package logic
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type GetCurrentUserLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewGetCurrentUserLogic creates a GetCurrentUserLogic instance.
 // NewGetCurrentUserLogic 创建 GetCurrentUserLogic 实例。
 func NewGetCurrentUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetCurrentUserLogic {
+	logCtx := withLogContext(ctx)
 	return &GetCurrentUserLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 

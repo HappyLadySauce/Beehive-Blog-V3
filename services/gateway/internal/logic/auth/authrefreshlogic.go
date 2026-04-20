@@ -6,28 +6,35 @@ package auth
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
+	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
+	identityerrors "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type AuthRefreshLogic struct {
-	logx.Logger
+	logger *logs.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
 func NewAuthRefreshLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AuthRefreshLogic {
 	return &AuthRefreshLogic{
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
 func (l *AuthRefreshLogic) AuthRefresh(req *types.AuthRefreshReq) (resp *types.AuthRefreshResp, err error) {
-	// todo: add your logic here and delete this line
+	rpcResp, rpcErr := l.svcCtx.IdentityClient.RefreshSessionToken(
+		rpcContextWithMeta(l.ctx),
+		identityadapter.BuildRefreshRequest(req),
+	)
+	if rpcErr != nil {
+		return nil, identityerrors.MapUpstreamError(l.ctx, "auth_refresh", "/api/v3/auth/refresh", rpcErr)
+	}
 
-	return
+	return identityadapter.ToRefreshResponse(rpcResp), nil
 }

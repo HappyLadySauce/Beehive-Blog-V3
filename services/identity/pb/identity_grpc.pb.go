@@ -27,6 +27,7 @@ const (
 	Identity_LogoutSession_FullMethodName         = "/identity.Identity/LogoutSession"
 	Identity_GetCurrentUser_FullMethodName        = "/identity.Identity/GetCurrentUser"
 	Identity_IntrospectAccessToken_FullMethodName = "/identity.Identity/IntrospectAccessToken"
+	Identity_Ping_FullMethodName                  = "/identity.Identity/Ping"
 )
 
 // IdentityClient is the client API for Identity service.
@@ -41,6 +42,7 @@ type IdentityClient interface {
 	LogoutSession(ctx context.Context, in *LogoutSessionRequest, opts ...grpc.CallOption) (*LogoutSessionResponse, error)
 	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
 	IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error)
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type identityClient struct {
@@ -131,6 +133,16 @@ func (c *identityClient) IntrospectAccessToken(ctx context.Context, in *Introspe
 	return out, nil
 }
 
+func (c *identityClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, Identity_Ping_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IdentityServer is the server API for Identity service.
 // All implementations must embed UnimplementedIdentityServer
 // for forward compatibility.
@@ -143,6 +155,7 @@ type IdentityServer interface {
 	LogoutSession(context.Context, *LogoutSessionRequest) (*LogoutSessionResponse, error)
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error)
 	IntrospectAccessToken(context.Context, *IntrospectAccessTokenRequest) (*IntrospectAccessTokenResponse, error)
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedIdentityServer()
 }
 
@@ -176,6 +189,9 @@ func (UnimplementedIdentityServer) GetCurrentUser(context.Context, *GetCurrentUs
 }
 func (UnimplementedIdentityServer) IntrospectAccessToken(context.Context, *IntrospectAccessTokenRequest) (*IntrospectAccessTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IntrospectAccessToken not implemented")
+}
+func (UnimplementedIdentityServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedIdentityServer) mustEmbedUnimplementedIdentityServer() {}
 func (UnimplementedIdentityServer) testEmbeddedByValue()                  {}
@@ -342,6 +358,24 @@ func _Identity_IntrospectAccessToken_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Identity_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Identity_ServiceDesc is the grpc.ServiceDesc for Identity service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +414,10 @@ var Identity_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IntrospectAccessToken",
 			Handler:    _Identity_IntrospectAccessToken_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _Identity_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

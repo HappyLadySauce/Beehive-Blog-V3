@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 )
@@ -26,23 +27,23 @@ func NewSSOStartService(deps Dependencies) *SSOStartService {
 func (s *SSOStartService) Execute(ctx context.Context, in StartSSOInput) (*StartSSOResult, error) {
 	providerName, err := auth.NormalizeProvider(in.Provider)
 	if err != nil {
-		return nil, NewError(ErrorKindInvalidArgument, "unsupported provider", err)
+		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "unsupported provider")
 	}
 
 	redirectURI := strings.TrimSpace(in.RedirectURI)
 	if redirectURI == "" {
-		return nil, NewError(ErrorKindInvalidArgument, "redirect_uri is required", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "redirect_uri is required")
 	}
 
 	providerItem, ok := s.deps.Providers.Get(providerName)
 	if !ok {
-		return nil, NewError(ErrorKindInvalidArgument, "unsupported provider", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "unsupported provider")
 	}
 	if !providerItem.Enabled() {
-		return nil, NewError(ErrorKindFailedPrecondition, "sso_provider_disabled", nil)
+		return nil, errs.New(errs.CodeIdentitySSOProviderDisabled, "sso provider is disabled")
 	}
 	if redirectURI != strings.TrimSpace(providerItem.RedirectURL()) {
-		return nil, NewError(ErrorKindInvalidArgument, "redirect_uri does not match configured provider redirect", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "redirect_uri does not match configured provider redirect")
 	}
 	if !providerItem.LoginReady() {
 		writeAudit(ctx, s.deps.Store, auditInput{
@@ -54,7 +55,7 @@ func (s *SSOStartService) Execute(ctx context.Context, in StartSSOInput) (*Start
 				"reason": "sso_provider_not_ready",
 			}),
 		})
-		return nil, NewError(ErrorKindFailedPrecondition, "sso_provider_not_ready", nil)
+		return nil, errs.New(errs.CodeIdentitySSOProviderNotReady, "sso provider is not ready")
 	}
 
 	state := auth.EnsureState(in.State)

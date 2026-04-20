@@ -14,65 +14,80 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
-	server.AddRoutes(
-		[]rest.Route{
-			{
-				Method:  http.MethodPost,
-				Path:    "/login",
-				Handler: auth.AuthLoginHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodPost,
-				Path:    "/logout",
-				Handler: auth.AuthLogoutHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodGet,
-				Path:    "/me",
-				Handler: auth.AuthMeHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodPost,
-				Path:    "/refresh",
-				Handler: auth.AuthRefreshHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodPost,
-				Path:    "/register",
-				Handler: auth.AuthRegisterHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodPost,
-				Path:    "/sso/callback",
-				Handler: auth.AuthSsoCallbackHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodPost,
-				Path:    "/sso/start",
-				Handler: auth.AuthSsoStartHandler(serverCtx),
-			},
+	authPublicRoutes := []rest.Route{
+		{
+			Method:  http.MethodPost,
+			Path:    "/register",
+			Handler: auth.AuthRegisterHandler(serverCtx),
 		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/login",
+			Handler: auth.AuthLoginHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/sso/start",
+			Handler: auth.AuthSsoStartHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/sso/callback",
+			Handler: auth.AuthSsoCallbackHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/refresh",
+			Handler: auth.AuthRefreshHandler(serverCtx),
+		},
+	}
+
+	authProtectedRoutes := []rest.Route{
+		{
+			Method:  http.MethodGet,
+			Path:    "/me",
+			Handler: auth.AuthMeHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/logout",
+			Handler: auth.AuthLogoutHandler(serverCtx),
+		},
+	}
+
+	opsRoutes := []rest.Route{
+		{
+			Method:  http.MethodGet,
+			Path:    "/healthz",
+			Handler: ops.HealthzHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/readyz",
+			Handler: ops.ReadyzHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/ws",
+			Handler: ops.WsHandler(serverCtx),
+		},
+	}
+
+	server.AddRoutes(
+		rest.WithMiddleware(serverCtx.RequestMetaMiddleware, authPublicRoutes...),
 		rest.WithPrefix("/api/v3/auth"),
 	)
 
 	server.AddRoutes(
-		[]rest.Route{
-			{
-				Method:  http.MethodGet,
-				Path:    "/healthz",
-				Handler: ops.HealthzHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodGet,
-				Path:    "/readyz",
-				Handler: ops.ReadyzHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodGet,
-				Path:    "/ws",
-				Handler: ops.WsHandler(serverCtx),
-			},
-		},
+		rest.WithMiddlewares([]rest.Middleware{
+			serverCtx.RequestMetaMiddleware,
+			serverCtx.AuthMiddleware,
+		}, authProtectedRoutes...),
+		rest.WithPrefix("/api/v3/auth"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddleware(serverCtx.RequestMetaMiddleware, opsRoutes...),
 		rest.WithPrefix("/"),
 	)
 }

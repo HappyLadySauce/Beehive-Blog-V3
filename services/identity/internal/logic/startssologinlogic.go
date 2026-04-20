@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // StartSsoLoginLogic handles outbound SSO authorize URL generation.
@@ -15,16 +15,17 @@ import (
 type StartSsoLoginLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewStartSsoLoginLogic creates a StartSsoLoginLogic instance.
 // NewStartSsoLoginLogic 创建 StartSsoLoginLogic 实例。
 func NewStartSsoLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *StartSsoLoginLogic {
+	logCtx := withLogContext(ctx)
 	return &StartSsoLoginLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 
@@ -41,7 +42,10 @@ func (l *StartSsoLoginLogic) StartSsoLogin(in *pb.StartSsoLoginRequest) (*pb.Sta
 		return nil, toStatusError(err, "start sso login failed")
 	}
 
-	l.Infof("sso start succeeded: provider=%s", result.Provider)
+	l.logger.Info(
+		"identity_start_sso_login_succeeded",
+		logs.String("provider", result.Provider),
+	)
 
 	return &pb.StartSsoLoginResponse{
 		Provider: result.Provider,

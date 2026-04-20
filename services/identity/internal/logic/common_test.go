@@ -1,9 +1,11 @@
 package logic
 
 import (
+	"errors"
 	"testing"
 
-	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
+	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -26,7 +28,7 @@ func TestParseID(t *testing.T) {
 func TestToStatusError(t *testing.T) {
 	t.Parallel()
 
-	err := toStatusError(identityservice.NewError(identityservice.ErrorKindFailedPrecondition, "account_disabled", nil), "fallback")
+	err := toStatusError(errs.New(errs.CodeIdentityAccountDisabled, "account disabled"), "fallback")
 	st, ok := status.FromError(err)
 	if !ok {
 		t.Fatalf("expected grpc status error, got %v", err)
@@ -34,7 +36,14 @@ func TestToStatusError(t *testing.T) {
 	if st.Code() != codes.FailedPrecondition {
 		t.Fatalf("expected failed precondition, got %s", st.Code())
 	}
-	if st.Message() != "account_disabled" {
-		t.Fatalf("expected account_disabled, got %s", st.Message())
+	if st.Message() != "account disabled" {
+		t.Fatalf("expected account disabled, got %s", st.Message())
+	}
+	parsed, ok := errgrpcx.ParseStatus(err)
+	if !ok {
+		t.Fatalf("expected parsed grpc status detail")
+	}
+	if !errors.Is(parsed, errs.E(errs.CodeIdentityAccountDisabled)) {
+		t.Fatalf("expected business code to survive grpc adaptation")
 	}
 }

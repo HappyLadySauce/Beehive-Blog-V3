@@ -6,28 +6,35 @@ package auth
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
+	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
+	identityerrors "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type AuthRegisterLogic struct {
-	logx.Logger
+	logger *logs.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
 func NewAuthRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AuthRegisterLogic {
 	return &AuthRegisterLogic{
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
 func (l *AuthRegisterLogic) AuthRegister(req *types.AuthRegisterReq) (resp *types.AuthRegisterResp, err error) {
-	// todo: add your logic here and delete this line
+	rpcResp, rpcErr := l.svcCtx.IdentityClient.RegisterLocalUser(
+		rpcContextWithMeta(l.ctx),
+		identityadapter.BuildRegisterRequest(req),
+	)
+	if rpcErr != nil {
+		return nil, identityerrors.MapUpstreamError(l.ctx, "auth_register", "/api/v3/auth/register", rpcErr)
+	}
 
-	return
+	return identityadapter.ToRegisterResponse(rpcResp), nil
 }

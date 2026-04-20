@@ -2,9 +2,11 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
@@ -49,8 +51,8 @@ func TestRefreshServiceExecute(t *testing.T) {
 		_, err := svc.Execute(context.Background(), service.RefreshSessionTokenInput{
 			RefreshToken: rawToken,
 		})
-		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
-			t.Fatalf("expected unauthenticated error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentitySessionRevoked)) {
+			t.Fatalf("expected session revoked error, got %v", err)
 		}
 	})
 
@@ -67,8 +69,8 @@ func TestRefreshServiceExecute(t *testing.T) {
 		_, err := svc.Execute(context.Background(), service.RefreshSessionTokenInput{
 			RefreshToken: rawToken,
 		})
-		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
-			t.Fatalf("expected unauthenticated error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityRefreshTokenExpired)) {
+			t.Fatalf("expected refresh token expired error, got %v", err)
 		}
 	})
 
@@ -85,8 +87,8 @@ func TestRefreshServiceExecute(t *testing.T) {
 		_, err := svc.Execute(context.Background(), service.RefreshSessionTokenInput{
 			RefreshToken: rawToken,
 		})
-		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
-			t.Fatalf("expected failed precondition error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityAccountDisabled)) {
+			t.Fatalf("expected account disabled error, got %v", err)
 		}
 	})
 }

@@ -4,27 +4,27 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type IntrospectAccessTokenLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewIntrospectAccessTokenLogic creates an IntrospectAccessTokenLogic instance.
 // NewIntrospectAccessTokenLogic 创建 IntrospectAccessTokenLogic 实例。
 func NewIntrospectAccessTokenLogic(ctx context.Context, svcCtx *svc.ServiceContext) *IntrospectAccessTokenLogic {
+	logCtx := withLogContext(ctx)
 	return &IntrospectAccessTokenLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 

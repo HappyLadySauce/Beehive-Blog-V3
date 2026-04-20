@@ -1,10 +1,13 @@
 package logic
 
 import (
+	"context"
 	"strconv"
 	"time"
 
-	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -37,27 +40,11 @@ func toStatusError(err error, fallbackMessage string) error {
 	if err == nil {
 		return nil
 	}
-	if st, ok := status.FromError(err); ok {
-		return st.Err()
-	}
+	return errgrpcx.ToStatus(err, fallbackMessage)
+}
 
-	switch {
-	case identityservice.IsKind(err, identityservice.ErrorKindInvalidArgument):
-		return status.Error(codes.InvalidArgument, err.Error())
-	case identityservice.IsKind(err, identityservice.ErrorKindUnauthenticated):
-		return status.Error(codes.Unauthenticated, err.Error())
-	case identityservice.IsKind(err, identityservice.ErrorKindAlreadyExists):
-		return status.Error(codes.AlreadyExists, err.Error())
-	case identityservice.IsKind(err, identityservice.ErrorKindFailedPrecondition):
-		return status.Error(codes.FailedPrecondition, err.Error())
-	case identityservice.IsKind(err, identityservice.ErrorKindNotFound):
-		return status.Error(codes.NotFound, err.Error())
-	case identityservice.IsKind(err, identityservice.ErrorKindUnimplemented):
-		return status.Error(codes.Unimplemented, err.Error())
-	default:
-		if fallbackMessage == "" {
-			fallbackMessage = "internal error"
-		}
-		return status.Errorf(codes.Internal, "%s: %v", fallbackMessage, err)
-	}
+// withLogContext enriches a logic context with request-scoped log metadata.
+// withLogContext 使用请求级日志元数据增强 logic 上下文。
+func withLogContext(ctx context.Context) context.Context {
+	return logs.WithRequestID(ctx, ctxmeta.GetRequestIDFromIncomingContext(ctx))
 }

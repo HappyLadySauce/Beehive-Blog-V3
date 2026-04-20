@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth/provider"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
@@ -17,12 +19,13 @@ type Manager struct {
 	Introspect  *IntrospectService
 	SSOStart    *SSOStartService
 	SSOFinish   *SSOFinishService
+	Ping        *PingService
 }
 
 // NewManager builds the complete identity service graph.
 // NewManager 构建完整的 identity service 依赖图。
-func NewManager(c config.Config, store *repo.Store, providers *provider.Registry) *Manager {
-	deps := newDependencies(c, store, providers)
+func NewManager(c config.Config, store *repo.Store, providers *provider.Registry, readinessChecker func(ctx context.Context) error) *Manager {
+	deps := newDependencies(c, store, providers, readinessChecker)
 	return &Manager{
 		Register:    NewRegisterService(deps),
 		Login:       NewLoginService(deps),
@@ -32,5 +35,6 @@ func NewManager(c config.Config, store *repo.Store, providers *provider.Registry
 		Introspect:  NewIntrospectService(deps),
 		SSOStart:    NewSSOStartService(deps),
 		SSOFinish:   NewSSOFinishService(deps),
+		Ping:        NewPingService(deps),
 	}
 }

@@ -4,26 +4,26 @@ import (
 	"context"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type LogoutSessionLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewLogoutSessionLogic creates a LogoutSessionLogic instance.
 // NewLogoutSessionLogic 创建 LogoutSessionLogic 实例。
 func NewLogoutSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LogoutSessionLogic {
+	logCtx := withLogContext(ctx)
 	return &LogoutSessionLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 
@@ -42,7 +42,10 @@ func (l *LogoutSessionLogic) LogoutSession(in *pb.LogoutSessionRequest) (*pb.Log
 		return nil, toStatusError(err, "logout session failed")
 	}
 
-	l.Infof("session logout succeeded: session_id=%d", sessionID)
+	l.logger.Info(
+		"identity_logout_session_succeeded",
+		logs.Int64("session_id", sessionID),
+	)
 
 	return &pb.LogoutSessionResponse{Ok: true}, nil
 }

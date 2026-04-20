@@ -1,3 +1,16 @@
 Name: gateway
 Host: 0.0.0.0
 Port: 8888
+
+IdentityRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: identity.rpc
+
+Security:
+  TokenPrefix: Bearer
+  TrustedProxyHeaders:
+    - X-Forwarded-For
+    - X-Real-IP
+    - Client-IP

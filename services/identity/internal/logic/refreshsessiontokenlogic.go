@@ -4,27 +4,27 @@ import (
 	"context"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type RefreshSessionTokenLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
-	logx.Logger
+	logger *logs.Logger
 }
 
 // NewRefreshSessionTokenLogic creates a RefreshSessionTokenLogic instance.
 // NewRefreshSessionTokenLogic 创建 RefreshSessionTokenLogic 实例。
 func NewRefreshSessionTokenLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RefreshSessionTokenLogic {
+	logCtx := withLogContext(ctx)
 	return &RefreshSessionTokenLogic{
-		ctx:    ctx,
+		ctx:    logCtx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(logCtx),
 	}
 }
 
@@ -40,7 +40,11 @@ func (l *RefreshSessionTokenLogic) RefreshSessionToken(in *pb.RefreshSessionToke
 		return nil, toStatusError(err, "refresh session token failed")
 	}
 
-	l.Infof("session refresh succeeded: user_id=%d session_id=%d", result.User.ID, result.Session.ID)
+	l.logger.Info(
+		"identity_refresh_session_token_succeeded",
+		logs.Int64("user_id", result.User.ID),
+		logs.Int64("session_id", result.Session.ID),
+	)
 
 	return &pb.RefreshSessionTokenResponse{
 		TokenPair: auth.NewTokenPair(

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
@@ -27,7 +28,7 @@ func NewRefreshService(deps Dependencies) *RefreshService {
 func (s *RefreshService) Execute(ctx context.Context, in RefreshSessionTokenInput) (*AuthResult, error) {
 	rawRefreshToken := strings.TrimSpace(in.RefreshToken)
 	if rawRefreshToken == "" {
-		return nil, NewError(ErrorKindInvalidArgument, "refresh_token is required", nil)
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "refresh_token is required")
 	}
 
 	now := s.deps.Clock()
@@ -45,34 +46,34 @@ func (s *RefreshService) Execute(ctx context.Context, in RefreshSessionTokenInpu
 		currentToken, err := store.RefreshTokens.GetActiveForUpdateByHash(ctx, refreshTokenHash)
 		if err != nil {
 			if repo.IsNotFound(err) {
-				return NewError(ErrorKindUnauthenticated, "invalid_refresh_token", nil)
+				return errs.New(errs.CodeIdentityInvalidRefreshToken, "invalid refresh token")
 			}
 			return err
 		}
 		if currentToken.ExpiresAt.Before(now) {
 			_ = store.RefreshTokens.Revoke(ctx, currentToken.ID, now)
-			return NewError(ErrorKindUnauthenticated, "refresh_token_expired", nil)
+			return errs.New(errs.CodeIdentityRefreshTokenExpired, "refresh token expired")
 		}
 
 		session, err = store.UserSessions.GetForUpdateByID(ctx, currentToken.SessionID)
 		if err != nil {
 			if repo.IsNotFound(err) {
-				return NewError(ErrorKindUnauthenticated, "session_revoked", nil)
+				return errs.New(errs.CodeIdentitySessionRevoked, "session revoked")
 			}
 			return err
 		}
 		if session.Status != auth.SessionStatusActive {
-			return NewError(ErrorKindUnauthenticated, "session_revoked", nil)
+			return errs.New(errs.CodeIdentitySessionRevoked, "session revoked")
 		}
 		if session.ExpiresAt.Before(now) {
 			_ = store.UserSessions.MarkExpired(ctx, session.ID, now)
-			return NewError(ErrorKindUnauthenticated, "session_expired", nil)
+			return errs.New(errs.CodeIdentityRefreshTokenExpired, "refresh token expired")
 		}
 
 		user, err = store.Users.GetByID(ctx, session.UserID)
 		if err != nil {
 			if repo.IsNotFound(err) {
-				return NewError(ErrorKindUnauthenticated, "account_not_found", nil)
+				return errs.New(errs.CodeIdentityAccountNotFound, "user not found")
 			}
 			return err
 		}

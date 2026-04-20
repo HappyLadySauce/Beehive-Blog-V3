@@ -6,28 +6,35 @@ package auth
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
+	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
+	identityerrors "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type AuthSsoStartLogic struct {
-	logx.Logger
+	logger *logs.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
 func NewAuthSsoStartLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AuthSsoStartLogic {
 	return &AuthSsoStartLogic{
-		Logger: logx.WithContext(ctx),
+		logger: logs.Ctx(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
 func (l *AuthSsoStartLogic) AuthSsoStart(req *types.AuthSsoStartReq) (resp *types.AuthSsoStartResp, err error) {
-	// todo: add your logic here and delete this line
+	rpcResp, rpcErr := l.svcCtx.IdentityClient.StartSsoLogin(
+		rpcContextWithMeta(l.ctx),
+		identityadapter.BuildSsoStartRequest(req),
+	)
+	if rpcErr != nil {
+		return nil, identityerrors.MapUpstreamError(l.ctx, "auth_sso_start", "/api/v3/auth/sso/start", rpcErr)
+	}
 
-	return
+	return identityadapter.ToSsoStartResponse(rpcResp), nil
 }
