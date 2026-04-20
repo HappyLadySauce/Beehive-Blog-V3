@@ -53,4 +53,40 @@ func TestRefreshServiceExecute(t *testing.T) {
 			t.Fatalf("expected unauthenticated error, got %v", err)
 		}
 	})
+
+	t.Run("expired refresh token fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store)
+		session := testkit.CreateSession(t, deps.Store, user.ID)
+		rawToken := "refresh-token"
+		testkit.CreateRefreshToken(t, deps.Store, session.ID, auth.HashRefreshToken(rawToken), func(token *entity.RefreshToken) {
+			token.ExpiresAt = now.Add(-time.Minute)
+		})
+
+		svc := service.NewRefreshService(deps)
+		_, err := svc.Execute(context.Background(), service.RefreshSessionTokenInput{
+			RefreshToken: rawToken,
+		})
+		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
+			t.Fatalf("expected unauthenticated error, got %v", err)
+		}
+	})
+
+	t.Run("disabled user fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store, func(u *entity.User) {
+			u.Status = auth.UserStatusDisabled
+		})
+		session := testkit.CreateSession(t, deps.Store, user.ID)
+		rawToken := "refresh-token"
+		testkit.CreateRefreshToken(t, deps.Store, session.ID, auth.HashRefreshToken(rawToken))
+
+		svc := service.NewRefreshService(deps)
+		_, err := svc.Execute(context.Background(), service.RefreshSessionTokenInput{
+			RefreshToken: rawToken,
+		})
+		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
+			t.Fatalf("expected failed precondition error, got %v", err)
+		}
+	})
 }

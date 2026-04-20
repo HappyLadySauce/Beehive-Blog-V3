@@ -33,7 +33,7 @@ func SharedPostgres(t *testing.T) *postgresState {
 	t.Helper()
 
 	postgresOnce.Do(func() {
-		ctx := context.Background()
+		ctx := t.Context()
 		container, err := tcpostgres.Run(
 			ctx,
 			"postgres:16-alpine",
@@ -42,7 +42,7 @@ func SharedPostgres(t *testing.T) *postgresState {
 			tcpostgres.WithPassword("postgres"),
 		)
 		if err != nil {
-			sharedPostgres.err = err
+			sharedPostgres.err = fallbackPostgres(ctx, err)
 			return
 		}
 
@@ -113,6 +113,49 @@ RESTART IDENTITY CASCADE;
 func PostgresDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	return SharedPostgres(t).db
+}
+
+func fallbackPostgres(ctx context.Context, containerErr error) error {
+	cfg, ok, err := loadPostgresEnv()
+	if err != nil {
+		return fmt.Errorf("load PostgreSQL fallback environment failed after container error %v: %w", containerErr, err)
+	}
+	if !ok {
+		return containerErr
+	}
+
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
+		cfg.Host,
+		cfg.Port,
+		cfg.User,
+		cfg.Password,
+		cfg.DBName,
+		cfg.SSLMode,
+		cfg.TimeZone,
+	)
+
+	db, openErr := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if openErr != nil {
+		return fmt.Errorf("start PostgreSQL container failed: %v; fallback PostgreSQL open failed: %w", containerErr, openErr)
+	}
+
+	sqlDB, dbErr := db.DB()
+	if dbErr != nil {
+		return fmt.Errorf("start PostgreSQL container failed: %v; fallback PostgreSQL sql DB failed: %w", containerErr, dbErr)
+	}
+	if pingErr := sqlDB.PingContext(ctx); pingErr != nil {
+		return fmt.Errorf("start PostgreSQL container failed: %v; fallback PostgreSQL ping failed: %w", containerErr, pingErr)
+	}
+	if migrateErr := runMigrations(ctx, sqlDB); migrateErr != nil {
+		return fmt.Errorf("start PostgreSQL container failed: %v; fallback PostgreSQL migration failed: %w", containerErr, migrateErr)
+	}
+
+	sharedPostgres.dsn = dsn
+	sharedPostgres.db = db
+	sharedPostgres.sqlDB = sqlDB
+
+	return nil
 }
 
 func runMigrations(ctx context.Context, db *sql.DB) error {

@@ -2,6 +2,7 @@ package testkit
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -26,10 +27,10 @@ func SharedRedis(t *testing.T) *redisState {
 	t.Helper()
 
 	redisOnce.Do(func() {
-		ctx := context.Background()
+		ctx := t.Context()
 		container, err := tcredis.Run(ctx, "redis:7-alpine")
 		if err != nil {
-			sharedRedis.err = err
+			sharedRedis.err = fallbackRedis(ctx, err)
 			return
 		}
 
@@ -77,4 +78,27 @@ func ResetRedis(t *testing.T) {
 func RedisClient(t *testing.T) *redis.Client {
 	t.Helper()
 	return SharedRedis(t).client
+}
+
+func fallbackRedis(ctx context.Context, containerErr error) error {
+	cfg, ok, err := loadRedisEnv()
+	if err != nil {
+		return fmt.Errorf("load Redis fallback environment failed after container error %v: %w", containerErr, err)
+	}
+	if !ok {
+		return containerErr
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Password: cfg.Password,
+		DB:       cfg.Database,
+	})
+	if pingErr := client.Ping(ctx).Err(); pingErr != nil {
+		return fmt.Errorf("start Redis container failed: %v; fallback Redis ping failed: %w", containerErr, pingErr)
+	}
+
+	sharedRedis.client = client
+
+	return nil
 }

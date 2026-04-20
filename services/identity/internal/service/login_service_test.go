@@ -82,4 +82,65 @@ func TestLoginServiceExecute(t *testing.T) {
 			t.Fatalf("expected failed precondition error, got %v", err)
 		}
 	})
+
+	t.Run("password mismatch fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store)
+		hash, err := auth.HashPassword("password123", deps.Config.Security.PasswordHashCost)
+		if err != nil {
+			t.Fatalf("expected hash password to succeed, got %v", err)
+		}
+		testkit.CreateCredentialLocal(t, deps.Store, user.ID, hash)
+
+		svc := service.NewLoginService(deps)
+		_, err = svc.Execute(context.Background(), service.LoginLocalUserInput{
+			LoginIdentifier: user.Username,
+			Password:        "wrong-password",
+		})
+		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
+			t.Fatalf("expected unauthenticated error, got %v", err)
+		}
+	})
+
+	t.Run("pending user fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store, func(u *entity.User) {
+			u.Status = auth.UserStatusPending
+		})
+		hash, err := auth.HashPassword("password123", deps.Config.Security.PasswordHashCost)
+		if err != nil {
+			t.Fatalf("expected hash password to succeed, got %v", err)
+		}
+		testkit.CreateCredentialLocal(t, deps.Store, user.ID, hash)
+
+		svc := service.NewLoginService(deps)
+		_, err = svc.Execute(context.Background(), service.LoginLocalUserInput{
+			LoginIdentifier: user.Username,
+			Password:        "password123",
+		})
+		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
+			t.Fatalf("expected failed precondition error, got %v", err)
+		}
+	})
+
+	t.Run("locked user fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store, func(u *entity.User) {
+			u.Status = auth.UserStatusLocked
+		})
+		hash, err := auth.HashPassword("password123", deps.Config.Security.PasswordHashCost)
+		if err != nil {
+			t.Fatalf("expected hash password to succeed, got %v", err)
+		}
+		testkit.CreateCredentialLocal(t, deps.Store, user.ID, hash)
+
+		svc := service.NewLoginService(deps)
+		_, err = svc.Execute(context.Background(), service.LoginLocalUserInput{
+			LoginIdentifier: user.Username,
+			Password:        "password123",
+		})
+		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
+			t.Fatalf("expected failed precondition error, got %v", err)
+		}
+	})
 }

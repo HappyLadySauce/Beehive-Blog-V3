@@ -58,6 +58,57 @@ func TestRegisterServiceExecute(t *testing.T) {
 		}
 	})
 
+	t.Run("duplicate email", func(t *testing.T) {
+		deps := newDeps(t, now)
+		svc := service.NewRegisterService(deps)
+
+		_, err := svc.Execute(context.Background(), service.RegisterLocalUserInput{
+			Username: "alice_001",
+			Email:    "alice@example.com",
+			Password: "password123",
+		})
+		if err != nil {
+			t.Fatalf("expected first register to succeed, got %v", err)
+		}
+
+		_, err = svc.Execute(context.Background(), service.RegisterLocalUserInput{
+			Username: "alice_002",
+			Email:    "alice@example.com",
+			Password: "password123",
+		})
+		if !service.IsKind(err, service.ErrorKindAlreadyExists) {
+			t.Fatalf("expected already exists error, got %v", err)
+		}
+	})
+
+	t.Run("invalid username", func(t *testing.T) {
+		deps := newDeps(t, now)
+		svc := service.NewRegisterService(deps)
+
+		_, err := svc.Execute(context.Background(), service.RegisterLocalUserInput{
+			Username: "a",
+			Email:    "alice@example.com",
+			Password: "password123",
+		})
+		if !service.IsKind(err, service.ErrorKindInvalidArgument) {
+			t.Fatalf("expected invalid argument error, got %v", err)
+		}
+	})
+
+	t.Run("invalid email", func(t *testing.T) {
+		deps := newDeps(t, now)
+		svc := service.NewRegisterService(deps)
+
+		_, err := svc.Execute(context.Background(), service.RegisterLocalUserInput{
+			Username: "alice_001",
+			Email:    "alice-at-example.com",
+			Password: "password123",
+		})
+		if !service.IsKind(err, service.ErrorKindInvalidArgument) {
+			t.Fatalf("expected invalid argument error, got %v", err)
+		}
+	})
+
 	t.Run("invalid password", func(t *testing.T) {
 		deps := newDeps(t, now)
 		svc := service.NewRegisterService(deps)

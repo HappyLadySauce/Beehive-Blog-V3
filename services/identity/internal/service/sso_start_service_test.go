@@ -45,4 +45,18 @@ func TestSSOStartServiceExecute(t *testing.T) {
 			t.Fatalf("expected failed precondition error, got %v", err)
 		}
 	})
+
+	t.Run("redirect uri mismatch", func(t *testing.T) {
+		deps := newDeps(t, now)
+		svc := service.NewSSOStartService(deps)
+
+		_, err := svc.Execute(context.Background(), service.StartSSOInput{
+			Provider:    auth.ProviderGitHub,
+			RedirectURI: "https://example.com/other/callback",
+			State:       "fixed-state",
+		})
+		if !service.IsKind(err, service.ErrorKindInvalidArgument) {
+			t.Fatalf("expected invalid argument error, got %v", err)
+		}
+	})
 }

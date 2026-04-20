@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/testkit"
 )
@@ -37,6 +36,4 @@ func TestCredentialLocalRepository(t *testing.T) {
 	if _, err := store.CredentialLocals.GetByUserID(ctx, user.ID+999); err == nil {
 		t.Fatalf("expected missing credential lookup to fail")
 	}
-
-	_ = auth.UserRoleMember
 }

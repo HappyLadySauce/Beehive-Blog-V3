@@ -54,4 +54,26 @@ func TestUserSessionRepository(t *testing.T) {
 	if revoked.Status != auth.SessionStatusRevoked {
 		t.Fatalf("expected revoked status, got %s", revoked.Status)
 	}
+
+	expiredSession := &entity.UserSession{
+		UserID:     user.ID,
+		AuthSource: auth.AuthSourceLocal,
+		Status:     auth.SessionStatusActive,
+		LastSeenAt: &now,
+		ExpiresAt:  now.Add(time.Hour),
+	}
+	if err := store.UserSessions.Create(ctx, expiredSession); err != nil {
+		t.Fatalf("expected create second session to succeed, got %v", err)
+	}
+	if err := store.UserSessions.MarkExpired(ctx, expiredSession.ID, touchAt); err != nil {
+		t.Fatalf("expected mark expired to succeed, got %v", err)
+	}
+
+	expired, err := store.UserSessions.GetByID(ctx, expiredSession.ID)
+	if err != nil {
+		t.Fatalf("expected get expired session to succeed, got %v", err)
+	}
+	if expired.Status != auth.SessionStatusExpired {
+		t.Fatalf("expected expired status, got %s", expired.Status)
+	}
 }

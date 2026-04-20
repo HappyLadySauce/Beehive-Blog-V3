@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/testkit"
 	"golang.org/x/oauth2"
@@ -81,6 +82,157 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		})
 		if !service.IsKind(err, service.ErrorKindUnimplemented) {
 			t.Fatalf("expected unimplemented error, got %v", err)
+		}
+	})
+
+	t.Run("invalid state fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "github-access-token",
+					"token_type":   "bearer",
+				})
+			case "/user":
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"id":    12345,
+					"login": "octocat",
+					"name":  "The Octocat",
+				})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := githubClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.APIBaseURL = server.URL
+		client.OAuthEndpoint = oauth2.Endpoint{
+			AuthURL:  server.URL + "/authorize",
+			TokenURL: server.URL + "/token",
+		}
+
+		svc := service.NewSSOFinishService(deps)
+		_, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-123",
+			State:       "missing-state",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
+			t.Fatalf("expected unauthenticated error, got %v", err)
+		}
+	})
+
+	t.Run("consumed state fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderGitHub, "state-consumed", deps.Config.SSO.GitHub.RedirectURL, func(state *entity.OAuthLoginState) {
+			consumedAt := now.Add(-time.Minute)
+			state.ConsumedAt = &consumedAt
+		})
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "github-access-token",
+					"token_type":   "bearer",
+				})
+			case "/user":
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"id":    12345,
+					"login": "octocat",
+					"name":  "The Octocat",
+				})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := githubClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.APIBaseURL = server.URL
+		client.OAuthEndpoint = oauth2.Endpoint{
+			AuthURL:  server.URL + "/authorize",
+			TokenURL: server.URL + "/token",
+		}
+
+		svc := service.NewSSOFinishService(deps)
+		_, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-123",
+			State:       "state-consumed",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
+			t.Fatalf("expected unauthenticated error, got %v", err)
+		}
+	})
+
+	t.Run("provider disabled fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		deps.Config.SSO.GitHub.Enabled = false
+		deps.Providers = testkit.NewProviderRegistry(deps.Config)
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderGitHub, "state-disabled", deps.Config.SSO.GitHub.RedirectURL)
+
+		svc := service.NewSSOFinishService(deps)
+		_, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-123",
+			State:       "state-disabled",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if !service.IsKind(err, service.ErrorKindFailedPrecondition) {
+			t.Fatalf("expected failed precondition error, got %v", err)
+		}
+	})
+
+	t.Run("profile missing subject fails", func(t *testing.T) {
+		deps := newDeps(t, now)
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderGitHub, "state-bad-profile", deps.Config.SSO.GitHub.RedirectURL)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "github-access-token",
+					"token_type":   "bearer",
+				})
+			case "/user":
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"login": "octocat",
+					"name":  "The Octocat",
+				})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := githubClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.APIBaseURL = server.URL
+		client.OAuthEndpoint = oauth2.Endpoint{
+			AuthURL:  server.URL + "/authorize",
+			TokenURL: server.URL + "/token",
+		}
+
+		svc := service.NewSSOFinishService(deps)
+		_, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-123",
+			State:       "state-bad-profile",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if !service.IsKind(err, service.ErrorKindUnauthenticated) {
+			t.Fatalf("expected unauthenticated error, got %v", err)
 		}
 	})
 

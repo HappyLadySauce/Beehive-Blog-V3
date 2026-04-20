@@ -63,6 +63,19 @@
   - 测试数据清理
   - 测试 `ServiceContext` 装配
 - 环境变量模式只作为 fallback，不作为默认路径
+- PostgreSQL fallback 环境变量约定：
+  - `BEEHIVE_TEST_PG_HOST`
+  - `BEEHIVE_TEST_PG_PORT`
+  - `BEEHIVE_TEST_PG_USER`
+  - `BEEHIVE_TEST_PG_PASSWORD`
+  - `BEEHIVE_TEST_PG_DBNAME`
+  - `BEEHIVE_TEST_PG_SSLMODE`
+  - `BEEHIVE_TEST_PG_TIMEZONE`
+- Redis fallback 环境变量约定：
+  - `BEEHIVE_TEST_REDIS_HOST`
+  - `BEEHIVE_TEST_REDIS_PORT`
+  - `BEEHIVE_TEST_REDIS_PASSWORD`
+  - `BEEHIVE_TEST_REDIS_DB`
 
 ## 当前约束
 

@@ -127,6 +127,7 @@
   - `internal/service` 是身份域的**主业务测试入口**（注册、登录、refresh、logout、introspect、SSO 等闭环优先写在这里）。
   - `internal/logic` **只保留少量 smoke test**，守住 gRPC 适配与错误映射，不在此重复主业务分支。
   - PostgreSQL / Redis 集成测试默认使用 **Testcontainers**，由 `internal/testkit` 统一容器、迁移与清表；仅用环境变量直连本地实例为 **fallback**，不作为默认路径。
+  - fallback 环境变量命名统一以 `BEEHIVE_TEST_` 为前缀，具体约定见 `docs/v3/development/testing-conventions.md`。
   - SSO 测试：`QQ/WeChat` 只验证**入口拒绝**或未就绪；`GitHub` 为当前唯一完整 provider 的端到端覆盖对象。
   - GitHub OAuth 交互一律用 **`httptest.Server` 桩**，测试不访问真实 GitHub 外网。
 

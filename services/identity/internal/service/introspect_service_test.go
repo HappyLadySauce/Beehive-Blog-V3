@@ -73,4 +73,62 @@ func TestIntrospectServiceExecute(t *testing.T) {
 			t.Fatalf("expected disabled user token to be inactive")
 		}
 	})
+
+	t.Run("expired token inactive", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store)
+		session := testkit.CreateSession(t, deps.Store, user.ID)
+		token, _, err := auth.IssueAccessToken(
+			deps.Config.Security.AccessTokenSecret,
+			-time.Minute,
+			user.ID,
+			user.Role,
+			user.Status,
+			session.ID,
+			session.AuthSource,
+			now,
+		)
+		if err != nil {
+			t.Fatalf("expected issue token to succeed, got %v", err)
+		}
+
+		svc := service.NewIntrospectService(deps)
+		result, err := svc.Execute(context.Background(), service.IntrospectAccessTokenInput{AccessToken: token})
+		if err != nil {
+			t.Fatalf("expected introspect to succeed, got %v", err)
+		}
+		if result.Active {
+			t.Fatalf("expected expired token to be inactive")
+		}
+	})
+
+	t.Run("revoked session inactive", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store)
+		session := testkit.CreateSession(t, deps.Store, user.ID, func(s *entity.UserSession) {
+			s.Status = auth.SessionStatusRevoked
+		})
+		token, _, err := auth.IssueAccessToken(
+			deps.Config.Security.AccessTokenSecret,
+			15*time.Minute,
+			user.ID,
+			user.Role,
+			user.Status,
+			session.ID,
+			session.AuthSource,
+			now,
+		)
+		if err != nil {
+			t.Fatalf("expected issue token to succeed, got %v", err)
+		}
+
+		svc := service.NewIntrospectService(deps)
+		result, err := svc.Execute(context.Background(), service.IntrospectAccessTokenInput{AccessToken: token})
+		if err != nil {
+			t.Fatalf("expected introspect to succeed, got %v", err)
+		}
+		if result.Active {
+			t.Fatalf("expected revoked session token to be inactive")
+		}
+	})
 }

@@ -37,4 +37,16 @@ func TestOAuthLoginStateRepository(t *testing.T) {
 	if err := store.OAuthLoginStates.Consume(ctx, row.ID, consumedAt); err != nil {
 		t.Fatalf("expected consume oauth state to succeed, got %v", err)
 	}
+
+	if err := store.OAuthLoginStates.Consume(ctx, row.ID, consumedAt.Add(time.Minute)); err != nil {
+		t.Fatalf("expected second consume to be a no-op, got %v", err)
+	}
+
+	consumed, err := store.OAuthLoginStates.GetForUpdateByProviderState(ctx, "github", "state-1")
+	if err != nil {
+		t.Fatalf("expected get consumed oauth state to succeed, got %v", err)
+	}
+	if consumed.ConsumedAt == nil {
+		t.Fatalf("expected consumed_at to be set")
+	}
 }
