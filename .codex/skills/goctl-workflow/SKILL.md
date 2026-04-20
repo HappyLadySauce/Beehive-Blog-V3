@@ -1,6 +1,6 @@
 ---
 name: goctl-workflow
-description: Scaffold and maintain Beehive Blog v3 go-zero services with goctl. Use when creating or updating the gateway API service or pure RPC backend services, generating code from `v3/api/*.api` or `v3/proto/*.proto`, or explaining how generated files should map to handwritten business code in this repository.
+description: "Scaffold and maintain Beehive Blog v3 go-zero services with goctl. Use when creating or updating the gateway API service or pure RPC backend services, generating code from `v3/api/*.api` or `v3/proto/*.proto`, or explaining how generated files should map to handwritten business code in this repository."
 ---
 
 # goctl Workflow
