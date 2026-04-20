@@ -70,3 +70,7 @@
 - `service` 是后续身份域测试的核心入口
 - provider client 必须实例化注入，测试不依赖包级 HTTP/OAuth 钩子
 - `QQ/WeChat` 当前不开放入口，`GitHub` 是唯一完整 provider
+
+## 与其它文档的关系
+
+- `identity` 的目录职责与测试分层在编码规范中的收口说明见 `docs/v3/development/coding-conventions.md` 的 **`### identity`** 小节。
