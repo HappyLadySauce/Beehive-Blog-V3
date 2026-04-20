@@ -9,6 +9,7 @@
 - [编码与配置规范索引](./development/README.md)
 - [编码规范](./development/coding-conventions.md)
 - [配置规范](./development/configuration-conventions.md)
+- [测试规范](./development/testing-conventions.md)
 - [Identity 文档索引](./identity/README.md)
 - [Identity 服务设计](./identity/identity-service-design.md)
 - [Identity 领域模型](./identity/identity-domain-model.md)

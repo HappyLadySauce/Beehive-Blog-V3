@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
+	identityprovider "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth/provider"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/config"
+	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 	"google.golang.org/grpc/codes"
@@ -16,19 +18,34 @@ import (
 func TestStartSsoLoginRejectsProvidersThatAreNotReady(t *testing.T) {
 	t.Parallel()
 
-	logic := NewStartSsoLoginLogic(context.Background(), &svc.ServiceContext{
-		Config: config.Config{
-			Security: config.SecurityConf{
-				StateTTLSeconds: 600,
+	conf := config.Config{
+		Security: config.SecurityConf{
+			StateTTLSeconds: 600,
+		},
+		SSO: config.SSOConf{
+			QQ: config.OAuthProviderConf{
+				Enabled:     true,
+				ClientID:    "qq-client-id",
+				RedirectURL: "https://example.com/auth/qq/callback",
 			},
-			SSO: config.SSOConf{
-				QQ: config.OAuthProviderConf{
-					Enabled:     true,
-					ClientID:    "qq-client-id",
-					RedirectURL: "https://example.com/auth/qq/callback",
-				},
+			GitHub: config.OAuthProviderConf{
+				Enabled:      true,
+				ClientID:     "github-client-id",
+				ClientSecret: "github-client-secret",
+				RedirectURL:  "https://example.com/auth/github/callback",
 			},
 		},
+	}
+	providers := identityprovider.NewRegistry(
+		identityprovider.NewGitHubClient(conf.SSO.GitHub),
+		identityprovider.NewQQClient(conf.SSO.QQ),
+		identityprovider.NewWeChatClient(conf.SSO.WeChat),
+	)
+
+	logic := NewStartSsoLoginLogic(context.Background(), &svc.ServiceContext{
+		Config:    conf,
+		Providers: providers,
+		Services:  identityservice.NewManager(conf, nil, providers),
 	})
 
 	_, err := logic.StartSsoLogin(&pb.StartSsoLoginRequest{

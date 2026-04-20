@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	identityprovider "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth/provider"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
+	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/driver/postgres"
@@ -17,11 +19,13 @@ import (
 )
 
 type ServiceContext struct {
-	Config config.Config
-	DB     *gorm.DB
-	SQLDB  *sql.DB
-	Redis  *redis.Client
-	Store  *repo.Store
+	Config    config.Config
+	DB        *gorm.DB
+	SQLDB     *sql.DB
+	Redis     *redis.Client
+	Store     *repo.Store
+	Providers *identityprovider.Registry
+	Services  *identityservice.Manager
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -40,15 +44,25 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(fmt.Errorf("initialize Redis failed: %w", err))
 	}
 
-	logx.Infof("identity infrastructure initialized: postgres=%s:%d redis=%s:%d",
-		c.Postgres.Host, c.Postgres.Port, c.StateRedis.Host, c.StateRedis.Port)
+	store := repo.NewStore(db)
+	providers := identityprovider.NewRegistry(
+		identityprovider.NewGitHubClient(c.SSO.GitHub),
+		identityprovider.NewQQClient(c.SSO.QQ),
+		identityprovider.NewWeChatClient(c.SSO.WeChat),
+	)
+	services := identityservice.NewManager(c, store, providers)
+
+	logx.Infof("identity infrastructure initialized: postgres=%s:%d redis=%s:%d providers=%d",
+		c.Postgres.Host, c.Postgres.Port, c.StateRedis.Host, c.StateRedis.Port, providers.Len())
 
 	return &ServiceContext{
-		Config: c,
-		DB:     db,
-		SQLDB:  sqlDB,
-		Redis:  rdb,
-		Store:  repo.NewStore(db),
+		Config:    c,
+		DB:        db,
+		SQLDB:     sqlDB,
+		Redis:     rdb,
+		Store:     store,
+		Providers: providers,
+		Services:  services,
 	}
 }
 

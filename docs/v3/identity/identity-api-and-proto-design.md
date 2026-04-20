@@ -10,6 +10,7 @@
 - SSO 继续采用统一抽象
 - 实际对外开放的 SSO provider 仅为 `GitHub`
 - `QQ/WeChat` 当前仅保留建模、配置与授权地址辅助，不开放登录入口
+- 内部生产代码按 `logic -> service -> repo` 分层实现
 
 ## 2. 设计原则
 
@@ -40,6 +41,20 @@
 
 - 授权裁决
 - 业务编排
+
+### 2.2.1 identity 内部实现入口
+
+当前 `identity` 的内部实现入口固定为：
+
+- `logic`：请求适配、metadata 提取、错误映射
+- `service`：核心用例编排
+- `repo`：数据库访问
+
+这意味着：
+
+- proto / API 契约保持稳定
+- 主要业务流程不直接写在 `logic`
+- 后续测试主入口应优先放在 `service`
 
 ### 2.3 SSO 采用两步抽象
 

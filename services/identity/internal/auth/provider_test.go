@@ -2,18 +2,16 @@ package auth
 
 import "testing"
 
-// TestIsProviderLoginReady verifies the phase-3 provider readiness contract.
-// TestIsProviderLoginReady 验证第三阶段的 provider 就绪约束。
-func TestIsProviderLoginReady(t *testing.T) {
+// TestEnsureState verifies state generation keeps explicit input and fills blanks.
+// TestEnsureState 验证 state 生成会保留显式输入并补齐空值。
+func TestEnsureState(t *testing.T) {
 	t.Parallel()
 
-	if !IsProviderLoginReady(ProviderGitHub) {
-		t.Fatalf("expected github provider to be ready")
+	if got := EnsureState("fixed-state"); got != "fixed-state" {
+		t.Fatalf("expected explicit state to be preserved, got %q", got)
 	}
-	if IsProviderLoginReady(ProviderQQ) {
-		t.Fatalf("expected qq provider to be not ready")
-	}
-	if IsProviderLoginReady(ProviderWeChat) {
-		t.Fatalf("expected wechat provider to be not ready")
+
+	if got := EnsureState(""); got == "" {
+		t.Fatalf("expected generated state to be non-empty")
 	}
 }

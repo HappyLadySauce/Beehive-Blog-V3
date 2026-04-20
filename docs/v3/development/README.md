@@ -6,6 +6,7 @@
 
 - [编码规范](./coding-conventions.md)
 - [配置规范](./configuration-conventions.md)
+- [测试规范](./testing-conventions.md)
 
 当前约定：
 

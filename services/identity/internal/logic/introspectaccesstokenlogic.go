@@ -3,17 +3,13 @@ package logic
 import (
 	"context"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
-	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
+	identityservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 
 	"github.com/zeromicro/go-zero/core/logx"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type IntrospectAccessTokenLogic struct {
@@ -32,57 +28,26 @@ func NewIntrospectAccessTokenLogic(ctx context.Context, svcCtx *svc.ServiceConte
 	}
 }
 
-// IntrospectAccessToken validates an access token against JWT claims and database state.
-// IntrospectAccessToken 结合 JWT claims 和数据库状态校验 access token。
+// IntrospectAccessToken adapts token introspection to the service layer.
+// IntrospectAccessToken 将 token introspection 适配到 service 层。
 func (l *IntrospectAccessTokenLogic) IntrospectAccessToken(in *pb.IntrospectAccessTokenRequest) (*pb.IntrospectAccessTokenResponse, error) {
-	// Validate the raw access token input.
-	// 校验原始 access token 输入。
-	accessToken := strings.TrimSpace(in.GetAccessToken())
-	if accessToken == "" {
-		return nil, status.Error(codes.InvalidArgument, "access_token is required")
-	}
-
-	claims, err := auth.ParseAccessToken(l.svcCtx.Config.Security.AccessTokenSecret, accessToken)
+	result, err := l.svcCtx.Services.Introspect.Execute(l.ctx, identityservice.IntrospectAccessTokenInput{
+		AccessToken: in.GetAccessToken(),
+	})
 	if err != nil {
-		l.Infof("access token introspection rejected invalid token: err=%v", err)
-		return statusInactiveResponse(), nil
+		return nil, toStatusError(err, "introspect access token failed")
 	}
-	if claims.ExpiresAt == nil || claims.ExpiresAt.Time.Before(time.Now().UTC()) {
-		return statusInactiveResponse(), nil
-	}
-	if claims.SessionID <= 0 || claims.UserID <= 0 {
-		return statusInactiveResponse(), nil
-	}
-
-	session, err := l.svcCtx.Store.UserSessions.GetByID(l.ctx, claims.SessionID)
-	if err != nil {
-		if repo.IsNotFound(err) {
-			return statusInactiveResponse(), nil
-		}
-		return nil, status.Errorf(codes.Internal, "lookup session failed: %v", err)
-	}
-	if session.Status != auth.SessionStatusActive || session.ExpiresAt.Before(time.Now().UTC()) {
-		return statusInactiveResponse(), nil
-	}
-
-	user, err := l.svcCtx.Store.Users.GetByID(l.ctx, claims.UserID)
-	if err != nil {
-		if repo.IsNotFound(err) {
-			return statusInactiveResponse(), nil
-		}
-		return nil, status.Errorf(codes.Internal, "lookup user failed: %v", err)
-	}
-	if user.Status != auth.UserStatusActive {
-		return statusInactiveResponse(), nil
+	if !result.Active {
+		return &pb.IntrospectAccessTokenResponse{Active: false}, nil
 	}
 
 	return &pb.IntrospectAccessTokenResponse{
 		Active:        true,
-		UserId:        strconv.FormatInt(user.ID, 10),
-		Role:          auth.ToProtoRole(user.Role),
-		AccountStatus: auth.ToProtoAccountStatus(user.Status),
-		SessionId:     strconv.FormatInt(session.ID, 10),
-		AuthSource:    auth.ToProtoAuthSource(session.AuthSource),
-		ExpiresAt:     claims.ExpiresAt.Time.Unix(),
+		UserId:        strconv.FormatInt(result.User.ID, 10),
+		Role:          auth.ToProtoRole(result.User.Role),
+		AccountStatus: auth.ToProtoAccountStatus(result.User.Status),
+		SessionId:     strconv.FormatInt(result.Session.ID, 10),
+		AuthSource:    auth.ToProtoAuthSource(result.Session.AuthSource),
+		ExpiresAt:     result.ExpiresAt,
 	}, nil
 }

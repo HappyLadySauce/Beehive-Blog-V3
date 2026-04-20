@@ -82,6 +82,21 @@
 
 ## 3. 服务职责边界
 
+### 3.0 内部实现层次
+
+`identity` 当前正式实现层次为：
+
+```text
+server -> logic -> service -> repo -> entity
+```
+
+说明：
+
+- `server` / `logic`：只做 gRPC transport 适配
+- `service`：负责核心用例编排、事务边界、审计与认证流程
+- `repo`：负责持久化访问
+- `entity`：负责 GORM 表结构映射
+
 ### 3.1 identity 负责
 
 - 本地账号注册

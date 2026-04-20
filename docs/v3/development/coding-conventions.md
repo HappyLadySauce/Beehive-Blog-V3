@@ -40,16 +40,35 @@
 #### `services/<svc>/internal/model/repo`
 
 - 只放 repository、store、query 封装、事务辅助
-- `logic` 通过 `repo.Store` 访问数据库
-- 不在 `logic` 中直接出现主要 CRUD
+- `service` 通过 `repo.Store` 访问数据库
+- 不在 `logic` 或 `server` 中直接出现主要 CRUD
+
+### `services/<svc>/internal/service`
+
+- 只放核心用例编排
+- service 负责：
+  - 输入规范化与业务校验
+  - 事务边界
+  - 调用 `repo`
+  - 调用 `auth` helper
+  - 写审计
+- service 不负责：
+  - gRPC status
+  - HTTP / RPC DTO 绑定
+  - transport metadata 读取
 
 ### `services/<svc>/internal/logic`
 
-- 只放业务用例编排
+- 只放 transport 适配逻辑
 - 一条 RPC 或一个 HTTP 用例对应一个 logic
-- logic 只消费 `svc.ServiceContext` 暴露的依赖
+- logic 只消费 `svc.ServiceContext` 暴露的 `Services`
+- logic 负责：
+  - 请求参数适配
+  - metadata 提取
+  - 调用 `service`
+  - 将 `service` 错误映射到 transport 错误
 - 不直接 new 数据库连接、Redis 连接或第三方 provider client
-- 不直接执行主要数据库 CRUD
+- 不直接执行主要数据库 CRUD 或事务编排
 
 ### `services/<svc>/internal/handler` / `server`
 
@@ -99,9 +118,11 @@
 
 - 使用 `internal/model/entity` 承载账户、会话、refresh token、SSO 绑定、审计等表结构映射
 - 使用 `internal/model/repo` 承载账户、会话、refresh token、SSO 绑定、审计等持久化访问
-- 认证、token、会话、SSO 逻辑放在 `internal/logic`
+- 使用 `internal/service` 承载认证、token、会话、SSO 用例编排
+- `internal/logic` 只做 RPC transport 适配
 - 配置结构和配置校验放在 `internal/config`
 - 第三阶段实际开放的 SSO provider 只有 `GitHub`
+- provider client 必须实例化注入，不允许继续依赖包级全局 HTTP/OAuth 钩子
 
 ### `gateway`
 
@@ -146,7 +167,7 @@ logx.Errorf("failed to refresh session token, user_id=%s session_id=%s: %v", use
 ## 禁止项
 
 - 不在 `logic` 中直接初始化 DB / Redis / MQ 连接
-- 不在 `logic` 中直接执行主要数据库 CRUD
+- 不在 `logic` 中直接执行主要数据库 CRUD 或事务编排
 - 不在 `gateway` 中直接访问 PostgreSQL
 - 不把服务私有 repository 放到 `pkg`
 - 不把业务编排写进 `handler`
