@@ -1,6 +1,6 @@
 ---
 name: contract-first-goctl
-description: Enforce the Beehive Blog v3 contract-first workflow. Use when adding or modifying gateway HTTP contracts or internal RPC contracts so work always follows this order: edit `v3/api/*.api` or `v3/proto/*.proto`, regenerate skeletons with `goctl`, then adjust generated and handwritten code.
+description: "Enforce the Beehive Blog v3 contract-first workflow. Use when adding or modifying gateway HTTP contracts or internal RPC contracts so work always follows this order: edit `v3/api/*.api` or `v3/proto/*.proto`, regenerate skeletons with `goctl`, then adjust generated and handwritten code."
 ---
 
 # Contract-First goctl Workflow
