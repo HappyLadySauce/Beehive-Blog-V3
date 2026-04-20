@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	tcredis "github.com/testcontainers/testcontainers-go/modules/redis"
 	"github.com/redis/go-redis/v9"
+	tcredis "github.com/testcontainers/testcontainers-go/modules/redis"
 )
 
 type redisState struct {

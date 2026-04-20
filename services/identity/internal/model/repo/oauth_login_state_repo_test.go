@@ -12,8 +12,6 @@ import (
 // TestOAuthLoginStateRepository verifies oauth state persistence and consume behavior.
 // TestOAuthLoginStateRepository 验证 oauth state 持久化与消费行为。
 func TestOAuthLoginStateRepository(t *testing.T) {
-	t.Parallel()
-
 	store := testkit.NewStore(t)
 	ctx := context.Background()
 

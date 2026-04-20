@@ -17,8 +17,6 @@ import (
 // TestSSOFinishServiceExecute verifies GitHub callback completion behavior.
 // TestSSOFinishServiceExecute 验证 GitHub callback 完成行为。
 func TestSSOFinishServiceExecute(t *testing.T) {
-	t.Parallel()
-
 	now := time.Date(2026, 4, 20, 12, 0, 0, 0, time.UTC)
 
 	t.Run("github happy path", func(t *testing.T) {
@@ -28,6 +26,7 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
 			case "/token":
+				w.Header().Set("Content-Type", "application/json")
 				_ = json.NewEncoder(w).Encode(map[string]any{
 					"access_token": "github-access-token",
 					"token_type":   "bearer",
@@ -94,6 +93,7 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
 			case "/token":
+				w.Header().Set("Content-Type", "application/json")
 				_ = json.NewEncoder(w).Encode(map[string]any{
 					"access_token": "github-access-token",
 					"token_type":   "bearer",

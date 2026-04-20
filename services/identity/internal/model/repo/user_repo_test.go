@@ -14,8 +14,6 @@ import (
 // TestUserRepository verifies user persistence behavior.
 // TestUserRepository 验证用户持久化行为。
 func TestUserRepository(t *testing.T) {
-	t.Parallel()
-
 	store := testkit.NewStore(t)
 	ctx := context.Background()
 	email := "alice@example.com"

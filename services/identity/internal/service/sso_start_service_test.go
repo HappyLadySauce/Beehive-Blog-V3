@@ -12,8 +12,6 @@ import (
 // TestSSOStartServiceExecute verifies outbound SSO authorize behavior.
 // TestSSOStartServiceExecute 验证对外 SSO 授权行为。
 func TestSSOStartServiceExecute(t *testing.T) {
-	t.Parallel()
-
 	now := time.Date(2026, 4, 20, 12, 0, 0, 0, time.UTC)
 
 	t.Run("github success", func(t *testing.T) {

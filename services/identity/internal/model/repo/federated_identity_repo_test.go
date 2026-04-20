@@ -11,8 +11,6 @@ import (
 // TestFederatedIdentityRepository verifies federated identity persistence.
 // TestFederatedIdentityRepository 验证联邦身份持久化。
 func TestFederatedIdentityRepository(t *testing.T) {
-	t.Parallel()
-
 	store := testkit.NewStore(t)
 	user := testkit.CreateUser(t, store)
 	ctx := context.Background()

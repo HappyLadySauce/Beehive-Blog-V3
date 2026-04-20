@@ -16,19 +16,19 @@ import (
 func NewConfig() config.Config {
 	return config.Config{
 		Postgres: config.PostgresConf{
-			Host: "unused",
-			User: "unused",
+			Host:   "unused",
+			User:   "unused",
 			DBName: "unused",
 		},
 		StateRedis: config.RedisConf{
 			Host: "unused",
 		},
 		Security: config.SecurityConf{
-			AccessTokenSecret:       "test-access-token-secret",
-			AccessTokenTTLSeconds:   900,
-			RefreshTokenTTLSeconds:  3600,
-			StateTTLSeconds:         600,
-			PasswordHashCost:        4,
+			AccessTokenSecret:      "test-access-token-secret",
+			AccessTokenTTLSeconds:  900,
+			RefreshTokenTTLSeconds: 3600,
+			StateTTLSeconds:        600,
+			PasswordHashCost:       4,
 		},
 		SSO: config.SSOConf{
 			GitHub: config.OAuthProviderConf{

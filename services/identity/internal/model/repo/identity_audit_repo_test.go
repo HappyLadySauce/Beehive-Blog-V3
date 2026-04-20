@@ -12,8 +12,6 @@ import (
 // TestIdentityAuditRepository verifies audit persistence.
 // TestIdentityAuditRepository 验证审计记录持久化。
 func TestIdentityAuditRepository(t *testing.T) {
-	t.Parallel()
-
 	store := testkit.NewStore(t)
 	user := testkit.CreateUser(t, store)
 	session := testkit.CreateSession(t, store, user.ID)

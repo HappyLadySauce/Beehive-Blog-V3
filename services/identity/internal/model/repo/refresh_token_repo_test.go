@@ -12,8 +12,6 @@ import (
 // TestRefreshTokenRepository verifies refresh token persistence and revocation.
 // TestRefreshTokenRepository 验证 refresh token 持久化与吊销行为。
 func TestRefreshTokenRepository(t *testing.T) {
-	t.Parallel()
-
 	store := testkit.NewStore(t)
 	user := testkit.CreateUser(t, store)
 	session := testkit.CreateSession(t, store, user.ID)

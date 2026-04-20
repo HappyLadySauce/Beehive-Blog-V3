@@ -22,6 +22,9 @@ func TestGitHubClientExchangeCode(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
+		// oauth2 treats "text/plain" token responses as form-encoded; force JSON so the library unmarshals wire JSON.
+		// oauth2 将 text/plain 的 token 响应当作表单解析；强制 JSON，以便库按 JSON 解析。
+		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"access_token": "github-access-token",
 			"token_type":   "bearer",
@@ -36,9 +39,13 @@ func TestGitHubClientExchangeCode(t *testing.T) {
 		RedirectURL:  "https://example.com/callback",
 	})
 	client.HTTPClient = server.Client()
+	// GitHub accepts client credentials in the POST body; pin AuthStyle to avoid
+	// oauth2's two-step header/body probe issuing two token requests to the stub.
+	// GitHub 接受将 client 凭证放在 POST body；固定 AuthStyle，避免 oauth2 对 stub 发起两次探测请求。
 	client.OAuthEndpoint = oauth2.Endpoint{
-		AuthURL:  server.URL + "/authorize",
-		TokenURL: server.URL + "/token",
+		AuthURL:   server.URL + "/authorize",
+		TokenURL:  server.URL + "/token",
+		AuthStyle: oauth2.AuthStyleInParams,
 	}
 
 	token, err := client.ExchangeCode(context.Background(), "code-123", "https://example.com/callback")

@@ -13,8 +13,6 @@ import (
 // TestUserSessionRepository verifies session persistence and state transitions.
 // TestUserSessionRepository 验证会话持久化与状态流转。
 func TestUserSessionRepository(t *testing.T) {
-	t.Parallel()
-
 	store := testkit.NewStore(t)
 	user := testkit.CreateUser(t, store)
 	ctx := context.Background()

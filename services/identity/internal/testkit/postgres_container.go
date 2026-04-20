@@ -23,7 +23,7 @@ type postgresState struct {
 }
 
 var (
-	postgresOnce  sync.Once
+	postgresOnce   sync.Once
 	sharedPostgres postgresState
 )
 

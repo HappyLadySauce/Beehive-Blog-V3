@@ -13,8 +13,6 @@ import (
 // TestCredentialLocalRepository verifies local credential persistence.
 // TestCredentialLocalRepository 验证本地凭证持久化。
 func TestCredentialLocalRepository(t *testing.T) {
-	t.Parallel()
-
 	store := testkit.NewStore(t)
 	user := testkit.CreateUser(t, store)
 	ctx := context.Background()
