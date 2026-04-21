@@ -16,7 +16,6 @@ import (
 
 type ServiceContext struct {
 	Config                config.Config
-	IdentityRPC           zrpc.Client
 	IdentityClient        pb.IdentityClient
 	IdentityProbe         identityadapter.ReadinessChecker
 	AuthMiddleware        rest.Middleware
@@ -43,7 +42,6 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 
 	return &ServiceContext{
 		Config:                c,
-		IdentityRPC:           identityRPC,
 		IdentityClient:        identityClient,
 		IdentityProbe:         identityProbe,
 		AuthMiddleware:        authMiddleware.Handle,

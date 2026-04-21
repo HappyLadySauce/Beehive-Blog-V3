@@ -78,13 +78,13 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		svc := service.NewSSOFinishService(deps)
 
 		_, err := svc.Execute(context.Background(), service.FinishSSOInput{
-			Provider:    auth.ProviderQQ,
+			Provider:    "qq",
 			Code:        "code-123",
 			State:       "state-1",
-			RedirectURI: deps.Config.SSO.QQ.RedirectURL,
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
 		})
-		if !errors.Is(err, errs.E(errs.CodeIdentitySSOProviderNotReady)) {
-			t.Fatalf("expected provider not ready error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
+			t.Fatalf("expected invalid argument error, got %v", err)
 		}
 	})
 

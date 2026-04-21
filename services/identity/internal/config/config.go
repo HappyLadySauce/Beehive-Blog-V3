@@ -59,10 +59,7 @@ type SecurityConf struct {
 }
 
 type SSOConf struct {
-	CallbackBaseURL string            `json:"CallbackBaseURL,optional"`
-	QQ              OAuthProviderConf `json:"QQ,optional"`
-	WeChat          OAuthProviderConf `json:"WeChat,optional"`
-	GitHub          OAuthProviderConf `json:"GitHub,optional"`
+	GitHub OAuthProviderConf `json:"GitHub,optional"`
 }
 
 type OAuthProviderConf struct {
@@ -102,15 +99,6 @@ func (c Config) Validate() error {
 	}
 	if c.Security.RefreshTokenTTLSeconds <= c.Security.AccessTokenTTLSeconds {
 		return fmt.Errorf("Security.RefreshTokenTTLSeconds must be greater than Security.AccessTokenTTLSeconds")
-	}
-	if err := validateOptionalURL("SSO.CallbackBaseURL", c.SSO.CallbackBaseURL); err != nil {
-		return err
-	}
-	if err := validateOAuthProvider("SSO.QQ", c.SSO.QQ); err != nil {
-		return err
-	}
-	if err := validateOAuthProvider("SSO.WeChat", c.SSO.WeChat); err != nil {
-		return err
 	}
 	if err := validateOAuthProvider("SSO.GitHub", c.SSO.GitHub); err != nil {
 		return err

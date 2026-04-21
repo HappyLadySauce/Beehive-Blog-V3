@@ -41,18 +41,6 @@ func NewConfig() config.Config {
 				RedirectURL:  "https://example.com/auth/github/callback",
 				Scopes:       []string{"read:user", "user:email"},
 			},
-			QQ: config.OAuthProviderConf{
-				Enabled:     true,
-				ClientID:    "qq-client-id",
-				RedirectURL: "https://example.com/auth/qq/callback",
-				Scopes:      []string{"get_user_info"},
-			},
-			WeChat: config.OAuthProviderConf{
-				Enabled:     true,
-				ClientID:    "wechat-client-id",
-				RedirectURL: "https://example.com/auth/wechat/callback",
-				Scopes:      []string{"snsapi_login"},
-			},
 		},
 	}
 }
@@ -70,8 +58,6 @@ func NewStore(t *testing.T) *repo.Store {
 func NewProviderRegistry(conf config.Config) *identityprovider.Registry {
 	return identityprovider.NewRegistry(
 		identityprovider.NewGitHubClient(conf.SSO.GitHub),
-		identityprovider.NewQQClient(conf.SSO.QQ),
-		identityprovider.NewWeChatClient(conf.SSO.WeChat),
 	)
 }
 

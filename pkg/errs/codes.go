@@ -77,10 +77,10 @@ const (
 	CodeIdentityUserNotFound Code = 110501
 	// CodeIdentitySessionNotFound identifies missing sessions.
 	// CodeIdentitySessionNotFound 标识会话不存在。
-	CodeIdentitySessionNotFound Code = 110501
+	CodeIdentitySessionNotFound Code = 110504
 	// CodeIdentityAccountNotFound identifies missing accounts.
 	// CodeIdentityAccountNotFound 标识账号不存在。
-	CodeIdentityAccountNotFound Code = 110501
+	CodeIdentityAccountNotFound Code = 110505
 	// CodeIdentityUsernameAlreadyExists identifies username conflicts.
 	// CodeIdentityUsernameAlreadyExists 标识用户名冲突。
 	CodeIdentityUsernameAlreadyExists Code = 110502

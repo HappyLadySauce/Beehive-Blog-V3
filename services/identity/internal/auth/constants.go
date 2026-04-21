@@ -4,12 +4,6 @@ const (
 	// ProviderGitHub identifies the GitHub SSO provider.
 	// ProviderGitHub 标识 GitHub SSO provider。
 	ProviderGitHub = "github"
-	// ProviderQQ identifies the QQ SSO provider.
-	// ProviderQQ 标识 QQ SSO provider。
-	ProviderQQ = "qq"
-	// ProviderWeChat identifies the WeChat SSO provider.
-	// ProviderWeChat 标识微信 SSO provider。
-	ProviderWeChat = "wechat"
 )
 
 const (

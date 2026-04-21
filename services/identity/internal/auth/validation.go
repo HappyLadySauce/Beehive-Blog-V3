@@ -76,7 +76,7 @@ func NormalizeLoginIdentifier(identifier string) (string, error) {
 func NormalizeProvider(provider string) (string, error) {
 	normalized := strings.ToLower(strings.TrimSpace(provider))
 	switch normalized {
-	case ProviderGitHub, ProviderQQ, ProviderWeChat:
+	case ProviderGitHub:
 		return normalized, nil
 	default:
 		return "", fmt.Errorf("unsupported provider")

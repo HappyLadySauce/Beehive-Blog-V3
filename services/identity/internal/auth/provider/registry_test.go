@@ -15,8 +15,6 @@ func TestRegistryGet(t *testing.T) {
 
 	registry := provider.NewRegistry(
 		provider.NewGitHubClient(config.OAuthProviderConf{Enabled: true}),
-		provider.NewQQClient(config.OAuthProviderConf{Enabled: true}),
-		provider.NewWeChatClient(config.OAuthProviderConf{Enabled: true}),
 	)
 
 	githubProvider, ok := registry.Get(auth.ProviderGitHub)
@@ -30,15 +28,8 @@ func TestRegistryGet(t *testing.T) {
 		t.Fatalf("expected github provider to be login ready")
 	}
 
-	qqProvider, ok := registry.Get(auth.ProviderQQ)
-	if !ok {
-		t.Fatalf("expected qq provider to be registered")
-	}
-	if !qqProvider.Enabled() {
-		t.Fatalf("expected qq provider to be enabled")
-	}
-	if qqProvider.LoginReady() {
-		t.Fatalf("expected qq provider to be not login ready")
+	if _, ok := registry.Get("qq"); ok {
+		t.Fatalf("expected unsupported provider to be absent")
 	}
 }
 
@@ -49,13 +40,12 @@ func TestRegistryGetCallback(t *testing.T) {
 
 	registry := provider.NewRegistry(
 		provider.NewGitHubClient(config.OAuthProviderConf{Enabled: true}),
-		provider.NewQQClient(config.OAuthProviderConf{Enabled: true}),
 	)
 
 	if _, ok := registry.GetCallback(auth.ProviderGitHub); !ok {
 		t.Fatalf("expected github callback provider to be registered")
 	}
-	if _, ok := registry.GetCallback(auth.ProviderQQ); ok {
-		t.Fatalf("expected qq callback provider to be unavailable")
+	if _, ok := registry.GetCallback("qq"); ok {
+		t.Fatalf("expected unsupported callback provider to be unavailable")
 	}
 }

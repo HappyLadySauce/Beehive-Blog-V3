@@ -46,19 +46,6 @@ Security:
   PasswordHashCost: 12
 
 SSO:
-  CallbackBaseURL: "http://localhost:8888"
-  QQ:
-    Enabled: false
-    ClientID: ""
-    ClientSecret: ""
-    RedirectURL: ""
-    Scopes: []
-  WeChat:
-    Enabled: false
-    ClientID: ""
-    ClientSecret: ""
-    RedirectURL: ""
-    Scopes: []
   GitHub:
     Enabled: false
     ClientID: ""

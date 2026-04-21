@@ -23,11 +23,6 @@ func TestStartSsoLoginRejectsProvidersThatAreNotReady(t *testing.T) {
 			StateTTLSeconds: 600,
 		},
 		SSO: config.SSOConf{
-			QQ: config.OAuthProviderConf{
-				Enabled:     true,
-				ClientID:    "qq-client-id",
-				RedirectURL: "https://example.com/auth/qq/callback",
-			},
 			GitHub: config.OAuthProviderConf{
 				Enabled:      true,
 				ClientID:     "github-client-id",
@@ -38,8 +33,6 @@ func TestStartSsoLoginRejectsProvidersThatAreNotReady(t *testing.T) {
 	}
 	providers := identityprovider.NewRegistry(
 		identityprovider.NewGitHubClient(conf.SSO.GitHub),
-		identityprovider.NewQQClient(conf.SSO.QQ),
-		identityprovider.NewWeChatClient(conf.SSO.WeChat),
 	)
 
 	logic := NewStartSsoLoginLogic(context.Background(), &svc.ServiceContext{
@@ -50,7 +43,7 @@ func TestStartSsoLoginRejectsProvidersThatAreNotReady(t *testing.T) {
 
 	_, err := logic.StartSsoLogin(&pb.StartSsoLoginRequest{
 		Provider:    "qq",
-		RedirectUri: "https://example.com/auth/qq/callback",
+		RedirectUri: "https://example.com/auth/github/callback",
 		State:       "fixed-state",
 	})
 	if err == nil {
@@ -61,10 +54,10 @@ func TestStartSsoLoginRejectsProvidersThatAreNotReady(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected grpc status error, got %v", err)
 	}
-	if st.Code() != codes.FailedPrecondition {
-		t.Fatalf("expected failed precondition, got %s", st.Code())
+	if st.Code() != codes.InvalidArgument {
+		t.Fatalf("expected invalid argument, got %s", st.Code())
 	}
-	if st.Message() != "sso provider is not ready" {
-		t.Fatalf("expected sso provider is not ready, got %s", st.Message())
+	if st.Message() != "unsupported provider" {
+		t.Fatalf("expected unsupported provider, got %s", st.Message())
 	}
 }

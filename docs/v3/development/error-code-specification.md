@@ -76,7 +76,9 @@
 - `110401`：sso provider disabled
 - `110402`：sso provider not ready
 - `110403`：sso state invalid
-- `110501`：resource not found
+- `110501`：user not found
+- `110504`：session not found
+- `110505`：account not found
 - `110502`：username already exists
 - `110503`：email already exists
 - `110601`：identity dependency unavailable
