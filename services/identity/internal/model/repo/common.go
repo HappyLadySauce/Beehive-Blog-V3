@@ -23,3 +23,14 @@ func IsUniqueViolation(err error) bool {
 
 	return false
 }
+
+// UniqueViolationConstraint returns the PostgreSQL unique constraint name when available.
+// UniqueViolationConstraint 返回 PostgreSQL 唯一约束名（若可获取）。
+func UniqueViolationConstraint(err error) string {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return pgErr.ConstraintName
+	}
+
+	return ""
+}

@@ -12,14 +12,22 @@ import (
 // RequestMetaMiddleware extracts trusted request metadata once per request.
 // RequestMetaMiddleware 每个请求只提取一次可信元数据。
 type RequestMetaMiddleware struct {
-	securityConf config.GatewaySecurityConf
+	proxyConf ctxmeta.TrustedProxyConfig
 }
 
 // NewRequestMetaMiddleware creates a request metadata middleware.
 // NewRequestMetaMiddleware 创建请求元数据中间件。
 func NewRequestMetaMiddleware(securityConf config.GatewaySecurityConf) *RequestMetaMiddleware {
+	trustedCIDRs, err := ctxmeta.ParseTrustedProxyCIDRs(securityConf.TrustedProxyCIDRs)
+	if err != nil {
+		panic("invalid gateway trusted proxy cidr configuration: " + err.Error())
+	}
+
 	return &RequestMetaMiddleware{
-		securityConf: securityConf,
+		proxyConf: ctxmeta.TrustedProxyConfig{
+			Headers: securityConf.TrustedProxyHeaders,
+			CIDRs:   trustedCIDRs,
+		},
 	}
 }
 
@@ -27,7 +35,7 @@ func NewRequestMetaMiddleware(securityConf config.GatewaySecurityConf) *RequestM
 // Handle 提取请求元数据并写入上下文。
 func (m *RequestMetaMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		requestMeta := ctxmeta.BuildRequestMetaFromHTTP(r, m.securityConf.TrustedProxyHeaders)
+		requestMeta := ctxmeta.BuildRequestMetaFromHTTP(r, m.proxyConf)
 		if requestMeta.RequestID == "" {
 			requestMeta.RequestID = uuid.NewString()
 		}

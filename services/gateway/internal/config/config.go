@@ -13,6 +13,7 @@ import (
 type GatewaySecurityConf struct {
 	TokenPrefix         string   `json:",default=Bearer"`
 	TrustedProxyHeaders []string `json:",optional"`
+	TrustedProxyCIDRs   []string `json:",optional"`
 }
 
 type Config struct {

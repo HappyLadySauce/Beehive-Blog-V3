@@ -10,6 +10,7 @@ IdentityRPC:
 
 Security:
   TokenPrefix: Bearer
+  TrustedProxyCIDRs: []
   TrustedProxyHeaders:
     - X-Forwarded-For
     - X-Real-IP

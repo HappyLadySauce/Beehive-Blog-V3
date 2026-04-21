@@ -27,6 +27,13 @@ type RequestMeta struct {
 	RequestID    string
 }
 
+// TrustedProxyConfig defines the trusted proxy decision inputs.
+// TrustedProxyConfig 定义受信代理判定输入。
+type TrustedProxyConfig struct {
+	Headers []string
+	CIDRs   []*net.IPNet
+}
+
 // GetClientIPFromIncomingContext extracts a trusted client IP from gRPC metadata.
 // 从 gRPC metadata 中提取可信的客户端 IP。
 func GetClientIPFromIncomingContext(ctx context.Context) string {
@@ -75,14 +82,71 @@ func GetRequestIDFromIncomingContext(ctx context.Context) string {
 	return strings.TrimSpace(values[0])
 }
 
+// ParseTrustedProxyCIDRs parses trusted proxy CIDR strings once during setup.
+// ParseTrustedProxyCIDRs 在初始化阶段一次性解析受信代理 CIDR 字符串。
+func ParseTrustedProxyCIDRs(rawCIDRs []string) ([]*net.IPNet, error) {
+	if len(rawCIDRs) == 0 {
+		return nil, nil
+	}
+
+	networks := make([]*net.IPNet, 0, len(rawCIDRs))
+	for _, raw := range rawCIDRs {
+		cidr := strings.TrimSpace(raw)
+		if cidr == "" {
+			continue
+		}
+
+		_, network, err := net.ParseCIDR(cidr)
+		if err != nil {
+			return nil, err
+		}
+		networks = append(networks, network)
+	}
+
+	return networks, nil
+}
+
+// IsTrustedProxy reports whether the remote address belongs to a trusted proxy.
+// IsTrustedProxy 判断远端地址是否属于受信代理。
+func IsTrustedProxy(remoteAddr string, cidrs []*net.IPNet) bool {
+	if len(cidrs) == 0 {
+		return false
+	}
+
+	host, _, err := net.SplitHostPort(strings.TrimSpace(remoteAddr))
+	if err != nil {
+		host = strings.TrimSpace(remoteAddr)
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+
+	for _, network := range cidrs {
+		if network != nil && network.Contains(ip) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // BuildRequestMetaFromHTTP builds trusted metadata from an HTTP request.
 // BuildRequestMetaFromHTTP 从 HTTP 请求构建可信元数据。
-func BuildRequestMetaFromHTTP(r *http.Request, trustedProxyHeaders []string) RequestMeta {
-	forwardedFor := strings.TrimSpace(r.Header.Get(headerXForwardedFor))
-	realIP := strings.TrimSpace(r.Header.Get(headerXRealIP))
-	clientIP := strings.TrimSpace(r.Header.Get(headerClientIP))
+func BuildRequestMetaFromHTTP(r *http.Request, proxyConf TrustedProxyConfig) RequestMeta {
+	trustProxyHeaders := IsTrustedProxy(strings.TrimSpace(r.RemoteAddr), proxyConf.CIDRs)
 
-	resolvedClientIP := ExtractTrustedClientIP(r, trustedProxyHeaders)
+	forwardedFor := ""
+	realIP := ""
+	clientIP := ""
+	if trustProxyHeaders {
+		forwardedFor = strings.TrimSpace(r.Header.Get(headerXForwardedFor))
+		realIP = strings.TrimSpace(r.Header.Get(headerXRealIP))
+		clientIP = strings.TrimSpace(r.Header.Get(headerClientIP))
+	}
+
+	resolvedClientIP := ExtractTrustedClientIP(r, proxyConf)
 	if clientIP == "" {
 		clientIP = resolvedClientIP
 	}
@@ -102,30 +166,32 @@ func BuildRequestMetaFromHTTP(r *http.Request, trustedProxyHeaders []string) Req
 	}
 }
 
-// ExtractTrustedClientIP extracts a trusted client IP by predefined order.
-// ExtractTrustedClientIP 按固定顺序提取可信客户端 IP。
-func ExtractTrustedClientIP(r *http.Request, trustedProxyHeaders []string) string {
-	headerValues := map[string]string{
-		headerXForwardedFor: strings.TrimSpace(r.Header.Get(headerXForwardedFor)),
-		headerXRealIP:       strings.TrimSpace(r.Header.Get(headerXRealIP)),
-		headerClientIP:      strings.TrimSpace(r.Header.Get(headerClientIP)),
-	}
-	for _, key := range trustedProxyHeaders {
-		lowerKey := strings.ToLower(strings.TrimSpace(key))
-		rawValue, exists := headerValues[lowerKey]
-		if !exists || rawValue == "" {
-			continue
+// ExtractTrustedClientIP extracts a trusted client IP by trusted source and header order.
+// ExtractTrustedClientIP 按受信来源和头部顺序提取可信客户端 IP。
+func ExtractTrustedClientIP(r *http.Request, proxyConf TrustedProxyConfig) string {
+	if IsTrustedProxy(strings.TrimSpace(r.RemoteAddr), proxyConf.CIDRs) {
+		headerValues := map[string]string{
+			headerXForwardedFor: strings.TrimSpace(r.Header.Get(headerXForwardedFor)),
+			headerXRealIP:       strings.TrimSpace(r.Header.Get(headerXRealIP)),
+			headerClientIP:      strings.TrimSpace(r.Header.Get(headerClientIP)),
 		}
-
-		if lowerKey == headerXForwardedFor {
-			if firstIP := firstIPFromForwardedFor(rawValue); firstIP != "" {
-				return firstIP
+		for _, key := range proxyConf.Headers {
+			lowerKey := strings.ToLower(strings.TrimSpace(key))
+			rawValue, exists := headerValues[lowerKey]
+			if !exists || rawValue == "" {
+				continue
 			}
-			continue
-		}
 
-		if normalized := normalizeIP(rawValue); normalized != "" {
-			return normalized
+			if lowerKey == headerXForwardedFor {
+				if firstIP := firstIPFromForwardedFor(rawValue); firstIP != "" {
+					return firstIP
+				}
+				continue
+			}
+
+			if normalized := normalizeIP(rawValue); normalized != "" {
+				return normalized
+			}
 		}
 	}
 
