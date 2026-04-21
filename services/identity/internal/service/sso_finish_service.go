@@ -349,10 +349,4 @@ func shouldWriteSSOStateFailureAudit(err error) bool {
 	return errors.As(err, &stateErr)
 }
 
-// errorsIsSSOStateInvalid reports whether the error represents an invalid or consumed SSO state.
-// errorsIsSSOStateInvalid 判断错误是否表示 SSO state 无效或已消费。
-func errorsIsSSOStateInvalid(err error) bool {
-	return errors.Is(err, errs.E(errs.CodeIdentitySSOStateInvalid))
-}
-
 var _ identityprovider.CallbackProvider = (*identityprovider.GitHubClient)(nil)

@@ -355,12 +355,12 @@ func sanitizeValue(key string, value any) string {
 		return ""
 	case string:
 		return quoteIfNeeded(sanitizeMessage(typed))
+	case errs.Code:
+		return typed.String()
 	case fmt.Stringer:
 		return quoteIfNeeded(sanitizeMessage(typed.String()))
 	case error:
 		return quoteIfNeeded(safeErrorMessage(typed))
-	case errs.Code:
-		return typed.String()
 	case int:
 		return strconv.Itoa(typed)
 	case int64:
