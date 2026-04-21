@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
@@ -17,10 +18,10 @@ type RequestMetaMiddleware struct {
 
 // NewRequestMetaMiddleware creates a request metadata middleware.
 // NewRequestMetaMiddleware 创建请求元数据中间件。
-func NewRequestMetaMiddleware(securityConf config.GatewaySecurityConf) *RequestMetaMiddleware {
+func NewRequestMetaMiddleware(securityConf config.GatewaySecurityConf) (*RequestMetaMiddleware, error) {
 	trustedCIDRs, err := ctxmeta.ParseTrustedProxyCIDRs(securityConf.TrustedProxyCIDRs)
 	if err != nil {
-		panic("invalid gateway trusted proxy cidr configuration: " + err.Error())
+		return nil, fmt.Errorf("parse trusted proxy cidrs: %w", err)
 	}
 
 	return &RequestMetaMiddleware{
@@ -28,7 +29,7 @@ func NewRequestMetaMiddleware(securityConf config.GatewaySecurityConf) *RequestM
 			Headers: securityConf.TrustedProxyHeaders,
 			CIDRs:   trustedCIDRs,
 		},
-	}
+	}, nil
 }
 
 // Handle extracts request metadata and stores it in context.

@@ -4,6 +4,8 @@
 package svc
 
 import (
+	"fmt"
+
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/middleware"
@@ -21,13 +23,20 @@ type ServiceContext struct {
 	RequestMetaMiddleware rest.Middleware
 }
 
-func NewServiceContext(c config.Config) *ServiceContext {
+func NewServiceContext(c config.Config) (*ServiceContext, error) {
+	if err := c.Validate(); err != nil {
+		return nil, err
+	}
+
 	identityRPC := zrpc.MustNewClient(c.IdentityRPC)
 	identityClient := pb.NewIdentityClient(identityRPC.Conn())
 	identityProbe := identityadapter.NewProbe(identityClient)
 
 	authMiddleware := middleware.NewAuthMiddleware(identityClient, c.Security)
-	requestMetaMiddleware := middleware.NewRequestMetaMiddleware(c.Security)
+	requestMetaMiddleware, err := middleware.NewRequestMetaMiddleware(c.Security)
+	if err != nil {
+		return nil, fmt.Errorf("create request meta middleware: %w", err)
+	}
 
 	return &ServiceContext{
 		Config:                c,
@@ -36,5 +45,5 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		IdentityProbe:         identityProbe,
 		AuthMiddleware:        authMiddleware.Handle,
 		RequestMetaMiddleware: requestMetaMiddleware.Handle,
-	}
+	}, nil
 }

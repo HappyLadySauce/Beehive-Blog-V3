@@ -13,6 +13,7 @@ const (
 	headerXForwardedFor = "x-forwarded-for"
 	headerXRealIP       = "x-real-ip"
 	headerClientIP      = "client-ip"
+	headerTrustedIP     = "x-beehive-trusted-client-ip"
 	headerUserAgent     = "user-agent"
 	headerXRequestID    = "x-request-id"
 )
@@ -42,28 +43,12 @@ func GetClientIPFromIncomingContext(ctx context.Context) string {
 		return ""
 	}
 
-	for _, key := range []string{"x-forwarded-for", "x-real-ip", "client-ip"} {
-		values := md.Get(key)
-		if len(values) == 0 {
-			continue
-		}
-
-		candidate := strings.TrimSpace(values[0])
-		if candidate == "" {
-			continue
-		}
-
-		if key == "x-forwarded-for" {
-			parts := strings.Split(candidate, ",")
-			if len(parts) > 0 {
-				return strings.TrimSpace(parts[0])
-			}
-		}
-
-		return candidate
+	values := md.Get(headerTrustedIP)
+	if len(values) == 0 {
+		return ""
 	}
 
-	return ""
+	return normalizeIP(strings.TrimSpace(values[0]))
 }
 
 // GetRequestIDFromIncomingContext extracts request_id from gRPC metadata.
@@ -216,9 +201,7 @@ func OutgoingContextWithRequestMeta(ctx context.Context, meta RequestMeta) conte
 		pairs = append(pairs, key, value)
 	}
 
-	appendIfNotEmpty(headerXForwardedFor, meta.ForwardedFor)
-	appendIfNotEmpty(headerXRealIP, meta.RealIP)
-	appendIfNotEmpty(headerClientIP, meta.ClientIP)
+	appendIfNotEmpty(headerTrustedIP, meta.ClientIP)
 	appendIfNotEmpty(headerUserAgent, meta.UserAgent)
 	appendIfNotEmpty(headerXRequestID, meta.RequestID)
 

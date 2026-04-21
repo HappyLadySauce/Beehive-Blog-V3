@@ -154,10 +154,13 @@ func TestAuthMiddlewareWritesTrustedContext(t *testing.T) {
 func TestRequestMetaMiddlewareClientIPOrder(t *testing.T) {
 	t.Parallel()
 
-	m := NewRequestMetaMiddleware(config.GatewaySecurityConf{
+	m, err := NewRequestMetaMiddleware(config.GatewaySecurityConf{
 		TrustedProxyCIDRs:   []string{"127.0.0.0/8"},
 		TrustedProxyHeaders: []string{"X-Forwarded-For", "X-Real-IP", "Client-IP"},
 	})
+	if err != nil {
+		t.Fatalf("expected middleware construction to succeed, got %v", err)
+	}
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	req.RemoteAddr = "127.0.0.1:1234"
 	req.Header.Set("X-Forwarded-For", "10.0.0.1, 10.0.0.2")
@@ -182,10 +185,13 @@ func TestRequestMetaMiddlewareClientIPOrder(t *testing.T) {
 func TestRequestMetaMiddlewareIgnoresForwardHeadersFromUntrustedSource(t *testing.T) {
 	t.Parallel()
 
-	m := NewRequestMetaMiddleware(config.GatewaySecurityConf{
+	m, err := NewRequestMetaMiddleware(config.GatewaySecurityConf{
 		TrustedProxyCIDRs:   []string{"10.0.0.0/8"},
 		TrustedProxyHeaders: []string{"X-Forwarded-For", "X-Real-IP", "Client-IP"},
 	})
+	if err != nil {
+		t.Fatalf("expected middleware construction to succeed, got %v", err)
+	}
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	req.RemoteAddr = "127.0.0.1:4567"
 	req.Header.Set("X-Forwarded-For", "203.0.113.10")
@@ -210,10 +216,13 @@ func TestRequestMetaMiddlewareIgnoresForwardHeadersFromUntrustedSource(t *testin
 func TestRequestMetaMiddlewareInvalidRemoteAddrFallsBackWithoutPanic(t *testing.T) {
 	t.Parallel()
 
-	m := NewRequestMetaMiddleware(config.GatewaySecurityConf{
+	m, err := NewRequestMetaMiddleware(config.GatewaySecurityConf{
 		TrustedProxyCIDRs:   []string{"127.0.0.0/8"},
 		TrustedProxyHeaders: []string{"X-Forwarded-For"},
 	})
+	if err != nil {
+		t.Fatalf("expected middleware construction to succeed, got %v", err)
+	}
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	req.RemoteAddr = "not-an-ip"
 	req.Header.Set("X-Forwarded-For", "203.0.113.10")
@@ -230,6 +239,17 @@ func TestRequestMetaMiddlewareInvalidRemoteAddrFallsBackWithoutPanic(t *testing.
 
 	if clientIP != "" {
 		t.Fatalf("expected empty client ip for invalid remote addr, got %s", clientIP)
+	}
+}
+
+func TestRequestMetaMiddlewareRejectsInvalidTrustedProxyCIDRs(t *testing.T) {
+	t.Parallel()
+
+	if _, err := NewRequestMetaMiddleware(config.GatewaySecurityConf{
+		TrustedProxyCIDRs:   []string{"not-a-cidr"},
+		TrustedProxyHeaders: []string{"X-Forwarded-For"},
+	}); err == nil {
+		t.Fatalf("expected invalid trusted proxy cidr error")
 	}
 }
 

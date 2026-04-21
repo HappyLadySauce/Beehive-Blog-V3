@@ -7,6 +7,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errhttpx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/httpx"
@@ -41,7 +42,11 @@ func main() {
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
 
-	ctx := svc.NewServiceContext(c)
+	ctx, err := svc.NewServiceContext(c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "failed to initialize gateway service context: %v\n", err)
+		os.Exit(1)
+	}
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
