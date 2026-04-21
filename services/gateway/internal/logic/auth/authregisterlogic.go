@@ -29,7 +29,7 @@ func NewAuthRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Auth
 
 func (l *AuthRegisterLogic) AuthRegister(req *types.AuthRegisterReq) (resp *types.AuthRegisterResp, err error) {
 	rpcResp, rpcErr := l.svcCtx.IdentityClient.RegisterLocalUser(
-		rpcContextWithMeta(l.ctx),
+		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),
 		identityadapter.BuildRegisterRequest(req),
 	)
 	if rpcErr != nil {

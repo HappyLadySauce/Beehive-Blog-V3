@@ -29,11 +29,12 @@ var (
 type AuthMiddleware struct {
 	identityClient pb.IdentityClient
 	tokenPrefix    string
+	internalAuth   ctxmeta.InternalRPCAuth
 }
 
 // NewAuthMiddleware creates auth middleware.
 // NewAuthMiddleware 创建鉴权中间件。
-func NewAuthMiddleware(identityClient pb.IdentityClient, securityConf config.GatewaySecurityConf) *AuthMiddleware {
+func NewAuthMiddleware(identityClient pb.IdentityClient, securityConf config.GatewaySecurityConf, rpcConf config.IdentityRPCConf) *AuthMiddleware {
 	tokenPrefix := strings.TrimSpace(securityConf.TokenPrefix)
 	if tokenPrefix == "" {
 		tokenPrefix = "Bearer"
@@ -41,6 +42,10 @@ func NewAuthMiddleware(identityClient pb.IdentityClient, securityConf config.Gat
 	return &AuthMiddleware{
 		identityClient: identityClient,
 		tokenPrefix:    tokenPrefix,
+		internalAuth: ctxmeta.InternalRPCAuth{
+			Token:  rpcConf.InternalAuthToken,
+			Caller: rpcConf.InternalCallerName,
+		},
 	}
 }
 
@@ -57,7 +62,7 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		requestMeta, _ := RequestMetaFrom(ctx)
-		rpcCtx := ctxmeta.OutgoingContextWithRequestMeta(ctx, requestMeta)
+		rpcCtx := ctxmeta.BuildIdentityOutgoingContext(ctx, requestMeta, m.internalAuth)
 
 		introspectResp, introspectErr := m.identityClient.IntrospectAccessToken(rpcCtx, &pb.IntrospectAccessTokenRequest{
 			AccessToken: accessToken,

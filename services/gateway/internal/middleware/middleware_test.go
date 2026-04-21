@@ -13,6 +13,7 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -62,7 +63,7 @@ func TestAuthMiddlewareRejectsMissingToken(t *testing.T) {
 		introspectFn: func(_ context.Context, _ *pb.IntrospectAccessTokenRequest, _ ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error) {
 			return &pb.IntrospectAccessTokenResponse{Active: true}, nil
 		},
-	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"})
+	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"}, config.IdentityRPCConf{InternalAuthToken: "secret", InternalCallerName: "gateway"})
 	req := httptest.NewRequest(http.MethodGet, "/api/v3/auth/me", nil)
 	rr := httptest.NewRecorder()
 
@@ -93,7 +94,7 @@ func TestAuthMiddlewareInactiveToken(t *testing.T) {
 		introspectFn: func(_ context.Context, _ *pb.IntrospectAccessTokenRequest, _ ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error) {
 			return &pb.IntrospectAccessTokenResponse{Active: false}, nil
 		},
-	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"})
+	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"}, config.IdentityRPCConf{InternalAuthToken: "secret", InternalCallerName: "gateway"})
 	req := httptest.NewRequest(http.MethodGet, "/api/v3/auth/me", nil)
 	req.Header.Set("Authorization", "Bearer token")
 	rr := httptest.NewRecorder()
@@ -122,7 +123,17 @@ func TestAuthMiddlewareWritesTrustedContext(t *testing.T) {
 	t.Parallel()
 
 	m := NewAuthMiddleware(&fakeIdentityClient{
-		introspectFn: func(_ context.Context, _ *pb.IntrospectAccessTokenRequest, _ ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error) {
+		introspectFn: func(ctx context.Context, _ *pb.IntrospectAccessTokenRequest, _ ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error) {
+			md, ok := metadata.FromOutgoingContext(ctx)
+			if !ok {
+				t.Fatalf("expected outgoing metadata")
+			}
+			if got := md.Get("x-beehive-internal-auth-token"); len(got) != 1 || got[0] != "secret" {
+				t.Fatalf("expected internal auth token metadata, got %v", got)
+			}
+			if got := md.Get("x-beehive-internal-caller"); len(got) != 1 || got[0] != "gateway" {
+				t.Fatalf("expected internal caller metadata, got %v", got)
+			}
 			return &pb.IntrospectAccessTokenResponse{
 				Active:        true,
 				UserId:        "u1",
@@ -132,7 +143,7 @@ func TestAuthMiddlewareWritesTrustedContext(t *testing.T) {
 				AuthSource:    pb.AuthSource_AUTH_SOURCE_LOCAL,
 			}, nil
 		},
-	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"})
+	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"}, config.IdentityRPCConf{InternalAuthToken: "secret", InternalCallerName: "gateway"})
 	req := httptest.NewRequest(http.MethodGet, "/api/v3/auth/me", nil)
 	req.Header.Set("Authorization", "Bearer token")
 	rr := httptest.NewRecorder()
@@ -260,7 +271,7 @@ func TestAuthMiddlewareMasksUpstreamErrors(t *testing.T) {
 		introspectFn: func(_ context.Context, _ *pb.IntrospectAccessTokenRequest, _ ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error) {
 			return nil, status.Error(codes.Unavailable, "identity backend exploded")
 		},
-	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"})
+	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"}, config.IdentityRPCConf{InternalAuthToken: "secret", InternalCallerName: "gateway"})
 	req := httptest.NewRequest(http.MethodGet, "/api/v3/auth/me", nil)
 	req.Header.Set("Authorization", "Bearer token")
 	rr := httptest.NewRecorder()
@@ -295,7 +306,7 @@ func TestAuthMiddlewarePermissionDeniedMapsForbidden(t *testing.T) {
 		introspectFn: func(_ context.Context, _ *pb.IntrospectAccessTokenRequest, _ ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error) {
 			return nil, status.Error(codes.PermissionDenied, "forbidden upstream")
 		},
-	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"})
+	}, config.GatewaySecurityConf{TokenPrefix: "Bearer"}, config.IdentityRPCConf{InternalAuthToken: "secret", InternalCallerName: "gateway"})
 	req := httptest.NewRequest(http.MethodGet, "/api/v3/auth/me", nil)
 	req.Header.Set("Authorization", "Bearer token")
 	rr := httptest.NewRecorder()

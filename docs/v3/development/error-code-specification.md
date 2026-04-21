@@ -72,6 +72,7 @@
 - `110205`：account pending
 - `110206`：account disabled
 - `110207`：account locked
+- `110208`：internal caller unauthorized
 - `110401`：sso provider disabled
 - `110402`：sso provider not ready
 - `110403`：sso state invalid

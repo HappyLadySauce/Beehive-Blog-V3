@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/server"
@@ -23,7 +24,11 @@ func main() {
 
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
-	ctx := svc.NewServiceContext(c)
+	ctx, err := svc.NewServiceContext(c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "failed to initialize identity service context: %v\n", err)
+		os.Exit(1)
+	}
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		pb.RegisterIdentityServer(grpcServer, server.NewIdentityServer(ctx))
@@ -32,6 +37,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	s.AddUnaryInterceptors(server.NewInternalAuthInterceptor(c).Unary())
 	defer s.Stop()
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)

@@ -10,13 +10,17 @@ import (
 )
 
 const (
-	headerXForwardedFor = "x-forwarded-for"
-	headerXRealIP       = "x-real-ip"
-	headerClientIP      = "client-ip"
-	headerTrustedIP     = "x-beehive-trusted-client-ip"
-	headerUserAgent     = "user-agent"
-	headerXRequestID    = "x-request-id"
+	headerXForwardedFor  = "x-forwarded-for"
+	headerXRealIP        = "x-real-ip"
+	headerClientIP       = "client-ip"
+	headerInternalToken  = "x-beehive-internal-auth-token"
+	headerInternalCaller = "x-beehive-internal-caller"
+	headerTrustedIP      = "x-beehive-trusted-client-ip"
+	headerUserAgent      = "user-agent"
+	headerXRequestID     = "x-request-id"
 )
+
+type trustedCallerContextKey struct{}
 
 // RequestMeta carries trusted request metadata.
 // RequestMeta 承载可信请求元数据。
@@ -35,9 +39,20 @@ type TrustedProxyConfig struct {
 	CIDRs   []*net.IPNet
 }
 
+// InternalRPCAuth defines authenticated gateway -> identity RPC metadata.
+// InternalRPCAuth 定义已认证的 gateway -> identity RPC metadata。
+type InternalRPCAuth struct {
+	Token  string
+	Caller string
+}
+
 // GetClientIPFromIncomingContext extracts a trusted client IP from gRPC metadata.
 // 从 gRPC metadata 中提取可信的客户端 IP。
 func GetClientIPFromIncomingContext(ctx context.Context) string {
+	if _, ok := TrustedInternalCallerFrom(ctx); !ok {
+		return ""
+	}
+
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return ""
@@ -49,6 +64,23 @@ func GetClientIPFromIncomingContext(ctx context.Context) string {
 	}
 
 	return normalizeIP(strings.TrimSpace(values[0]))
+}
+
+// WithTrustedInternalCaller marks the current context as coming from an authenticated internal caller.
+// WithTrustedInternalCaller 将当前上下文标记为来自已认证的内部调用方。
+func WithTrustedInternalCaller(ctx context.Context, caller string) context.Context {
+	return context.WithValue(ctx, trustedCallerContextKey{}, strings.TrimSpace(caller))
+}
+
+// TrustedInternalCallerFrom reads the authenticated internal caller from context.
+// TrustedInternalCallerFrom 从上下文中读取已认证的内部调用方。
+func TrustedInternalCallerFrom(ctx context.Context) (string, bool) {
+	caller, ok := ctx.Value(trustedCallerContextKey{}).(string)
+	if !ok || strings.TrimSpace(caller) == "" {
+		return "", false
+	}
+
+	return caller, true
 }
 
 // GetRequestIDFromIncomingContext extracts request_id from gRPC metadata.
@@ -190,9 +222,9 @@ func ExtractTrustedClientIP(r *http.Request, proxyConf TrustedProxyConfig) strin
 	return normalizeIP(strings.TrimSpace(r.RemoteAddr))
 }
 
-// OutgoingContextWithRequestMeta injects metadata into outgoing gRPC context.
-// OutgoingContextWithRequestMeta 将元数据注入 gRPC 出站上下文。
-func OutgoingContextWithRequestMeta(ctx context.Context, meta RequestMeta) context.Context {
+// BuildIdentityOutgoingContext injects authenticated metadata into gateway -> identity gRPC context.
+// BuildIdentityOutgoingContext 将已认证 metadata 注入 gateway -> identity gRPC 上下文。
+func BuildIdentityOutgoingContext(ctx context.Context, meta RequestMeta, auth InternalRPCAuth) context.Context {
 	pairs := []string{}
 	appendIfNotEmpty := func(key, value string) {
 		if value == "" {
@@ -201,6 +233,8 @@ func OutgoingContextWithRequestMeta(ctx context.Context, meta RequestMeta) conte
 		pairs = append(pairs, key, value)
 	}
 
+	appendIfNotEmpty(headerInternalToken, strings.TrimSpace(auth.Token))
+	appendIfNotEmpty(headerInternalCaller, strings.TrimSpace(auth.Caller))
 	appendIfNotEmpty(headerTrustedIP, meta.ClientIP)
 	appendIfNotEmpty(headerUserAgent, meta.UserAgent)
 	appendIfNotEmpty(headerXRequestID, meta.RequestID)
@@ -209,7 +243,7 @@ func OutgoingContextWithRequestMeta(ctx context.Context, meta RequestMeta) conte
 		return ctx
 	}
 
-	return metadata.NewOutgoingContext(ctx, metadata.Pairs(pairs...))
+	return metadata.AppendToOutgoingContext(ctx, pairs...)
 }
 
 func firstIPFromForwardedFor(raw string) string {

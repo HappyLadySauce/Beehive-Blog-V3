@@ -29,7 +29,7 @@ func NewAuthSsoCallbackLogic(ctx context.Context, svcCtx *svc.ServiceContext) *A
 
 func (l *AuthSsoCallbackLogic) AuthSsoCallback(req *types.AuthSsoCallbackReq) (resp *types.AuthSsoCallbackResp, err error) {
 	rpcResp, rpcErr := l.svcCtx.IdentityClient.FinishSsoLogin(
-		rpcContextWithMeta(l.ctx),
+		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),
 		identityadapter.BuildSsoCallbackRequest(req),
 	)
 	if rpcErr != nil {

@@ -28,11 +28,11 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		return nil, err
 	}
 
-	identityRPC := zrpc.MustNewClient(c.IdentityRPC)
+	identityRPC := zrpc.MustNewClient(c.IdentityRPC.RpcClientConf)
 	identityClient := pb.NewIdentityClient(identityRPC.Conn())
-	identityProbe := identityadapter.NewProbe(identityClient)
+	identityProbe := identityadapter.NewProbe(identityClient, c.IdentityRPC)
 
-	authMiddleware := middleware.NewAuthMiddleware(identityClient, c.Security)
+	authMiddleware := middleware.NewAuthMiddleware(identityClient, c.Security, c.IdentityRPC)
 	requestMetaMiddleware, err := middleware.NewRequestMetaMiddleware(c.Security)
 	if err != nil {
 		return nil, fmt.Errorf("create request meta middleware: %w", err)

@@ -29,7 +29,7 @@ func NewAuthRefreshLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AuthR
 
 func (l *AuthRefreshLogic) AuthRefresh(req *types.AuthRefreshReq) (resp *types.AuthRefreshResp, err error) {
 	rpcResp, rpcErr := l.svcCtx.IdentityClient.RefreshSessionToken(
-		rpcContextWithMeta(l.ctx),
+		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),
 		identityadapter.BuildRefreshRequest(req),
 	)
 	if rpcErr != nil {

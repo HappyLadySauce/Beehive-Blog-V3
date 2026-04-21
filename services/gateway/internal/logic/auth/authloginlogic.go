@@ -29,7 +29,7 @@ func NewAuthLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AuthLog
 
 func (l *AuthLoginLogic) AuthLogin(req *types.AuthLoginReq) (resp *types.AuthLoginResp, err error) {
 	rpcResp, rpcErr := l.svcCtx.IdentityClient.LoginLocalUser(
-		rpcContextWithMeta(l.ctx),
+		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),
 		identityadapter.BuildLoginRequest(req),
 	)
 	if rpcErr != nil {

@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// TestGetClientIPFromIncomingContext verifies only internal trusted metadata is accepted.
-// TestGetClientIPFromIncomingContext 验证仅接受内部受控 metadata 作为可信客户端 IP。
+// TestGetClientIPFromIncomingContext verifies trusted client IP requires authenticated internal caller context.
+// TestGetClientIPFromIncomingContext 验证可信客户端 IP 必须依赖已认证的内部调用方上下文。
 func TestGetClientIPFromIncomingContext(t *testing.T) {
 	t.Parallel()
 
@@ -26,33 +26,47 @@ func TestGetClientIPFromIncomingContext(t *testing.T) {
 		}
 	})
 
-	t.Run("reads internal trusted client ip", func(t *testing.T) {
+	t.Run("requires trusted caller marker", func(t *testing.T) {
 		t.Parallel()
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 			"x-beehive-trusted-client-ip", "198.51.100.7",
 		))
+		if clientIP := GetClientIPFromIncomingContext(ctx); clientIP != "" {
+			t.Fatalf("expected empty client ip without trusted caller marker, got %s", clientIP)
+		}
+
+		ctx = WithTrustedInternalCaller(ctx, "gateway")
 		if clientIP := GetClientIPFromIncomingContext(ctx); clientIP != "198.51.100.7" {
 			t.Fatalf("expected trusted client ip, got %s", clientIP)
 		}
 	})
 }
 
-// TestOutgoingContextWithRequestMeta verifies gateway only forwards internal trusted client ip.
-// TestOutgoingContextWithRequestMeta 验证 gateway 仅转发内部受控客户端 IP。
-func TestOutgoingContextWithRequestMeta(t *testing.T) {
+// TestBuildIdentityOutgoingContext verifies gateway forwards internal auth and trusted metadata.
+// TestBuildIdentityOutgoingContext 验证 gateway 会转发内部认证与可信元数据。
+func TestBuildIdentityOutgoingContext(t *testing.T) {
 	t.Parallel()
 
-	ctx := OutgoingContextWithRequestMeta(context.Background(), RequestMeta{
+	ctx := BuildIdentityOutgoingContext(context.Background(), RequestMeta{
 		ForwardedFor: "203.0.113.10",
 		RealIP:       "203.0.113.11",
 		ClientIP:     "198.51.100.7",
 		UserAgent:    "go-test",
 		RequestID:    "req-1",
+	}, InternalRPCAuth{
+		Token:  "secret-token",
+		Caller: "gateway",
 	})
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
 		t.Fatalf("expected outgoing metadata")
+	}
+	if got := md.Get("x-beehive-internal-auth-token"); len(got) != 1 || got[0] != "secret-token" {
+		t.Fatalf("expected internal auth token metadata, got %v", got)
+	}
+	if got := md.Get("x-beehive-internal-caller"); len(got) != 1 || got[0] != "gateway" {
+		t.Fatalf("expected internal caller metadata, got %v", got)
 	}
 	if got := md.Get("x-beehive-trusted-client-ip"); len(got) != 1 || got[0] != "198.51.100.7" {
 		t.Fatalf("expected internal trusted client ip metadata, got %v", got)

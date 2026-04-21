@@ -36,7 +36,7 @@ func (l *AuthLogoutLogic) AuthLogout(req *types.AuthLogoutReq) (resp *types.Auth
 	}
 
 	_, rpcErr := l.svcCtx.IdentityClient.LogoutSession(
-		rpcContextWithMeta(l.ctx),
+		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),
 		identityadapter.BuildLogoutRequest(authCtx.SessionID, req),
 	)
 	if rpcErr != nil {

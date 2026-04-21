@@ -3,8 +3,10 @@ package identity
 import (
 	"context"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 )
 
@@ -17,13 +19,20 @@ type ReadinessChecker interface {
 // Probe performs lightweight identity readiness checks through Ping RPC.
 // Probe 通过 Ping RPC 执行轻量级 identity 就绪检查。
 type Probe struct {
-	client pb.IdentityClient
+	client       pb.IdentityClient
+	internalAuth ctxmeta.InternalRPCAuth
 }
 
 // NewProbe creates a Probe instance.
 // NewProbe 创建 Probe 实例。
-func NewProbe(client pb.IdentityClient) *Probe {
-	return &Probe{client: client}
+func NewProbe(client pb.IdentityClient, rpcConf config.IdentityRPCConf) *Probe {
+	return &Probe{
+		client: client,
+		internalAuth: ctxmeta.InternalRPCAuth{
+			Token:  rpcConf.InternalAuthToken,
+			Caller: rpcConf.InternalCallerName,
+		},
+	}
 }
 
 // Check verifies the upstream identity service is ready.
@@ -33,7 +42,8 @@ func (p *Probe) Check(ctx context.Context) error {
 		return errs.New(errs.CodeGatewayNotReady, "identity client is not initialized")
 	}
 
-	resp, err := p.client.Ping(ctx, &pb.PingRequest{})
+	rpcCtx := ctxmeta.BuildIdentityOutgoingContext(ctx, ctxmeta.RequestMeta{}, p.internalAuth)
+	resp, err := p.client.Ping(rpcCtx, &pb.PingRequest{})
 	if err != nil {
 		if parsed, ok := errgrpcx.ParseStatus(err); ok {
 			return errs.Wrap(parsed, errs.CodeGatewayNotReady, "identity service is not ready")

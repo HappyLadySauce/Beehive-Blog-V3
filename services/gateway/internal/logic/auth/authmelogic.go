@@ -36,7 +36,7 @@ func (l *AuthMeLogic) AuthMe(req *types.AuthMeReq) (resp *types.AuthMeResp, err 
 	}
 
 	rpcResp, rpcErr := l.svcCtx.IdentityClient.GetCurrentUser(
-		rpcContextWithMeta(l.ctx),
+		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),
 		identityadapter.BuildMeRequest(authCtx.UserID),
 	)
 	if rpcErr != nil {

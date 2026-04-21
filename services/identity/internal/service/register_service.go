@@ -11,15 +11,6 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
 )
 
-const (
-	// usersUsernameUniqueConstraint is the database unique constraint for usernames.
-	// usersUsernameUniqueConstraint 是用户名唯一约束的数据库名称。
-	usersUsernameUniqueConstraint = "ux_identity_users_username"
-	// usersEmailUniqueConstraint is the database unique constraint for emails.
-	// usersEmailUniqueConstraint 是邮箱唯一约束的数据库名称。
-	usersEmailUniqueConstraint = "ux_identity_users_email"
-)
-
 // RegisterService handles local registration use cases.
 // RegisterService 处理本地注册用例。
 type RegisterService struct {
@@ -139,11 +130,11 @@ func (s *RegisterService) Execute(ctx context.Context, in RegisterLocalUserInput
 		return nil
 	})
 	if err != nil {
-		if repo.IsUniqueViolation(err) {
-			switch repo.UniqueViolationConstraint(err) {
-			case usersUsernameUniqueConstraint:
+		if conflictKind, ok := repo.ParseUniqueViolation(err); ok {
+			switch conflictKind {
+			case repo.UniqueViolationUsername:
 				return nil, errs.Wrap(err, errs.CodeIdentityUsernameAlreadyExists, "username already exists")
-			case usersEmailUniqueConstraint:
+			case repo.UniqueViolationEmail:
 				return nil, errs.Wrap(err, errs.CodeIdentityEmailAlreadyExists, "email already exists")
 			default:
 				return nil, errs.Wrap(err, errs.CodeIdentityInternal, "register user failed")

@@ -5,6 +5,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
 	"github.com/zeromicro/go-zero/rest"
@@ -19,9 +20,17 @@ type GatewaySecurityConf struct {
 	TrustedProxyCIDRs   []string `json:",optional"`
 }
 
+// IdentityRPCConf defines gateway access to the identity RPC service.
+// IdentityRPCConf 定义 gateway 访问 identity RPC 服务的配置。
+type IdentityRPCConf struct {
+	zrpc.RpcClientConf
+	InternalAuthToken  string `json:"InternalAuthToken"`
+	InternalCallerName string `json:"InternalCallerName,default=gateway"`
+}
+
 type Config struct {
 	rest.RestConf
-	IdentityRPC zrpc.RpcClientConf
+	IdentityRPC IdentityRPCConf
 	Security    GatewaySecurityConf
 }
 
@@ -32,5 +41,29 @@ func (c Config) Validate() error {
 		return fmt.Errorf("security.trusted_proxy_cidrs is invalid: %w", err)
 	}
 
+	hasHeaders := hasNonEmptyValues(c.Security.TrustedProxyHeaders)
+	hasCIDRs := hasNonEmptyValues(c.Security.TrustedProxyCIDRs)
+	if hasHeaders && !hasCIDRs {
+		return fmt.Errorf("security.trusted_proxy_headers requires non-empty security.trusted_proxy_cidrs")
+	}
+	if hasCIDRs && !hasHeaders {
+		return fmt.Errorf("security.trusted_proxy_cidrs requires non-empty security.trusted_proxy_headers")
+	}
+	if strings.TrimSpace(c.IdentityRPC.InternalAuthToken) == "" {
+		return fmt.Errorf("IdentityRPC.InternalAuthToken is required")
+	}
+	if strings.TrimSpace(c.IdentityRPC.InternalCallerName) == "" {
+		return fmt.Errorf("IdentityRPC.InternalCallerName is required")
+	}
+
 	return nil
+}
+
+func hasNonEmptyValues(values []string) bool {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return true
+		}
+	}
+	return false
 }

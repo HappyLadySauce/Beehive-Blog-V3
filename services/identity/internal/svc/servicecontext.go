@@ -28,20 +28,20 @@ type ServiceContext struct {
 	Services  *identityservice.Manager
 }
 
-func NewServiceContext(c config.Config) *ServiceContext {
+func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	if err := c.Validate(); err != nil {
-		panic(fmt.Errorf("identity service context validation failed: %w", err))
+		return nil, fmt.Errorf("identity service context validation failed: %w", err)
 	}
 
 	db, sqlDB, err := newPostgres(c.Postgres)
 	if err != nil {
-		panic(fmt.Errorf("initialize PostgreSQL failed: %w", err))
+		return nil, fmt.Errorf("initialize PostgreSQL failed: %w", err)
 	}
 
 	rdb, err := newRedis(c.StateRedis)
 	if err != nil {
 		_ = sqlDB.Close()
-		panic(fmt.Errorf("initialize Redis failed: %w", err))
+		return nil, fmt.Errorf("initialize Redis failed: %w", err)
 	}
 
 	store := repo.NewStore(db)
@@ -85,7 +85,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Store:     store,
 		Providers: providers,
 		Services:  services,
-	}
+	}, nil
 }
 
 func newPostgres(c config.PostgresConf) (*gorm.DB, *sql.DB, error) {

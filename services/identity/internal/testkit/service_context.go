@@ -16,6 +16,8 @@ import (
 // NewConfig 返回 identity 测试基线配置。
 func NewConfig() config.Config {
 	return config.Config{
+		InternalAuthToken: "test-internal-auth-token",
+		AllowedCallers:    []string{"gateway"},
 		Postgres: config.PostgresConf{
 			Host:   "unused",
 			User:   "unused",

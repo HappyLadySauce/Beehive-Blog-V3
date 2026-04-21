@@ -7,11 +7,10 @@ IdentityRPC:
     Hosts:
       - 127.0.0.1:2379
     Key: identity.rpc
+  InternalAuthToken: "replace-me-with-a-shared-internal-secret"
+  InternalCallerName: "gateway"
 
 Security:
   TokenPrefix: Bearer
   TrustedProxyCIDRs: []
-  TrustedProxyHeaders:
-    - X-Forwarded-For
-    - X-Real-IP
-    - Client-IP
+  TrustedProxyHeaders: []

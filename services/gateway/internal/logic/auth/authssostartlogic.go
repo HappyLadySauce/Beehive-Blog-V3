@@ -29,7 +29,7 @@ func NewAuthSsoStartLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Auth
 
 func (l *AuthSsoStartLogic) AuthSsoStart(req *types.AuthSsoStartReq) (resp *types.AuthSsoStartResp, err error) {
 	rpcResp, rpcErr := l.svcCtx.IdentityClient.StartSsoLogin(
-		rpcContextWithMeta(l.ctx),
+		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),
 		identityadapter.BuildSsoStartRequest(req),
 	)
 	if rpcErr != nil {

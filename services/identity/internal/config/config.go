@@ -11,10 +11,12 @@ import (
 type Config struct {
 	zrpc.RpcServerConf
 
-	Postgres   PostgresConf `json:"Postgres"`
-	StateRedis RedisConf    `json:"StateRedis"`
-	Security   SecurityConf `json:"Security"`
-	SSO        SSOConf      `json:"SSO,optional"`
+	Postgres          PostgresConf `json:"Postgres"`
+	StateRedis        RedisConf    `json:"StateRedis"`
+	Security          SecurityConf `json:"Security"`
+	SSO               SSOConf      `json:"SSO,optional"`
+	InternalAuthToken string       `json:"InternalAuthToken"`
+	AllowedCallers    []string     `json:"AllowedCallers"`
 }
 
 type RedisConf struct {
@@ -83,6 +85,17 @@ func (c Config) Validate() error {
 	}
 	if strings.TrimSpace(c.StateRedis.Host) == "" {
 		return fmt.Errorf("StateRedis.Host is required")
+	}
+	if strings.TrimSpace(c.InternalAuthToken) == "" {
+		return fmt.Errorf("InternalAuthToken is required")
+	}
+	if len(c.AllowedCallers) == 0 {
+		return fmt.Errorf("AllowedCallers is required")
+	}
+	for _, caller := range c.AllowedCallers {
+		if strings.TrimSpace(caller) == "" {
+			return fmt.Errorf("AllowedCallers must not contain empty values")
+		}
 	}
 	if strings.TrimSpace(c.Security.AccessTokenSecret) == "" {
 		return fmt.Errorf("Security.AccessTokenSecret is required")

@@ -60,6 +60,9 @@ const (
 	// CodeIdentityAccountLocked identifies locked accounts.
 	// CodeIdentityAccountLocked 标识已锁定账号。
 	CodeIdentityAccountLocked Code = 110207
+	// CodeIdentityInternalCallerUnauthorized identifies unauthorized internal callers.
+	// CodeIdentityInternalCallerUnauthorized 标识未通过认证的内部调用方。
+	CodeIdentityInternalCallerUnauthorized Code = 110208
 	// CodeIdentitySSOProviderDisabled identifies disabled SSO providers.
 	// CodeIdentitySSOProviderDisabled 标识已禁用的 SSO provider。
 	CodeIdentitySSOProviderDisabled Code = 110401

@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/middleware"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -78,9 +80,19 @@ func TestAuthRegisterMapsResponse(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeIdentityClient{
-		registerFn: func(_ context.Context, in *pb.RegisterLocalUserRequest, _ ...grpc.CallOption) (*pb.RegisterLocalUserResponse, error) {
+		registerFn: func(ctx context.Context, in *pb.RegisterLocalUserRequest, _ ...grpc.CallOption) (*pb.RegisterLocalUserResponse, error) {
 			if in.GetUsername() != "alice" {
 				t.Fatalf("unexpected username %s", in.GetUsername())
+			}
+			md, ok := metadata.FromOutgoingContext(ctx)
+			if !ok {
+				t.Fatalf("expected outgoing metadata")
+			}
+			if got := md.Get("x-beehive-internal-auth-token"); len(got) != 1 || got[0] != "secret" {
+				t.Fatalf("expected internal auth token metadata, got %v", got)
+			}
+			if got := md.Get("x-beehive-internal-caller"); len(got) != 1 || got[0] != "gateway" {
+				t.Fatalf("expected internal caller metadata, got %v", got)
 			}
 			return &pb.RegisterLocalUserResponse{
 				TokenPair: &pb.TokenPair{AccessToken: "a", RefreshToken: "r", ExpiresIn: 100, TokenType: "Bearer"},
@@ -91,7 +103,15 @@ func TestAuthRegisterMapsResponse(t *testing.T) {
 			}, nil
 		},
 	}
-	logic := NewAuthRegisterLogic(context.Background(), &svc.ServiceContext{IdentityClient: client})
+	logic := NewAuthRegisterLogic(context.Background(), &svc.ServiceContext{
+		Config: config.Config{
+			IdentityRPC: config.IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+		},
+		IdentityClient: client,
+	})
 	resp, err := logic.AuthRegister(&types.AuthRegisterReq{Username: "alice", Email: "alice@example.com", Password: "12345678"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -109,7 +129,15 @@ func TestAuthSsoStartErrorMapsTo412(t *testing.T) {
 			return nil, status.Error(codes.FailedPrecondition, "provider not ready")
 		},
 	}
-	logic := NewAuthSsoStartLogic(context.Background(), &svc.ServiceContext{IdentityClient: client})
+	logic := NewAuthSsoStartLogic(context.Background(), &svc.ServiceContext{
+		Config: config.Config{
+			IdentityRPC: config.IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+		},
+		IdentityClient: client,
+	})
 	_, err := logic.AuthSsoStart(&types.AuthSsoStartReq{Provider: "qq", RedirectUri: "https://example.com/cb"})
 	if err == nil {
 		t.Fatalf("expected error")
@@ -130,7 +158,15 @@ func TestAuthLogoutUsesTrustedSessionID(t *testing.T) {
 		},
 	}
 	ctx := middleware.WithAuthContext(context.Background(), middleware.AuthContext{SessionID: "trusted-session"})
-	logic := NewAuthLogoutLogic(ctx, &svc.ServiceContext{IdentityClient: client})
+	logic := NewAuthLogoutLogic(ctx, &svc.ServiceContext{
+		Config: config.Config{
+			IdentityRPC: config.IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+		},
+		IdentityClient: client,
+	})
 	resp, err := logic.AuthLogout(&types.AuthLogoutReq{RefreshToken: "refresh"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -143,7 +179,12 @@ func TestAuthLogoutUsesTrustedSessionID(t *testing.T) {
 func TestAuthMeRequiresTrustedContext(t *testing.T) {
 	t.Parallel()
 
-	logic := NewAuthMeLogic(context.Background(), &svc.ServiceContext{IdentityClient: &fakeIdentityClient{
+	logic := NewAuthMeLogic(context.Background(), &svc.ServiceContext{Config: config.Config{
+		IdentityRPC: config.IdentityRPCConf{
+			InternalAuthToken:  "secret",
+			InternalCallerName: "gateway",
+		},
+	}, IdentityClient: &fakeIdentityClient{
 		getCurrentFn: func(_ context.Context, _ *pb.GetCurrentUserRequest, _ ...grpc.CallOption) (*pb.GetCurrentUserResponse, error) {
 			return &pb.GetCurrentUserResponse{}, nil
 		},

@@ -5,6 +5,10 @@ Etcd:
   - 127.0.0.1:2379
   Key: identity.rpc
 
+InternalAuthToken: "replace-me-with-a-shared-internal-secret"
+AllowedCallers:
+  - gateway
+
 Postgres:
   Host: 127.0.0.1
   Port: 5432
