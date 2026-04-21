@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 	"google.golang.org/grpc"
@@ -55,10 +56,10 @@ func TestProbeCheckInjectsInternalAuth(t *testing.T) {
 			if !ok {
 				t.Fatalf("expected outgoing metadata")
 			}
-			if got := md.Get("x-beehive-internal-auth-token"); len(got) != 1 || got[0] != "secret" {
+			if got := md.Get(ctxmeta.MetadataKeyInternalAuthToken); len(got) != 1 || got[0] != "secret" {
 				t.Fatalf("expected internal auth token metadata, got %v", got)
 			}
-			if got := md.Get("x-beehive-internal-caller"); len(got) != 1 || got[0] != "gateway" {
+			if got := md.Get(ctxmeta.MetadataKeyInternalCaller); len(got) != 1 || got[0] != "gateway" {
 				t.Fatalf("expected internal caller metadata, got %v", got)
 			}
 

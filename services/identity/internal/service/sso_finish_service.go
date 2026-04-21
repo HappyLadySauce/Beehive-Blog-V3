@@ -17,6 +17,27 @@ type validatedOAuthState struct {
 	ID int64
 }
 
+type ssoStateFailure struct {
+	reason string
+	err    error
+}
+
+func (e *ssoStateFailure) Error() string {
+	if e == nil || e.err == nil {
+		return ""
+	}
+
+	return e.err.Error()
+}
+
+func (e *ssoStateFailure) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+
+	return e.err
+}
+
 // SSOFinishService handles SSO callback completion.
 // SSOFinishService 处理 SSO callback 完成流程。
 type SSOFinishService struct {
@@ -64,7 +85,7 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 
 	stateRow, err := s.validateOAuthState(ctx, providerName, strings.TrimSpace(in.State), redirectURI)
 	if err != nil {
-		s.writeFailureAudit(ctx, in, providerName, "invalid_state")
+		s.writeFailureAudit(ctx, in, providerName, ssoStateFailureReason(err, "invalid_state"))
 		return nil, err
 	}
 
@@ -93,15 +114,21 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 		lockedState, err := store.OAuthLoginStates.GetForUpdateByProviderState(ctx, providerName, strings.TrimSpace(in.State))
 		if err != nil {
 			if repo.IsNotFound(err) {
-				return errs.New(errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+				return newSSOStateFailure("state_not_found", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
 			}
 			return err
 		}
-		if lockedState.ID != stateRow.ID || lockedState.ConsumedAt != nil || lockedState.ExpiresAt.Before(now) {
-			return errs.New(errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+		if lockedState.ID != stateRow.ID {
+			return newSSOStateFailure("state_already_consumed", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+		}
+		if lockedState.ConsumedAt != nil {
+			return newSSOStateFailure("state_already_consumed", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+		}
+		if lockedState.ExpiresAt.Before(now) {
+			return newSSOStateFailure("state_expired", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
 		}
 		if lockedState.RedirectURI != redirectURI {
-			return errs.New(errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
+			return newSSOStateFailure("state_redirect_mismatch", errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
 		}
 
 		fed, err := store.FederatedIdentities.GetByProviderSubject(ctx, providerName, profile.Subject)
@@ -232,8 +259,8 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 		return nil
 	})
 	if err != nil {
-		if errorsIsSSOStateInvalid(err) {
-			s.writeFailureAudit(ctx, in, providerName, "state_already_consumed")
+		if shouldWriteSSOStateFailureAudit(err) {
+			s.writeFailureAudit(ctx, in, providerName, ssoStateFailureReason(err, "invalid_state"))
 		}
 		return nil, err
 	}
@@ -262,15 +289,18 @@ func (s *SSOFinishService) validateOAuthState(ctx context.Context, providerName,
 		stateRow, err := store.OAuthLoginStates.GetForUpdateByProviderState(ctx, providerName, state)
 		if err != nil {
 			if repo.IsNotFound(err) {
-				return errs.New(errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+				return newSSOStateFailure("state_not_found", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
 			}
 			return err
 		}
-		if stateRow.ConsumedAt != nil || stateRow.ExpiresAt.Before(now) {
-			return errs.New(errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+		if stateRow.ConsumedAt != nil {
+			return newSSOStateFailure("state_already_consumed", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+		}
+		if stateRow.ExpiresAt.Before(now) {
+			return newSSOStateFailure("state_expired", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
 		}
 		if stateRow.RedirectURI != redirectURI {
-			return errs.New(errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
+			return newSSOStateFailure("state_redirect_mismatch", errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
 		}
 
 		result.ID = stateRow.ID
@@ -296,6 +326,27 @@ func (s *SSOFinishService) writeFailureAudit(ctx context.Context, in FinishSSOIn
 			"reason": reason,
 		}),
 	})
+}
+
+func newSSOStateFailure(reason string, code errs.Code, message string) error {
+	return &ssoStateFailure{
+		reason: reason,
+		err:    errs.New(code, message),
+	}
+}
+
+func ssoStateFailureReason(err error, fallback string) string {
+	var stateErr *ssoStateFailure
+	if errors.As(err, &stateErr) && strings.TrimSpace(stateErr.reason) != "" {
+		return stateErr.reason
+	}
+
+	return fallback
+}
+
+func shouldWriteSSOStateFailureAudit(err error) bool {
+	var stateErr *ssoStateFailure
+	return errors.As(err, &stateErr)
 }
 
 // errorsIsSSOStateInvalid reports whether the error represents an invalid or consumed SSO state.

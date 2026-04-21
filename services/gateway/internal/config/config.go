@@ -34,6 +34,12 @@ type Config struct {
 	Security    GatewaySecurityConf
 }
 
+var supportedTrustedProxyHeaders = map[string]struct{}{
+	"x-forwarded-for": {},
+	"x-real-ip":       {},
+	"client-ip":       {},
+}
+
 // Validate verifies gateway configuration before startup.
 // Validate 在启动前验证 gateway 配置。
 func (c Config) Validate() error {
@@ -48,6 +54,15 @@ func (c Config) Validate() error {
 	}
 	if hasCIDRs && !hasHeaders {
 		return fmt.Errorf("security.trusted_proxy_cidrs requires non-empty security.trusted_proxy_headers")
+	}
+	for _, rawHeader := range c.Security.TrustedProxyHeaders {
+		header := strings.ToLower(strings.TrimSpace(rawHeader))
+		if header == "" {
+			continue
+		}
+		if _, ok := supportedTrustedProxyHeaders[header]; !ok {
+			return fmt.Errorf("security.trusted_proxy_headers contains unsupported value %q", rawHeader)
+		}
 	}
 	if strings.TrimSpace(c.IdentityRPC.InternalAuthToken) == "" {
 		return fmt.Errorf("IdentityRPC.InternalAuthToken is required")

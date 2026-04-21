@@ -131,6 +131,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		if !errors.Is(err, errs.E(errs.CodeIdentitySSOStateInvalid)) {
 			t.Fatalf("expected invalid sso state error, got %v", err)
 		}
+		if reason := latestSSOFailureAuditReason(t, deps); reason != "state_not_found" {
+			t.Fatalf("expected state_not_found audit reason, got %s", reason)
+		}
 		if tokenHits.Load() != 0 {
 			t.Fatalf("expected no upstream token exchange before invalid state rejection, got %d hits", tokenHits.Load())
 		}
@@ -183,6 +186,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		if !errors.Is(err, errs.E(errs.CodeIdentitySSOStateInvalid)) {
 			t.Fatalf("expected invalid sso state error, got %v", err)
 		}
+		if reason := latestSSOFailureAuditReason(t, deps); reason != "state_already_consumed" {
+			t.Fatalf("expected state_already_consumed audit reason, got %s", reason)
+		}
 		if tokenHits.Load() != 0 {
 			t.Fatalf("expected no upstream token exchange for consumed state, got %d hits", tokenHits.Load())
 		}
@@ -233,6 +239,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		})
 		if !errors.Is(err, errs.E(errs.CodeIdentitySSOStateInvalid)) {
 			t.Fatalf("expected invalid sso state error, got %v", err)
+		}
+		if reason := latestSSOFailureAuditReason(t, deps); reason != "state_expired" {
+			t.Fatalf("expected state_expired audit reason, got %s", reason)
 		}
 		if tokenHits.Load() != 0 {
 			t.Fatalf("expected no upstream token exchange for expired state, got %d hits", tokenHits.Load())
@@ -345,6 +354,13 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		if len(audits) == 0 {
 			t.Fatalf("expected at least one failure audit")
 		}
+		var detail map[string]any
+		if err := json.Unmarshal(audits[len(audits)-1].Detail, &detail); err != nil {
+			t.Fatalf("failed to parse audit detail: %v", err)
+		}
+		if detail["reason"] != "exchange_code_failed" {
+			t.Fatalf("expected exchange_code_failed audit reason, got %v", detail["reason"])
+		}
 	})
 
 	t.Run("existing federated identity reuses user", func(t *testing.T) {
@@ -395,4 +411,25 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 			t.Fatalf("expected existing user_id=%d, got %d", user.ID, result.User.ID)
 		}
 	})
+}
+
+func latestSSOFailureAuditReason(t *testing.T, deps service.Dependencies) string {
+	t.Helper()
+
+	var audit entity.IdentityAudit
+	if err := deps.Store.DB().
+		WithContext(context.Background()).
+		Where("event_type = ? AND result = ?", auth.AuditEventFinishSSO, auth.AuditResultFailure).
+		Order("id desc").
+		First(&audit).Error; err != nil {
+		t.Fatalf("failed to load latest sso failure audit: %v", err)
+	}
+
+	detail := map[string]any{}
+	if err := json.Unmarshal(audit.Detail, &detail); err != nil {
+		t.Fatalf("failed to parse audit detail: %v", err)
+	}
+
+	reason, _ := detail["reason"].(string)
+	return reason
 }

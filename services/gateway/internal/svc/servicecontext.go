@@ -28,7 +28,10 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		return nil, err
 	}
 
-	identityRPC := zrpc.MustNewClient(c.IdentityRPC.RpcClientConf)
+	identityRPC, err := zrpc.NewClient(c.IdentityRPC.RpcClientConf)
+	if err != nil {
+		return nil, fmt.Errorf("create identity rpc client: %w", err)
+	}
 	identityClient := pb.NewIdentityClient(identityRPC.Conn())
 	identityProbe := identityadapter.NewProbe(identityClient, c.IdentityRPC)
 

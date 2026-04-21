@@ -10,6 +10,7 @@
 
 - 只放配置结构定义
 - 只负责表达配置字段、tag 约束和 `Validate()` 校验入口
+- 启动前必须通过 `Validate()` 给出显式错误，不允许把配置错误留到 runtime panic
 - 不在这里初始化数据库、Redis、MQ、RPC client
 
 ### `services/<svc>/internal/svc`
@@ -23,6 +24,7 @@
   - JWT helper
   - OAuth provider client
 - 不在这里写业务规则
+- 初始化失败必须显式返回 `error`，不允许继续保留 `Must*` 或 panic 兜底路径
 
 ### `services/<svc>/internal/model`
 

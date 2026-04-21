@@ -38,8 +38,8 @@ func TestInternalAuthInterceptor(t *testing.T) {
 		t.Parallel()
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-			internalAuthTokenKey, "secret",
-			internalCallerKey, "gateway",
+			ctxmeta.MetadataKeyInternalAuthToken, "secret",
+			ctxmeta.MetadataKeyInternalCaller, "gateway",
 		))
 		resp, err := interceptor.Unary()(ctx, nil, info, handler)
 		if err != nil {
@@ -54,7 +54,7 @@ func TestInternalAuthInterceptor(t *testing.T) {
 		t.Parallel()
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-			internalCallerKey, "gateway",
+			ctxmeta.MetadataKeyInternalCaller, "gateway",
 		))
 		_, err := interceptor.Unary()(ctx, nil, info, handler)
 		assertUnauthenticatedInternalCaller(t, err)
@@ -64,8 +64,8 @@ func TestInternalAuthInterceptor(t *testing.T) {
 		t.Parallel()
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-			internalAuthTokenKey, "wrong",
-			internalCallerKey, "gateway",
+			ctxmeta.MetadataKeyInternalAuthToken, "wrong",
+			ctxmeta.MetadataKeyInternalCaller, "gateway",
 		))
 		_, err := interceptor.Unary()(ctx, nil, info, handler)
 		assertUnauthenticatedInternalCaller(t, err)
@@ -75,8 +75,8 @@ func TestInternalAuthInterceptor(t *testing.T) {
 		t.Parallel()
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-			internalAuthTokenKey, "secret",
-			internalCallerKey, "search",
+			ctxmeta.MetadataKeyInternalAuthToken, "secret",
+			ctxmeta.MetadataKeyInternalCaller, "search",
 		))
 		_, err := interceptor.Unary()(ctx, nil, info, handler)
 		assertUnauthenticatedInternalCaller(t, err)

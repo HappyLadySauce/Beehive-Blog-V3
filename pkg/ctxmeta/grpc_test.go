@@ -30,7 +30,7 @@ func TestGetClientIPFromIncomingContext(t *testing.T) {
 		t.Parallel()
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-			"x-beehive-trusted-client-ip", "198.51.100.7",
+			MetadataKeyTrustedClientIP, "198.51.100.7",
 		))
 		if clientIP := GetClientIPFromIncomingContext(ctx); clientIP != "" {
 			t.Fatalf("expected empty client ip without trusted caller marker, got %s", clientIP)
@@ -62,13 +62,13 @@ func TestBuildIdentityOutgoingContext(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected outgoing metadata")
 	}
-	if got := md.Get("x-beehive-internal-auth-token"); len(got) != 1 || got[0] != "secret-token" {
+	if got := md.Get(MetadataKeyInternalAuthToken); len(got) != 1 || got[0] != "secret-token" {
 		t.Fatalf("expected internal auth token metadata, got %v", got)
 	}
-	if got := md.Get("x-beehive-internal-caller"); len(got) != 1 || got[0] != "gateway" {
+	if got := md.Get(MetadataKeyInternalCaller); len(got) != 1 || got[0] != "gateway" {
 		t.Fatalf("expected internal caller metadata, got %v", got)
 	}
-	if got := md.Get("x-beehive-trusted-client-ip"); len(got) != 1 || got[0] != "198.51.100.7" {
+	if got := md.Get(MetadataKeyTrustedClientIP); len(got) != 1 || got[0] != "198.51.100.7" {
 		t.Fatalf("expected internal trusted client ip metadata, got %v", got)
 	}
 	if got := md.Get("x-forwarded-for"); len(got) != 0 {

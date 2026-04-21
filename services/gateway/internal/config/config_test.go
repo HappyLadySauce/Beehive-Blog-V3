@@ -25,6 +25,24 @@ func TestConfigValidate(t *testing.T) {
 		}
 	})
 
+	t.Run("trusted proxy headers are case insensitive", func(t *testing.T) {
+		t.Parallel()
+
+		conf := Config{
+			IdentityRPC: IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			Security: GatewaySecurityConf{
+				TrustedProxyHeaders: []string{"x-forwarded-for", "CLIENT-IP"},
+				TrustedProxyCIDRs:   []string{"127.0.0.0/8"},
+			},
+		}
+		if err := conf.Validate(); err != nil {
+			t.Fatalf("expected case-insensitive trusted proxy headers to pass, got %v", err)
+		}
+	})
+
 	t.Run("invalid trusted proxy cidrs", func(t *testing.T) {
 		t.Parallel()
 
@@ -40,6 +58,24 @@ func TestConfigValidate(t *testing.T) {
 		}
 		if err := conf.Validate(); err == nil {
 			t.Fatalf("expected config validation to fail")
+		}
+	})
+
+	t.Run("unsupported trusted proxy header should fail", func(t *testing.T) {
+		t.Parallel()
+
+		conf := Config{
+			IdentityRPC: IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			Security: GatewaySecurityConf{
+				TrustedProxyHeaders: []string{"X-Forwaded-For"},
+				TrustedProxyCIDRs:   []string{"127.0.0.0/8"},
+			},
+		}
+		if err := conf.Validate(); err == nil {
+			t.Fatalf("expected config validation to fail for unsupported trusted proxy header")
 		}
 	})
 

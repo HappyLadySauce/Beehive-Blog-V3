@@ -10,14 +10,29 @@ import (
 )
 
 const (
-	headerXForwardedFor  = "x-forwarded-for"
-	headerXRealIP        = "x-real-ip"
-	headerClientIP       = "client-ip"
-	headerInternalToken  = "x-beehive-internal-auth-token"
-	headerInternalCaller = "x-beehive-internal-caller"
-	headerTrustedIP      = "x-beehive-trusted-client-ip"
-	headerUserAgent      = "user-agent"
-	headerXRequestID     = "x-request-id"
+	headerXForwardedFor = "x-forwarded-for"
+	headerXRealIP       = "x-real-ip"
+	headerClientIP      = "client-ip"
+	headerUserAgent     = "user-agent"
+	headerXRequestID    = "x-request-id"
+)
+
+const (
+	// MetadataKeyInternalAuthToken is the metadata key for gateway -> identity shared-secret authentication.
+	// MetadataKeyInternalAuthToken 是 gateway -> identity 共享密钥认证的 metadata key。
+	MetadataKeyInternalAuthToken = "x-beehive-internal-auth-token"
+	// MetadataKeyInternalCaller is the metadata key for the authenticated internal caller name.
+	// MetadataKeyInternalCaller 是已认证内部调用方名称的 metadata key。
+	MetadataKeyInternalCaller = "x-beehive-internal-caller"
+	// MetadataKeyTrustedClientIP is the metadata key for the trusted client IP forwarded by gateway.
+	// MetadataKeyTrustedClientIP 是由 gateway 转发的可信客户端 IP metadata key。
+	MetadataKeyTrustedClientIP = "x-beehive-trusted-client-ip"
+	// MetadataKeyRequestID is the metadata key for the current request identifier.
+	// MetadataKeyRequestID 是当前请求标识的 metadata key。
+	MetadataKeyRequestID = headerXRequestID
+	// MetadataKeyUserAgent is the metadata key for the client user agent.
+	// MetadataKeyUserAgent 是客户端 User-Agent 的 metadata key。
+	MetadataKeyUserAgent = headerUserAgent
 )
 
 type trustedCallerContextKey struct{}
@@ -58,7 +73,7 @@ func GetClientIPFromIncomingContext(ctx context.Context) string {
 		return ""
 	}
 
-	values := md.Get(headerTrustedIP)
+	values := md.Get(MetadataKeyTrustedClientIP)
 	if len(values) == 0 {
 		return ""
 	}
@@ -91,7 +106,7 @@ func GetRequestIDFromIncomingContext(ctx context.Context) string {
 		return ""
 	}
 
-	values := md.Get(headerXRequestID)
+	values := md.Get(MetadataKeyRequestID)
 	if len(values) == 0 {
 		return ""
 	}
@@ -233,11 +248,11 @@ func BuildIdentityOutgoingContext(ctx context.Context, meta RequestMeta, auth In
 		pairs = append(pairs, key, value)
 	}
 
-	appendIfNotEmpty(headerInternalToken, strings.TrimSpace(auth.Token))
-	appendIfNotEmpty(headerInternalCaller, strings.TrimSpace(auth.Caller))
-	appendIfNotEmpty(headerTrustedIP, meta.ClientIP)
-	appendIfNotEmpty(headerUserAgent, meta.UserAgent)
-	appendIfNotEmpty(headerXRequestID, meta.RequestID)
+	appendIfNotEmpty(MetadataKeyInternalAuthToken, strings.TrimSpace(auth.Token))
+	appendIfNotEmpty(MetadataKeyInternalCaller, strings.TrimSpace(auth.Caller))
+	appendIfNotEmpty(MetadataKeyTrustedClientIP, meta.ClientIP)
+	appendIfNotEmpty(MetadataKeyUserAgent, meta.UserAgent)
+	appendIfNotEmpty(MetadataKeyRequestID, meta.RequestID)
 
 	if len(pairs) == 0 {
 		return ctx

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/subtle"
 	"strings"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
@@ -15,8 +16,6 @@ import (
 
 const (
 	identityServicePrefix = "/identity.Identity/"
-	internalAuthTokenKey  = "x-beehive-internal-auth-token"
-	internalCallerKey     = "x-beehive-internal-caller"
 )
 
 // InternalAuthInterceptor authenticates all business RPC calls from trusted internal callers.
@@ -80,12 +79,12 @@ func (i *InternalAuthInterceptor) authenticate(ctx context.Context) (string, err
 		return "", errs.New(errs.CodeIdentityInternalCallerUnauthorized, "internal caller authentication failed")
 	}
 
-	token := strings.TrimSpace(firstMetadataValue(md, internalAuthTokenKey))
-	caller := strings.TrimSpace(firstMetadataValue(md, internalCallerKey))
+	token := strings.TrimSpace(firstMetadataValue(md, ctxmeta.MetadataKeyInternalAuthToken))
+	caller := strings.TrimSpace(firstMetadataValue(md, ctxmeta.MetadataKeyInternalCaller))
 	if token == "" || caller == "" {
 		return caller, errs.New(errs.CodeIdentityInternalCallerUnauthorized, "internal caller authentication failed")
 	}
-	if token != i.token {
+	if subtle.ConstantTimeCompare([]byte(token), []byte(i.token)) != 1 {
 		return caller, errs.New(errs.CodeIdentityInternalCallerUnauthorized, "internal caller authentication failed")
 	}
 	if _, ok := i.allowedCallers[caller]; !ok {

@@ -72,6 +72,7 @@ logs.Ctx(ctx).Error(
 - 客户端响应与服务端日志必须分离：
   - 客户端只看 `code/message/reference/request_id`
   - 服务端日志可以看 `cause`
+- 安全审计日志中的 `reason` 必须反映真实失败原因，不允许把不存在、过期、已消费、并发竞争等不同事件压成同一个 reason
 
 ## 敏感信息黑名单
 
