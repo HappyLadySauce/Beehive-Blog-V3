@@ -11,6 +11,30 @@
 - [日志规范](./logging-conventions.md)
 - [代码评审清单](./review-checklist.md)
 
+## Skill 体系
+
+当前仓库的 `.codex/skills/` 建议按“阶段型 + 能力型 + 规范型”三层使用：
+
+- 阶段型：
+  - `v3-start-task`
+  - `v3-during-task`
+  - `v3-finish-task`
+- 能力型：
+  - `v3-contract-first`
+  - `v3-goctl`
+  - `v3-review-rules`
+- 规范型：
+  - `v3-coding-standards`
+  - `v3-error-and-logging`
+  - `v3-testing`
+
+旧 skill：
+
+- `goctl-workflow`
+- `contract-first-goctl`
+
+当前只作为过渡入口保留，后续应优先使用新的拆分 skill，而不是继续把所有规则一次性加载。
+
 当前约定：
 
 - 本目录是 `v3` 编码与配置规范的唯一基线

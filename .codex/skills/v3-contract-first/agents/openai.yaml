@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 Contract First"
+  short_description: "Apply the contract-first change order for v3 API and proto contracts"
+  default_prompt: "Use $v3-contract-first to determine the correct API/proto change sequence before generation or implementation."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 goctl"
+  short_description: "Use the correct goctl commands and generation boundaries for v3"
+  default_prompt: "Use $v3-goctl to run the correct goctl commands and explain generated-code boundaries in this repo."

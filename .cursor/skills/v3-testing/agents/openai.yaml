@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 Testing"
+  short_description: "Apply repository-wide testing layers and Testcontainers defaults"
+  default_prompt: "Use $v3-testing to place tests in the correct layer and follow the repository's integration-test standards."

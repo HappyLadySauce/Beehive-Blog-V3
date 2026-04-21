@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 Review Rules"
+  short_description: "Run and explain the automated review rules for errors and logs"
+  default_prompt: "Use $v3-review-rules to run review-rule checks and enforce the project's error and logging gate."

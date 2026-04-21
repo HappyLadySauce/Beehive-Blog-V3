@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 Finish Task"
+  short_description: "Run final verification and hand-off checks for a v3 task"
+  default_prompt: "Use $v3-finish-task to run final checks, review-rule validation, and delivery readiness for this task."

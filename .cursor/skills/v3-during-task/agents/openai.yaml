@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 During Task"
+  short_description: "Guide implementation-stage decisions for handwritten v3 code"
+  default_prompt: "Use $v3-during-task to keep this implementation inside the correct layer and route to the right standards skills."
