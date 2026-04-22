@@ -8,7 +8,6 @@ import (
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
-	identityprovider "github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth/provider"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
 )
@@ -131,7 +130,7 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 			return newSSOStateFailure("state_redirect_mismatch", errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
 		}
 
-		fed, err := store.FederatedIdentities.GetByProviderSubject(ctx, providerName, profile.Subject)
+		fed, err := store.FederatedIdentities.GetByProviderIdentity(ctx, providerName, profile.Subject, profile.OpenID, profile.UnionID)
 		if err != nil && !repo.IsNotFound(err) {
 			return err
 		}
@@ -147,29 +146,38 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 			if err := store.FederatedIdentities.TouchLogin(
 				ctx,
 				fed.ID,
+				stringPtr(profile.Subject),
+				stringPtr(profile.SubjectType),
 				profile.Email,
 				stringPtr(profile.DisplayName),
 				profile.AvatarURL,
+				stringPtr(profile.Login),
+				profile.OpenID,
+				profile.UnionID,
 				profile.RawProfile,
 				now,
 			); err != nil {
 				return err
 			}
 		} else {
-			if profile.Email != nil && *profile.Email != "" {
+			if profile.Email != nil && *profile.Email != "" && profile.EmailVerified {
 				user, err = store.Users.GetByEmail(ctx, *profile.Email)
 				if err != nil && !repo.IsNotFound(err) {
 					return err
 				}
 			}
 			if user == nil {
-				username, err := buildUniqueGitHubUsername(ctx, store, profile.Login)
+				username, err := buildUniqueSSOUsername(ctx, store, providerName, profile.Login, profile.Subject)
 				if err != nil {
 					return err
 				}
 				nickname := profile.DisplayName
 				if strings.TrimSpace(nickname) == "" {
-					nickname = profile.Login
+					if strings.TrimSpace(profile.Login) != "" {
+						nickname = profile.Login
+					} else {
+						nickname = providerName + " user"
+					}
 				}
 				user = &entity.User{
 					Username:    username,
@@ -194,6 +202,8 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 				Provider:            providerName,
 				ProviderSubject:     profile.Subject,
 				ProviderSubjectType: profile.SubjectType,
+				UnionID:             profile.UnionID,
+				OpenID:              profile.OpenID,
 				ProviderLogin:       stringPtr(profile.Login),
 				ProviderEmail:       profile.Email,
 				ProviderDisplayName: stringPtr(profile.DisplayName),
@@ -348,5 +358,3 @@ func shouldWriteSSOStateFailureAudit(err error) bool {
 	var stateErr *ssoStateFailure
 	return errors.As(err, &stateErr)
 }
-
-var _ identityprovider.CallbackProvider = (*identityprovider.GitHubClient)(nil)

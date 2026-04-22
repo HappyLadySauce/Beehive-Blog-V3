@@ -18,8 +18,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// TestSSOFinishServiceExecute verifies GitHub callback completion behavior.
-// TestSSOFinishServiceExecute 验证 GitHub callback 完成行为。
+// TestSSOFinishServiceExecute verifies SSO callback completion behavior.
+// TestSSOFinishServiceExecute 验证 SSO callback 完成行为。
 func TestSSOFinishServiceExecute(t *testing.T) {
 	now := time.Date(2026, 4, 20, 12, 0, 0, 0, time.UTC)
 
@@ -36,12 +36,14 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 					"token_type":   "bearer",
 				})
 			case "/user":
-				_ = json.NewEncoder(w).Encode(map[string]any{
-					"id":         12345,
-					"login":      "octocat",
-					"name":       "The Octocat",
-					"email":      "octocat@example.com",
-					"avatar_url": "https://example.com/avatar.png",
+				writeGitHubUserResponse(w, 12345, "octocat", "The Octocat", "octocat@example.com")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, []map[string]any{
+					{
+						"email":    "octocat@example.com",
+						"verified": true,
+						"primary":  true,
+					},
 				})
 			default:
 				http.NotFound(w, r)
@@ -73,18 +75,123 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		}
 	})
 
+	t.Run("qq happy path", func(t *testing.T) {
+		deps := newDeps(t, now)
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderQQ, "qq-state-1", deps.Config.SSO.QQ.RedirectURL)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "qq-access-token",
+					"expires_in":   7776000,
+				})
+			case "/me":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"client_id": "qq-client-id",
+					"openid":    "qq-openid-123",
+				})
+			case "/userinfo":
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"ret":            0,
+					"nickname":       "QQ Nick",
+					"figureurl_qq_2": "https://example.com/qq-avatar.png",
+				})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := qqClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.AuthorizeURL = server.URL + "/authorize"
+		client.TokenURL = server.URL + "/token"
+		client.OpenIDURL = server.URL + "/me"
+		client.UserInfoURL = server.URL + "/userinfo"
+
+		svc := service.NewSSOFinishService(deps)
+		result, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderQQ,
+			Code:        "code-qq-123",
+			State:       "qq-state-1",
+			RedirectURI: deps.Config.SSO.QQ.RedirectURL,
+			ClientIP:    "127.0.0.1",
+		})
+		if err != nil {
+			t.Fatalf("expected qq sso finish to succeed, got %v", err)
+		}
+		if result.User == nil || result.Session == nil {
+			t.Fatalf("expected user and session to be returned")
+		}
+	})
+
+	t.Run("wechat happy path prefers unionid", func(t *testing.T) {
+		deps := newDeps(t, now)
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderWeChat, "wechat-state-1", deps.Config.SSO.WeChat.RedirectURL)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token":  "wechat-access-token",
+					"refresh_token": "wechat-refresh-token",
+					"openid":        "wechat-openid-123",
+					"unionid":       "wechat-unionid-456",
+					"scope":         "snsapi_login",
+				})
+			case "/userinfo":
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"openid":     "wechat-openid-123",
+					"unionid":    "wechat-unionid-456",
+					"nickname":   "WeChat Nick",
+					"headimgurl": "https://example.com/wechat-avatar.png",
+				})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := wechatClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.AuthorizeURL = server.URL + "/authorize"
+		client.TokenURL = server.URL + "/token"
+		client.UserInfoURL = server.URL + "/userinfo"
+
+		svc := service.NewSSOFinishService(deps)
+		result, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderWeChat,
+			Code:        "code-wechat-123",
+			State:       "wechat-state-1",
+			RedirectURI: deps.Config.SSO.WeChat.RedirectURL,
+			ClientIP:    "127.0.0.1",
+		})
+		if err != nil {
+			t.Fatalf("expected wechat sso finish to succeed, got %v", err)
+		}
+		if result.User == nil || result.Session == nil {
+			t.Fatalf("expected user and session to be returned")
+		}
+	})
+
 	t.Run("provider not ready", func(t *testing.T) {
 		deps := newDeps(t, now)
+		deps.Config.SSO.QQ.ClientSecret = ""
+		deps.Providers = testkit.NewProviderRegistry(deps.Config)
 		svc := service.NewSSOFinishService(deps)
 
 		_, err := svc.Execute(context.Background(), service.FinishSSOInput{
-			Provider:    "qq",
+			Provider:    auth.ProviderQQ,
 			Code:        "code-123",
 			State:       "state-1",
-			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+			RedirectURI: deps.Config.SSO.QQ.RedirectURL,
 		})
-		if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
-			t.Fatalf("expected invalid argument error, got %v", err)
+		if !errors.Is(err, errs.E(errs.CodeIdentitySSOProviderNotReady)) {
+			t.Fatalf("expected provider not ready error, got %v", err)
 		}
 	})
 
@@ -102,11 +209,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 					"token_type":   "bearer",
 				})
 			case "/user":
-				_ = json.NewEncoder(w).Encode(map[string]any{
-					"id":    12345,
-					"login": "octocat",
-					"name":  "The Octocat",
-				})
+				writeGitHubUserResponse(w, 12345, "octocat", "The Octocat", "")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, nil)
 			default:
 				http.NotFound(w, r)
 			}
@@ -157,11 +262,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 					"token_type":   "bearer",
 				})
 			case "/user":
-				_ = json.NewEncoder(w).Encode(map[string]any{
-					"id":    12345,
-					"login": "octocat",
-					"name":  "The Octocat",
-				})
+				writeGitHubUserResponse(w, 12345, "octocat", "The Octocat", "")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, nil)
 			default:
 				http.NotFound(w, r)
 			}
@@ -211,11 +314,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 					"token_type":   "bearer",
 				})
 			case "/user":
-				_ = json.NewEncoder(w).Encode(map[string]any{
-					"id":    12345,
-					"login": "octocat",
-					"name":  "The Octocat",
-				})
+				writeGitHubUserResponse(w, 12345, "octocat", "The Octocat", "")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, nil)
 			default:
 				http.NotFound(w, r)
 			}
@@ -279,10 +380,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 					"token_type":   "bearer",
 				})
 			case "/user":
-				_ = json.NewEncoder(w).Encode(map[string]any{
-					"login": "octocat",
-					"name":  "The Octocat",
-				})
+				writeGitHubUserResponse(w, 0, "octocat", "The Octocat", "")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, nil)
 			default:
 				http.NotFound(w, r)
 			}
@@ -378,11 +478,9 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 					"token_type":   "bearer",
 				})
 			case "/user":
-				_ = json.NewEncoder(w).Encode(map[string]any{
-					"id":    12345,
-					"login": "octocat",
-					"name":  "The Octocat",
-				})
+				writeGitHubUserResponse(w, 12345, "octocat", "The Octocat", "")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, nil)
 			default:
 				http.NotFound(w, r)
 			}
@@ -411,6 +509,119 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 			t.Fatalf("expected existing user_id=%d, got %d", user.ID, result.User.ID)
 		}
 	})
+
+	t.Run("verified github email links existing local user", func(t *testing.T) {
+		deps := newDeps(t, now)
+		existingUser := testkit.CreateUser(t, deps.Store, func(user *entity.User) {
+			email := "octocat@example.com"
+			user.Email = &email
+		})
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderGitHub, "state-link-verified", deps.Config.SSO.GitHub.RedirectURL)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "github-access-token",
+					"token_type":   "bearer",
+				})
+			case "/user":
+				writeGitHubUserResponse(w, 99999, "octocat", "The Octocat", "octocat@example.com")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, []map[string]any{
+					{
+						"email":    "octocat@example.com",
+						"verified": true,
+						"primary":  true,
+					},
+				})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := githubClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.APIBaseURL = server.URL
+		client.OAuthEndpoint = oauth2.Endpoint{
+			AuthURL:  server.URL + "/authorize",
+			TokenURL: server.URL + "/token",
+		}
+
+		svc := service.NewSSOFinishService(deps)
+		result, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-link-verified",
+			State:       "state-link-verified",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if err != nil {
+			t.Fatalf("expected verified github email linking to succeed, got %v", err)
+		}
+		if result.User == nil || result.User.ID != existingUser.ID {
+			t.Fatalf("expected existing user_id=%d, got %#v", existingUser.ID, result.User)
+		}
+	})
+
+	t.Run("unverified github email does not link existing local user", func(t *testing.T) {
+		deps := newDeps(t, now)
+		existingUser := testkit.CreateUser(t, deps.Store, func(user *entity.User) {
+			email := "octocat@example.com"
+			user.Email = &email
+		})
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderGitHub, "state-link-unverified", deps.Config.SSO.GitHub.RedirectURL)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "github-access-token",
+					"token_type":   "bearer",
+				})
+			case "/user":
+				writeGitHubUserResponse(w, 88888, "octocat-unverified", "The Octocat", "octocat@example.com")
+			case "/user/emails":
+				writeGitHubEmailsResponse(w, []map[string]any{
+					{
+						"email":    "octocat@example.com",
+						"verified": false,
+						"primary":  true,
+					},
+				})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := githubClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.APIBaseURL = server.URL
+		client.OAuthEndpoint = oauth2.Endpoint{
+			AuthURL:  server.URL + "/authorize",
+			TokenURL: server.URL + "/token",
+		}
+
+		svc := service.NewSSOFinishService(deps)
+		result, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-link-unverified",
+			State:       "state-link-unverified",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if err != nil {
+			t.Fatalf("expected unverified github email flow to succeed, got %v", err)
+		}
+		if result.User == nil {
+			t.Fatalf("expected user to be returned")
+		}
+		if result.User.ID == existingUser.ID {
+			t.Fatalf("expected unverified github email not to link existing user_id=%d", existingUser.ID)
+		}
+	})
 }
 
 func latestSSOFailureAuditReason(t *testing.T, deps service.Dependencies) string {
@@ -432,4 +643,27 @@ func latestSSOFailureAuditReason(t *testing.T, deps service.Dependencies) string
 
 	reason, _ := detail["reason"].(string)
 	return reason
+}
+
+func writeGitHubUserResponse(w http.ResponseWriter, id int64, login, name, email string) {
+	payload := map[string]any{
+		"login": login,
+		"name":  name,
+	}
+	if id > 0 {
+		payload["id"] = id
+	}
+	if email != "" {
+		payload["email"] = email
+	}
+
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func writeGitHubEmailsResponse(w http.ResponseWriter, payload []map[string]any) {
+	if payload == nil {
+		payload = []map[string]any{}
+	}
+
+	_ = json.NewEncoder(w).Encode(payload)
 }

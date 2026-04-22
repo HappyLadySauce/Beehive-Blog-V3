@@ -29,3 +29,35 @@ func githubClientFromDeps(t *testing.T, deps service.Dependencies) *provider.Git
 
 	return client
 }
+
+func qqClientFromDeps(t *testing.T, deps service.Dependencies) *provider.QQClient {
+	t.Helper()
+
+	callbackProvider, ok := deps.Providers.GetCallback("qq")
+	if !ok {
+		t.Fatalf("expected qq callback provider to be registered")
+	}
+
+	client, ok := callbackProvider.(*provider.QQClient)
+	if !ok {
+		t.Fatalf("expected qq callback provider type, got %T", callbackProvider)
+	}
+
+	return client
+}
+
+func wechatClientFromDeps(t *testing.T, deps service.Dependencies) *provider.WeChatClient {
+	t.Helper()
+
+	callbackProvider, ok := deps.Providers.GetCallback("wechat")
+	if !ok {
+		t.Fatalf("expected wechat callback provider to be registered")
+	}
+
+	client, ok := callbackProvider.(*provider.WeChatClient)
+	if !ok {
+		t.Fatalf("expected wechat callback provider type, got %T", callbackProvider)
+	}
+
+	return client
+}

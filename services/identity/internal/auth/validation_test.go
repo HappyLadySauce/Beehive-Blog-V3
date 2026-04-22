@@ -146,6 +146,12 @@ func TestNormalizeProvider(t *testing.T) {
 	if got != auth.ProviderGitHub {
 		t.Fatalf("expected %q, got %q", auth.ProviderGitHub, got)
 	}
+	if got, err := auth.NormalizeProvider(" qq "); err != nil || got != auth.ProviderQQ {
+		t.Fatalf("expected qq provider to normalize, got provider=%q err=%v", got, err)
+	}
+	if got, err := auth.NormalizeProvider(" WeChat "); err != nil || got != auth.ProviderWeChat {
+		t.Fatalf("expected wechat provider to normalize, got provider=%q err=%v", got, err)
+	}
 
 	if _, err := auth.NormalizeProvider("unknown"); err == nil {
 		t.Fatalf("expected unknown provider to fail")

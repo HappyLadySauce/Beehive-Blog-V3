@@ -15,9 +15,9 @@ import (
 // GatewaySecurityConf defines gateway security related settings.
 // GatewaySecurityConf 定义网关安全相关配置。
 type GatewaySecurityConf struct {
-	TokenPrefix         string   `json:",default=Bearer"`
-	TrustedProxyHeaders []string `json:",optional"`
-	TrustedProxyCIDRs   []string `json:",optional"`
+	TokenPrefix         string   `json:"TokenPrefix"`
+	TrustedProxyHeaders []string `json:"TrustedProxyHeaders"`
+	TrustedProxyCIDRs   []string `json:"TrustedProxyCIDRs"`
 }
 
 // IdentityRPCConf defines gateway access to the identity RPC service.
@@ -25,7 +25,7 @@ type GatewaySecurityConf struct {
 type IdentityRPCConf struct {
 	zrpc.RpcClientConf
 	InternalAuthToken  string `json:"InternalAuthToken"`
-	InternalCallerName string `json:"InternalCallerName,default=gateway"`
+	InternalCallerName string `json:"InternalCallerName"`
 }
 
 type Config struct {

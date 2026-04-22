@@ -52,8 +52,8 @@ func TestGitHubClientExchangeCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected exchange code to succeed, got %v", err)
 	}
-	if token != "github-access-token" {
-		t.Fatalf("expected github-access-token, got %q", token)
+	if token == nil || token.Token != "github-access-token" {
+		t.Fatalf("expected github-access-token, got %#v", token)
 	}
 }
 
@@ -63,17 +63,26 @@ func TestGitHubClientFetchProfile(t *testing.T) {
 	t.Parallel()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/user" {
+		switch r.URL.Path {
+		case "/user":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":         12345,
+				"login":      "octocat",
+				"name":       "The Octocat",
+				"email":      "OctoCat@Example.com",
+				"avatar_url": "https://example.com/avatar.png",
+			})
+		case "/user/emails":
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{
+					"email":    "OctoCat@Example.com",
+					"verified": true,
+					"primary":  true,
+				},
+			})
+		default:
 			http.NotFound(w, r)
-			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"id":         12345,
-			"login":      "octocat",
-			"name":       "The Octocat",
-			"email":      "OctoCat@Example.com",
-			"avatar_url": "https://example.com/avatar.png",
-		})
 	}))
 	defer server.Close()
 
@@ -87,7 +96,7 @@ func TestGitHubClientFetchProfile(t *testing.T) {
 	client.HTTPClient = server.Client()
 	client.APIBaseURL = server.URL
 
-	profile, raw, err := client.FetchProfile(context.Background(), "access-token")
+	profile, raw, err := client.FetchProfile(context.Background(), &provider.AccessToken{Token: "access-token"})
 	if err != nil {
 		t.Fatalf("expected fetch profile to succeed, got %v", err)
 	}
@@ -100,8 +109,61 @@ func TestGitHubClientFetchProfile(t *testing.T) {
 	if profile.Email == nil || *profile.Email != "octocat@example.com" {
 		t.Fatalf("expected normalized email, got %#v", profile.Email)
 	}
+	if !profile.EmailVerified {
+		t.Fatalf("expected email to be marked verified")
+	}
 	if len(raw) == 0 {
 		t.Fatalf("expected raw profile payload to be present")
+	}
+}
+
+// TestGitHubClientFetchProfileWithoutVerifiedEmail verifies unverified email is not trusted.
+// TestGitHubClientFetchProfileWithoutVerifiedEmail 验证未验证邮箱不会被信任。
+func TestGitHubClientFetchProfileWithoutVerifiedEmail(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/user":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":    12345,
+				"login": "octocat",
+				"name":  "The Octocat",
+				"email": "octocat@example.com",
+			})
+		case "/user/emails":
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{
+					"email":    "octocat@example.com",
+					"verified": false,
+					"primary":  true,
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client := provider.NewGitHubClient(config.OAuthProviderConf{
+		Enabled:      true,
+		ClientID:     " github-client-id ",
+		ClientSecret: " github-client-secret ",
+		RedirectURL:  " https://example.com/callback ",
+		Scopes:       []string{" read:user ", " user:email "},
+	})
+	client.HTTPClient = server.Client()
+	client.APIBaseURL = server.URL
+
+	profile, _, err := client.FetchProfile(context.Background(), &provider.AccessToken{Token: "access-token"})
+	if err != nil {
+		t.Fatalf("expected fetch profile to succeed, got %v", err)
+	}
+	if profile.Email != nil {
+		t.Fatalf("expected unverified email to be ignored, got %#v", profile.Email)
+	}
+	if profile.EmailVerified {
+		t.Fatalf("expected email to be unverified")
 	}
 }
 
@@ -121,7 +183,7 @@ func TestGitHubClientFetchProfileRejectsIncompleteProfile(t *testing.T) {
 	client.HTTPClient = server.Client()
 	client.APIBaseURL = server.URL
 
-	if _, _, err := client.FetchProfile(context.Background(), "access-token"); err == nil {
+	if _, _, err := client.FetchProfile(context.Background(), &provider.AccessToken{Token: "access-token"}); err == nil {
 		t.Fatalf("expected incomplete profile to fail")
 	}
 }

@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var githubUsernameSanitizer = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+var ssoUsernameSanitizer = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 
 // Dependencies defines the infrastructure and helper set used by services.
 // Dependencies 定义 service 层使用的基础设施与 helper 集合。
@@ -140,14 +140,17 @@ func stringPtr(value string) *string {
 	return &trimmed
 }
 
-// buildUniqueGitHubUsername builds a collision-free username candidate for GitHub sign-ins.
-// buildUniqueGitHubUsername 为 GitHub 登录构建无冲突用户名候选值。
-func buildUniqueGitHubUsername(ctx context.Context, store *repo.Store, preferred string) (string, error) {
+// buildUniqueSSOUsername builds a collision-free username candidate for SSO sign-ins.
+// buildUniqueSSOUsername 为 SSO 登录构建无冲突用户名候选值。
+func buildUniqueSSOUsername(ctx context.Context, store *repo.Store, providerName, preferred, subject string) (string, error) {
 	candidate := strings.TrimSpace(preferred)
-	candidate = githubUsernameSanitizer.ReplaceAllString(candidate, "_")
+	if candidate == "" {
+		candidate = strings.TrimSpace(providerName) + "_" + strings.TrimSpace(subject)
+	}
+	candidate = ssoUsernameSanitizer.ReplaceAllString(candidate, "_")
 	candidate = strings.Trim(candidate, "_")
 	if len(candidate) < 3 {
-		candidate = "github_user"
+		candidate = strings.TrimSpace(providerName) + "_user"
 	}
 	if len(candidate) > 32 {
 		candidate = candidate[:32]

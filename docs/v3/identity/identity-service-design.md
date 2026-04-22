@@ -70,15 +70,19 @@
 - 本地凭证和联邦身份都绑定到同一个 `user`
 - SSO 不是未来注释位，而是一等设计对象
 
-### 2.6 第三阶段只开放 GitHub SSO
+### 2.6 第三阶段开放 GitHub / QQ / WeChat SSO
 
-为了避免半开通能力暴露，第三阶段的实际交付范围固定为：
+第三阶段的实际交付范围固定为：
 
 - `GitHub`：完整开放 `StartSsoLogin + FinishSsoLogin`
-- `QQ`：仅完成抽象、配置和授权地址辅助，不开放登录入口
-- `WeChat`：仅完成抽象、配置和授权地址辅助，不开放登录入口
+- `QQ`：完整开放 `StartSsoLogin + FinishSsoLogin`
+- `WeChat`：完整开放 `StartSsoLogin + FinishSsoLogin`
 
-这是实现级约束，不改变 `identity.proto` 的统一抽象，但会改变对外开放行为。
+补充说明：
+
+- QQ 采用 Web OAuth 流程，以 `openid` 作为主体标识
+- WeChat 采用网站/扫码 OAuth 流程，优先使用 `unionid`，没有时回退 `openid`
+- 实现继续复用统一的 `StartSsoLogin / FinishSsoLogin` 抽象，不新增 provider 专属 RPC
 
 ## 3. 服务职责边界
 
@@ -101,7 +105,7 @@ server -> logic -> service -> repo -> entity
 
 - 本地账号注册
 - 本地账号登录
-- GitHub SSO 登录接入
+- GitHub / QQ / WeChat SSO 登录接入
 - access token 签发
 - refresh token 签发与轮换
 - token introspection
@@ -250,7 +254,8 @@ SSO 采用统一联邦身份抽象，不在 proto 层绑定单一厂商。
 当前第三阶段的实现状态为：
 
 - 已完整落地：`GitHub`
-- 已建模但未对外开放：`QQ`、`WeChat`
+- 已完整落地：`QQ`
+- 已完整落地：`WeChat`
 
 约束：
 
@@ -262,9 +267,10 @@ SSO 采用统一联邦身份抽象，不在 proto 层绑定单一厂商。
 
 `v3` 第一阶段的 `identity` 已收口为：
 
-**一个同时负责本地账号、GitHub SSO、会话、token、基础账户信息的认证与基础账户服务。**
+**一个同时负责本地账号、GitHub / QQ / WeChat SSO、会话、token、基础账户信息的认证与基础账户服务。**
 
 补充说明：
 
-- `QQ/WeChat` 当前只保留抽象、模型、配置与授权地址辅助
-- `QQ/WeChat` 不作为可对外登录入口暴露
+- `QQ` 使用 `openid` 作为联邦主体标识
+- `WeChat` 优先使用 `unionid`，没有时回退 `openid`
+- `gateway` 继续只做 provider 透传和 transport 适配，不增加 provider 业务分支

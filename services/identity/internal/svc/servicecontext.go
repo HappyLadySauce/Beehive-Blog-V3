@@ -47,6 +47,8 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	store := repo.NewStore(db)
 	providers := identityprovider.NewRegistry(
 		identityprovider.NewGitHubClient(c.SSO.GitHub),
+		identityprovider.NewQQClient(c.SSO.QQ),
+		identityprovider.NewWeChatClient(c.SSO.WeChat),
 	)
 	readinessChecker := func(ctx context.Context) error {
 		if sqlDB == nil {

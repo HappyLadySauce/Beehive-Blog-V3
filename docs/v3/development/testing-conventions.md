@@ -82,7 +82,8 @@
 - `logic` 不是主要业务测试入口
 - `service` 是后续身份域测试的核心入口
 - provider client 必须实例化注入，测试不依赖包级 HTTP/OAuth 钩子
-- `QQ/WeChat` 当前不开放入口，`GitHub` 是唯一完整 provider
+- `GitHub`、`QQ`、`WeChat` 当前都属于完整 provider
+- SSO provider 的 token / profile / callback 测试统一使用 `httptest.Server`
 
 ## 与其它文档的关系
 

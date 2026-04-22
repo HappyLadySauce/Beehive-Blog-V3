@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -49,7 +50,11 @@ func (c *GitHubClient) Enabled() bool {
 // LoginReady reports whether the provider has a complete login implementation.
 // LoginReady 判断 provider 是否具备完整登录实现。
 func (c *GitHubClient) LoginReady() bool {
-	return c != nil && c.Enabled()
+	return c != nil &&
+		c.Enabled() &&
+		strings.TrimSpace(c.Conf.ClientID) != "" &&
+		strings.TrimSpace(c.Conf.ClientSecret) != "" &&
+		strings.TrimSpace(c.Conf.RedirectURL) != ""
 }
 
 // RedirectURL returns the configured redirect URL.
@@ -62,10 +67,10 @@ func (c *GitHubClient) RedirectURL() string {
 // BuildAuthorizeURL 构建 GitHub 授权地址。
 func (c *GitHubClient) BuildAuthorizeURL(state string) (string, error) {
 	oauthConf := oauth2.Config{
-		ClientID:     c.Conf.ClientID,
-		ClientSecret: c.Conf.ClientSecret,
-		RedirectURL:  c.Conf.RedirectURL,
-		Scopes:       c.Conf.Scopes,
+		ClientID:     strings.TrimSpace(c.Conf.ClientID),
+		ClientSecret: strings.TrimSpace(c.Conf.ClientSecret),
+		RedirectURL:  strings.TrimSpace(c.Conf.RedirectURL),
+		Scopes:       trimmedScopes(c.Conf.Scopes),
 		Endpoint:     c.OAuthEndpoint,
 	}
 
@@ -74,34 +79,38 @@ func (c *GitHubClient) BuildAuthorizeURL(state string) (string, error) {
 
 // ExchangeCode exchanges a GitHub authorization code for an access token.
 // ExchangeCode 使用 GitHub 授权码交换 access token。
-func (c *GitHubClient) ExchangeCode(ctx context.Context, code, redirectURI string) (string, error) {
+func (c *GitHubClient) ExchangeCode(ctx context.Context, code, redirectURI string) (*AccessToken, error) {
 	oauthConf := oauth2.Config{
-		ClientID:     c.Conf.ClientID,
-		ClientSecret: c.Conf.ClientSecret,
-		RedirectURL:  c.Conf.RedirectURL,
-		Scopes:       c.Conf.Scopes,
+		ClientID:     strings.TrimSpace(c.Conf.ClientID),
+		ClientSecret: strings.TrimSpace(c.Conf.ClientSecret),
+		RedirectURL:  strings.TrimSpace(c.Conf.RedirectURL),
+		Scopes:       trimmedScopes(c.Conf.Scopes),
 		Endpoint:     c.OAuthEndpoint,
 	}
 
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.HTTPClient)
 	token, err := oauthConf.Exchange(ctx, code, oauth2.SetAuthURLParam("redirect_uri", redirectURI))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return token.AccessToken, nil
+	return &AccessToken{
+		Token: strings.TrimSpace(token.AccessToken),
+	}, nil
 }
 
 // FetchProfile fetches the authenticated GitHub profile and normalizes it.
 // FetchProfile 拉取已授权 GitHub 用户资料并完成标准化。
-func (c *GitHubClient) FetchProfile(ctx context.Context, accessToken string) (*Profile, []byte, error) {
+func (c *GitHubClient) FetchProfile(ctx context.Context, accessToken *AccessToken) (*Profile, []byte, error) {
+	if accessToken == nil || strings.TrimSpace(accessToken.Token) == "" {
+		return nil, nil, fmt.Errorf("github access token is required")
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(c.APIBaseURL, "/")+"/user", nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "beehive-blog-v3-identity")
+	c.applyStandardHeaders(req, accessToken.Token)
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
@@ -118,6 +127,11 @@ func (c *GitHubClient) FetchProfile(ctx context.Context, accessToken string) (*P
 		return nil, nil, err
 	}
 
+	emailPtr, emailVerified, err := c.fetchVerifiedEmail(ctx, accessToken.Token)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	raw, err := json.Marshal(rawMap)
 	if err != nil {
 		return nil, nil, err
@@ -129,15 +143,6 @@ func (c *GitHubClient) FetchProfile(ctx context.Context, accessToken string) (*P
 	}
 	login, _ := rawMap["login"].(string)
 	name, _ := rawMap["name"].(string)
-
-	var emailPtr *string
-	if email, ok := rawMap["email"].(string); ok && strings.TrimSpace(email) != "" {
-		normalized, err := auth.NormalizeEmail(email)
-		if err != nil {
-			return nil, nil, err
-		}
-		emailPtr = stringPtr(normalized)
-	}
 
 	var avatarURLPtr *string
 	if avatarURL, ok := rawMap["avatar_url"].(string); ok && strings.TrimSpace(avatarURL) != "" {
@@ -154,26 +159,70 @@ func (c *GitHubClient) FetchProfile(ctx context.Context, accessToken string) (*P
 		Login:            strings.TrimSpace(login),
 		DisplayName:      strings.TrimSpace(name),
 		Email:            emailPtr,
+		EmailVerified:    emailVerified,
 		AvatarURL:        avatarURLPtr,
 		RawProfile:       raw,
 		ProviderClientID: stringPtr(strings.TrimSpace(c.Conf.ClientID)),
-		RequestedScopes:  scopesPtr(c.Conf.Scopes),
+		RequestedScopes:  scopesPtr(trimmedScopes(c.Conf.Scopes)),
 	}, raw, nil
 }
 
-func scopesPtr(scopes []string) *string {
-	if len(scopes) == 0 {
-		return nil
-	}
-
-	value := strings.Join(scopes, ",")
-	return &value
+type githubEmailRecord struct {
+	Email    string `json:"email"`
+	Primary  bool   `json:"primary"`
+	Verified bool   `json:"verified"`
 }
 
-func stringPtr(value string) *string {
-	if value == "" {
-		return nil
+func (c *GitHubClient) fetchVerifiedEmail(ctx context.Context, token string) (*string, bool, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(c.APIBaseURL, "/")+"/user/emails", nil)
+	if err != nil {
+		return nil, false, err
+	}
+	c.applyStandardHeaders(req, token)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, false, fmt.Errorf("github user emails API returned status %d: %s", resp.StatusCode, bodyPreview(body))
 	}
 
-	return &value
+	var emails []githubEmailRecord
+	if err := json.NewDecoder(resp.Body).Decode(&emails); err != nil {
+		return nil, false, err
+	}
+
+	var fallback *string
+	for _, item := range emails {
+		email := strings.TrimSpace(item.Email)
+		if email == "" || !item.Verified {
+			continue
+		}
+		normalized, err := auth.NormalizeEmail(email)
+		if err != nil {
+			return nil, false, err
+		}
+		if item.Primary {
+			return stringPtr(normalized), true, nil
+		}
+		if fallback == nil {
+			fallback = stringPtr(normalized)
+		}
+	}
+
+	if fallback != nil {
+		return fallback, true, nil
+	}
+
+	return nil, false, nil
+}
+
+func (c *GitHubClient) applyStandardHeaders(req *http.Request, token string) {
+	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(token))
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "beehive-blog-v3-identity")
 }

@@ -16,8 +16,18 @@ type Provider interface {
 // CallbackProvider 在 Provider 基础上扩展回调完成能力。
 type CallbackProvider interface {
 	Provider
-	ExchangeCode(ctx context.Context, code, redirectURI string) (string, error)
-	FetchProfile(ctx context.Context, accessToken string) (*Profile, []byte, error)
+	ExchangeCode(ctx context.Context, code, redirectURI string) (*AccessToken, error)
+	FetchProfile(ctx context.Context, accessToken *AccessToken) (*Profile, []byte, error)
+}
+
+// AccessToken contains the normalized provider token exchange result.
+// AccessToken 包含规范化后的 provider token 交换结果。
+type AccessToken struct {
+	Token        string
+	RefreshToken string
+	OpenID       string
+	UnionID      string
+	Scope        string
 }
 
 // Profile is the normalized federated profile produced by callback providers.
@@ -28,8 +38,15 @@ type Profile struct {
 	Login            string
 	DisplayName      string
 	Email            *string
+	EmailVerified    bool
 	AvatarURL        *string
+	UnionID          *string
+	OpenID           *string
 	RawProfile       []byte
 	ProviderClientID *string
 	RequestedScopes  *string
 }
+
+var _ CallbackProvider = (*GitHubClient)(nil)
+var _ CallbackProvider = (*QQClient)(nil)
+var _ CallbackProvider = (*WeChatClient)(nil)

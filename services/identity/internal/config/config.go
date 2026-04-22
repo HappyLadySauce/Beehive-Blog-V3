@@ -14,60 +14,62 @@ type Config struct {
 	Postgres          PostgresConf `json:"Postgres"`
 	StateRedis        RedisConf    `json:"StateRedis"`
 	Security          SecurityConf `json:"Security"`
-	SSO               SSOConf      `json:"SSO,optional"`
+	SSO               SSOConf      `json:"SSO"`
 	InternalAuthToken string       `json:"InternalAuthToken"`
 	AllowedCallers    []string     `json:"AllowedCallers"`
 }
 
 type RedisConf struct {
 	Host                string `json:"Host"`
-	Port                int    `json:"Port,default=6379,range=[1:65536)"`
-	Username            string `json:"Username,optional"`
-	Password            string `json:"Password,optional"`
-	DB                  int    `json:"DB,default=0,range=[0:65536)"`
-	EnableTLS           bool   `json:"EnableTLS,optional"`
-	DialTimeoutSeconds  int    `json:"DialTimeoutSeconds,default=3,range=[1:61)"`
-	ReadTimeoutSeconds  int    `json:"ReadTimeoutSeconds,default=3,range=[1:61)"`
-	WriteTimeoutSeconds int    `json:"WriteTimeoutSeconds,default=3,range=[1:61)"`
-	PoolTimeoutSeconds  int    `json:"PoolTimeoutSeconds,default=4,range=[1:121)"`
-	MaxRetries          int    `json:"MaxRetries,default=1,range=[0:11)"`
-	PoolSize            int    `json:"PoolSize,default=10,range=[1:201)"`
-	MinIdleConns        int    `json:"MinIdleConns,default=0,range=[0:201)"`
+	Port                int    `json:"Port"`
+	Username            string `json:"Username"`
+	Password            string `json:"Password"`
+	DB                  int    `json:"DB"`
+	EnableTLS           bool   `json:"EnableTLS"`
+	DialTimeoutSeconds  int    `json:"DialTimeoutSeconds"`
+	ReadTimeoutSeconds  int    `json:"ReadTimeoutSeconds"`
+	WriteTimeoutSeconds int    `json:"WriteTimeoutSeconds"`
+	PoolTimeoutSeconds  int    `json:"PoolTimeoutSeconds"`
+	MaxRetries          int    `json:"MaxRetries"`
+	PoolSize            int    `json:"PoolSize"`
+	MinIdleConns        int    `json:"MinIdleConns"`
 }
 
 type PostgresConf struct {
 	Host                   string `json:"Host"`
-	Port                   int    `json:"Port,default=5432,range=[1:65536)"`
+	Port                   int    `json:"Port"`
 	User                   string `json:"User"`
-	Password               string `json:"Password,optional"`
+	Password               string `json:"Password"`
 	DBName                 string `json:"DBName"`
-	SSLMode                string `json:"SSLMode,default=disable,options=[disable,require,verify-ca,verify-full]"`
-	TimeZone               string `json:"TimeZone,default=Asia/Shanghai"`
-	ConnectTimeoutSeconds  int    `json:"ConnectTimeoutSeconds,default=5,range=[1:61)"`
-	MaxOpenConns           int    `json:"MaxOpenConns,default=20,range=[1:201)"`
-	MaxIdleConns           int    `json:"MaxIdleConns,default=10,range=[0:201)"`
-	ConnMaxLifetimeSeconds int    `json:"ConnMaxLifetimeSeconds,default=1800,range=[1:86401)"`
-	ConnMaxIdleTimeSeconds int    `json:"ConnMaxIdleTimeSeconds,default=600,range=[1:86401)"`
+	SSLMode                string `json:"SSLMode"`
+	TimeZone               string `json:"TimeZone"`
+	ConnectTimeoutSeconds  int    `json:"ConnectTimeoutSeconds"`
+	MaxOpenConns           int    `json:"MaxOpenConns"`
+	MaxIdleConns           int    `json:"MaxIdleConns"`
+	ConnMaxLifetimeSeconds int    `json:"ConnMaxLifetimeSeconds"`
+	ConnMaxIdleTimeSeconds int    `json:"ConnMaxIdleTimeSeconds"`
 }
 
 type SecurityConf struct {
 	AccessTokenSecret      string `json:"AccessTokenSecret"`
-	AccessTokenTTLSeconds  int64  `json:"AccessTokenTTLSeconds,default=900,range=[60:86401)"`
-	RefreshTokenTTLSeconds int64  `json:"RefreshTokenTTLSeconds,default=2592000,range=[3600:7776001)"`
-	StateTTLSeconds        int64  `json:"StateTTLSeconds,default=600,range=[60:86401)"`
-	PasswordHashCost       int    `json:"PasswordHashCost,default=12,range=[10:17)"`
+	AccessTokenTTLSeconds  int64  `json:"AccessTokenTTLSeconds"`
+	RefreshTokenTTLSeconds int64  `json:"RefreshTokenTTLSeconds"`
+	StateTTLSeconds        int64  `json:"StateTTLSeconds"`
+	PasswordHashCost       int    `json:"PasswordHashCost"`
 }
 
 type SSOConf struct {
-	GitHub OAuthProviderConf `json:"GitHub,optional"`
+	GitHub OAuthProviderConf `json:"GitHub"`
+	QQ     OAuthProviderConf `json:"QQ"`
+	WeChat OAuthProviderConf `json:"WeChat"`
 }
 
 type OAuthProviderConf struct {
-	Enabled      bool     `json:"Enabled,optional"`
-	ClientID     string   `json:"ClientID,optional"`
-	ClientSecret string   `json:"ClientSecret,optional"`
-	RedirectURL  string   `json:"RedirectURL,optional"`
-	Scopes       []string `json:"Scopes,optional"`
+	Enabled      bool     `json:"Enabled"`
+	ClientID     string   `json:"ClientID"`
+	ClientSecret string   `json:"ClientSecret"`
+	RedirectURL  string   `json:"RedirectURL"`
+	Scopes       []string `json:"Scopes"`
 }
 
 func (c Config) Validate() error {
@@ -103,6 +105,15 @@ func (c Config) Validate() error {
 	if err := validateOAuthProvider("SSO.GitHub", c.SSO.GitHub); err != nil {
 		return err
 	}
+	if err := validateOAuthProvider("SSO.QQ", c.SSO.QQ); err != nil {
+		return err
+	}
+	if err := validateOAuthProvider("SSO.WeChat", c.SSO.WeChat); err != nil {
+		return err
+	}
+	if err := validateWeChatScopes(c.SSO.WeChat); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -122,6 +133,39 @@ func validateOAuthProvider(path string, conf OAuthProviderConf) error {
 	}
 
 	return validateOptionalURL(path+".RedirectURL", conf.RedirectURL)
+}
+
+func validateWeChatScopes(conf OAuthProviderConf) error {
+	if !conf.Enabled {
+		return nil
+	}
+
+	scopes := trimScopes(conf.Scopes)
+	if len(scopes) == 0 {
+		return nil
+	}
+	if len(scopes) != 1 || !strings.EqualFold(scopes[0], "snsapi_login") {
+		return fmt.Errorf("SSO.WeChat.Scopes only supports snsapi_login")
+	}
+
+	return nil
+}
+
+func trimScopes(scopes []string) []string {
+	if len(scopes) == 0 {
+		return nil
+	}
+
+	result := make([]string, 0, len(scopes))
+	for _, scope := range scopes {
+		trimmed := strings.TrimSpace(scope)
+		if trimmed == "" {
+			continue
+		}
+		result = append(result, trimmed)
+	}
+
+	return result
 }
 
 func validateOptionalURL(path, raw string) error {

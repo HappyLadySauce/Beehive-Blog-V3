@@ -8,8 +8,8 @@
 
 - 本地认证主链路完整实现
 - SSO 继续采用统一抽象
-- 实际对外开放的 SSO provider 仅为 `GitHub`
-- `QQ/WeChat` 当前仅保留建模、配置与授权地址辅助，不开放登录入口
+- 实际对外开放的 SSO provider 为 `GitHub`、`QQ`、`WeChat`
+- 三个 provider 都复用统一的 `StartSsoLogin / FinishSsoLogin` 泛化契约
 - 内部生产代码按 `logic -> service -> repo` 分层实现
 
 ## 2. 设计原则
@@ -65,18 +65,18 @@ proto 层继续抽象为：
 
 这样后续接其他 provider 时，无需修改 proto 结构。
 
-### 2.4 第三阶段只开放 GitHub SSO
+### 2.4 第三阶段开放 GitHub / QQ / WeChat SSO
 
 当前实现状态固定为：
 
 - `GitHub`：完整实现并开放
-- `QQ`：仅保留抽象、配置与授权地址辅助，不开放登录入口
-- `WeChat`：仅保留抽象、配置与授权地址辅助，不开放登录入口
+- `QQ`：完整实现并开放
+- `WeChat`：完整实现并开放
 
 实现行为固定为：
 
-- `StartSsoLogin` 对 `QQ/WeChat` 返回 `sso_provider_not_ready`
-- `FinishSsoLogin` 当前只完成 `GitHub` 的回调交换与平台会话建立
+- `StartSsoLogin` 对三 provider 都返回授权地址
+- `FinishSsoLogin` 对三 provider 都完成回调交换与平台会话建立
 
 ## 3. 第一版 RPC 集合
 
@@ -131,7 +131,7 @@ proto 层继续抽象为：
 作用：
 
 - 发起 SSO 登录流程
-- 第三阶段当前仅真正开放 `GitHub`
+- 第三阶段当前开放 `GitHub`、`QQ`、`WeChat`
 
 输入语义：
 
@@ -150,7 +150,7 @@ proto 层继续抽象为：
 作用：
 
 - 完成 SSO 回调交换与用户会话建立
-- 第三阶段当前仅真正完成 `GitHub`
+- 第三阶段当前支持 `GitHub`、`QQ`、`WeChat`
 
 输入语义：
 
@@ -365,5 +365,5 @@ proto 层继续抽象为：
 ## 7. 当前结论
 
 `identity.proto` 第一版围绕“本地账号 + SSO 并存、多会话、可吊销 refresh token、标准化 token introspection”来设计。  
-第三阶段实际对外开放的 SSO provider 为 `GitHub`，`QQ/WeChat` 仅保留抽象与模型准备。  
+第三阶段实际对外开放的 SSO provider 为 `GitHub`、`QQ`、`WeChat`。  
 `gateway.api` 第一版则只需要把这组能力清晰地映射成 `/api/v3/auth/*` 对外接口。
