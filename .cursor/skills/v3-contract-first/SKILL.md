@@ -24,6 +24,12 @@ It only defines the correct source-of-truth order and contract sequencing.
 - Change contracts before handwritten implementation.
 - Keep gateway HTTP contracts in `v3/api/gateway.api`.
 - Keep backend RPC contracts in `v3/proto/*.proto`.
+- Treat `v3/api/gateway.api` as the single source of truth for both HTTP behavior and generated Swagger docs.
+- When changing gateway HTTP contracts, update Swagger-facing metadata in the same edit:
+  - `info (...)` metadata for API overview
+  - field-level `example` / `options` / `default` tags where they materially improve testing
+  - interface-level `@doc (...)` business error descriptions for key routes
+  - explicit auth header examples for protected endpoints
 - Follow the sequence:
   - backend RPC contract first when HTTP needs new backend capability
   - gateway HTTP contract second
@@ -32,6 +38,7 @@ It only defines the correct source-of-truth order and contract sequencing.
 ## Do Not
 
 - Do not start from generated files.
+- Do not hand-edit `v3/api/gateway.yaml`; regenerate it from `v3/api/gateway.api`.
 - Do not move business orchestration into `gateway`.
 - Do not duplicate project-wide coding or logging rules here.
 
