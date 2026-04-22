@@ -25,10 +25,17 @@ It focuses only on command usage, output locations, and generated-code handling.
 - Use repository-standard commands and output directories.
 - Regenerate Swagger after gateway API contract changes.
 - Treat generated files as transport and wiring scaffolding.
+- Check regenerated Swagger output before delivery:
+  - top-level `info`
+  - route `summary` / `tags`
+  - request field examples and options
+  - key business error descriptions
+- Keep Swagger enhancement in the contract source; do not use generated-file patching as the primary workflow.
 
 ## Do Not
 
 - Do not redesign service boundaries here.
+- Do not treat `v3/api/gateway.yaml` as an editing entrypoint.
 - Do not repeat project-wide logging or error-handling rules here.
 - Do not treat generated glue as the long-term source of truth.
 

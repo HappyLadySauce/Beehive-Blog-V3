@@ -2,7 +2,17 @@ basePath: /
 consumes:
 - application/json
 info:
-  title: Beehive Blog v3 Gateway
+  contact:
+    email: maintainers@beehive.local
+    name: Beehive Blog Maintainers
+    url: https://github.com/happyladysauce/Beehive-Blog-v3
+  description: Beehive Blog v3 gateway HTTP contract for authentication, session management,
+    system probes, and websocket entrypoints. 适用于 Swagger UI、Apifox、Postman 等接口测试工具的联调与测试。
+  license:
+    name: Proprietary
+    url: https://github.com/happyladysauce/Beehive-Blog-v3
+  termsOfService: https://github.com/happyladysauce/Beehive-Blog-v3
+  title: Beehive Blog v3 Gateway API
   version: v3
 paths:
   /api/v3/auth/login:
@@ -17,16 +27,27 @@ paths:
         schema:
           properties:
             client_type:
+              enum:
+              - web
+              - ios
+              - android
+              example: web
               type: string
             device_id:
+              example: device_web_chrome_001
               type: string
             device_name:
+              example: Chrome on macOS
               type: string
             login_identifier:
+              example: alice@example.com
               type: string
             password:
+              example: Str0ngP@ssw0rd!
               type: string
             user_agent:
+              example: Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36
+                Chrome/135.0.0.0 Safari/537.36
               type: string
           required:
           - login_identifier
@@ -40,30 +61,46 @@ paths:
           schema:
             properties:
               access_token:
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.login_access
                 type: string
               expires_in:
+                example: 3600
                 type: integer
               refresh_token:
+                example: refresh_token_login_example
                 type: string
               session:
                 properties:
                   auth_source:
+                    example: password
                     type: string
                   client_type:
+                    enum:
+                    - web
+                    - ios
+                    - android
+                    example: web
                     type: string
                   device_id:
+                    example: device_web_chrome_001
                     type: string
                   device_name:
+                    example: Chrome on macOS
                     type: string
                   expires_at:
+                    example: 1713776400
                     type: integer
                   last_seen_at:
+                    example: 1713772800
                     type: integer
                   session_id:
+                    example: sess_01J8SESSIONEXAMPLE
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                 required:
                 - session_id
@@ -72,24 +109,33 @@ paths:
                 - status
                 type: object
               session_id:
+                example: sess_01J8LOGINEXAMPLE
                 type: string
               token_type:
+                example: Bearer
                 type: string
               user:
                 properties:
                   avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
                     type: string
                   email:
+                    example: alice@example.com
                     type: string
                   nickname:
+                    example: Alice
                     type: string
                   role:
+                    example: user
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                   username:
+                    example: beehive_user_01
                     type: string
                 required:
                 - user_id
@@ -102,13 +148,16 @@ paths:
       schemes:
       - https
       summary: AuthLogin
+      tags:
+      - Authentication
   /api/v3/auth/logout:
     post:
       consumes:
       - application/json
       operationId: authAuthLogout
       parameters:
-      - in: header
+      - example: Bearer eyJhbGciOi...
+        in: header
         name: Authorization
         type: string
       - in: body
@@ -117,6 +166,7 @@ paths:
         schema:
           properties:
             refresh_token:
+              example: refresh_token_login_example
               type: string
           type: object
       produces:
@@ -127,16 +177,22 @@ paths:
           schema:
             properties:
               ok:
+                example: true
                 type: boolean
             type: object
       schemes:
       - https
+      security:
+      - bearerAuth: []
       summary: AuthLogout
+      tags:
+      - Authentication
   /api/v3/auth/me:
     get:
       operationId: authAuthMe
       parameters:
-      - in: header
+      - example: Bearer eyJhbGciOi...
+        in: header
         name: Authorization
         type: string
       produces:
@@ -149,18 +205,25 @@ paths:
               user:
                 properties:
                   avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
                     type: string
                   email:
+                    example: alice@example.com
                     type: string
                   nickname:
+                    example: Alice
                     type: string
                   role:
+                    example: user
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                   username:
+                    example: beehive_user_01
                     type: string
                 required:
                 - user_id
@@ -172,7 +235,11 @@ paths:
             type: object
       schemes:
       - https
+      security:
+      - bearerAuth: []
       summary: AuthMe
+      tags:
+      - Authentication
   /api/v3/auth/refresh:
     post:
       consumes:
@@ -185,8 +252,11 @@ paths:
         schema:
           properties:
             refresh_token:
+              example: refresh_token_login_example
               type: string
             user_agent:
+              example: Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36
+                Chrome/135.0.0.0 Safari/537.36
               type: string
           required:
           - refresh_token
@@ -199,30 +269,46 @@ paths:
           schema:
             properties:
               access_token:
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh_access
                 type: string
               expires_in:
+                example: 3600
                 type: integer
               refresh_token:
+                example: refresh_token_refresh_example
                 type: string
               session:
                 properties:
                   auth_source:
+                    example: password
                     type: string
                   client_type:
+                    enum:
+                    - web
+                    - ios
+                    - android
+                    example: web
                     type: string
                   device_id:
+                    example: device_web_chrome_001
                     type: string
                   device_name:
+                    example: Chrome on macOS
                     type: string
                   expires_at:
+                    example: 1713776400
                     type: integer
                   last_seen_at:
+                    example: 1713772800
                     type: integer
                   session_id:
+                    example: sess_01J8SESSIONEXAMPLE
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                 required:
                 - session_id
@@ -231,13 +317,17 @@ paths:
                 - status
                 type: object
               session_id:
+                example: sess_01J8REFRESHEXAMPLE
                 type: string
               token_type:
+                example: Bearer
                 type: string
             type: object
       schemes:
       - https
       summary: AuthRefresh
+      tags:
+      - Authentication
   /api/v3/auth/register:
     post:
       consumes:
@@ -250,12 +340,16 @@ paths:
         schema:
           properties:
             email:
+              example: alice@example.com
               type: string
             nickname:
+              example: Alice
               type: string
             password:
+              example: Str0ngP@ssw0rd!
               type: string
             username:
+              example: beehive_user_01
               type: string
           required:
           - username
@@ -270,30 +364,46 @@ paths:
           schema:
             properties:
               access_token:
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.register_access
                 type: string
               expires_in:
+                example: 3600
                 type: integer
               refresh_token:
+                example: refresh_token_register_example
                 type: string
               session:
                 properties:
                   auth_source:
+                    example: password
                     type: string
                   client_type:
+                    enum:
+                    - web
+                    - ios
+                    - android
+                    example: web
                     type: string
                   device_id:
+                    example: device_web_chrome_001
                     type: string
                   device_name:
+                    example: Chrome on macOS
                     type: string
                   expires_at:
+                    example: 1713776400
                     type: integer
                   last_seen_at:
+                    example: 1713772800
                     type: integer
                   session_id:
+                    example: sess_01J8SESSIONEXAMPLE
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                 required:
                 - session_id
@@ -302,24 +412,33 @@ paths:
                 - status
                 type: object
               session_id:
+                example: sess_01J8REGISTEREXAMPLE
                 type: string
               token_type:
+                example: Bearer
                 type: string
               user:
                 properties:
                   avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
                     type: string
                   email:
+                    example: alice@example.com
                     type: string
                   nickname:
+                    example: Alice
                     type: string
                   role:
+                    example: user
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                   username:
+                    example: beehive_user_01
                     type: string
                 required:
                 - user_id
@@ -332,6 +451,8 @@ paths:
       schemes:
       - https
       summary: AuthRegister
+      tags:
+      - Authentication
   /api/v3/auth/sso/callback:
     post:
       consumes:
@@ -344,20 +465,37 @@ paths:
         schema:
           properties:
             client_type:
+              enum:
+              - web
+              - ios
+              - android
+              example: web
               type: string
             code:
+              example: gho_example_callback_code
               type: string
             device_id:
+              example: device_web_chrome_001
               type: string
             device_name:
+              example: Chrome on macOS
               type: string
             provider:
+              enum:
+              - github
+              - qq
+              - wechat
+              example: github
               type: string
             redirect_uri:
+              example: https://app.example.com/auth/callback/github
               type: string
             state:
+              example: state_01J8SSOSTARTEXAMPLE
               type: string
             user_agent:
+              example: Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36
+                Chrome/135.0.0.0 Safari/537.36
               type: string
           required:
           - provider
@@ -373,30 +511,46 @@ paths:
           schema:
             properties:
               access_token:
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sso_access
                 type: string
               expires_in:
+                example: 3600
                 type: integer
               refresh_token:
+                example: refresh_token_sso_example
                 type: string
               session:
                 properties:
                   auth_source:
+                    example: password
                     type: string
                   client_type:
+                    enum:
+                    - web
+                    - ios
+                    - android
+                    example: web
                     type: string
                   device_id:
+                    example: device_web_chrome_001
                     type: string
                   device_name:
+                    example: Chrome on macOS
                     type: string
                   expires_at:
+                    example: 1713776400
                     type: integer
                   last_seen_at:
+                    example: 1713772800
                     type: integer
                   session_id:
+                    example: sess_01J8SESSIONEXAMPLE
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                 required:
                 - session_id
@@ -405,24 +559,33 @@ paths:
                 - status
                 type: object
               session_id:
+                example: sess_01J8SSOEXAMPLE
                 type: string
               token_type:
+                example: Bearer
                 type: string
               user:
                 properties:
                   avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
                     type: string
                   email:
+                    example: alice@example.com
                     type: string
                   nickname:
+                    example: Alice
                     type: string
                   role:
+                    example: user
                     type: string
                   status:
+                    example: active
                     type: string
                   user_id:
+                    example: user_01J8PROFILEEXAMPLE
                     type: string
                   username:
+                    example: beehive_user_01
                     type: string
                 required:
                 - user_id
@@ -435,6 +598,8 @@ paths:
       schemes:
       - https
       summary: AuthSsoCallback
+      tags:
+      - Authentication
   /api/v3/auth/sso/start:
     post:
       consumes:
@@ -447,10 +612,17 @@ paths:
         schema:
           properties:
             provider:
+              enum:
+              - github
+              - qq
+              - wechat
+              example: github
               type: string
             redirect_uri:
+              example: https://app.example.com/auth/callback/github
               type: string
             state:
+              example: state_01J8SSOSTARTEXAMPLE
               type: string
           required:
           - provider
@@ -464,15 +636,20 @@ paths:
           schema:
             properties:
               auth_url:
+                example: https://github.com/login/oauth/authorize?client_id=xxx&redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fcallback%2Fgithub&state=state_01J8SSOSTARTEXAMPLE
                 type: string
               provider:
+                example: github
                 type: string
               state:
+                example: state_01J8SSOSTARTEXAMPLE
                 type: string
             type: object
       schemes:
       - https
       summary: AuthSsoStart
+      tags:
+      - Authentication
   /healthz:
     get:
       operationId: opsHealthz
@@ -484,11 +661,14 @@ paths:
           schema:
             properties:
               status:
+                example: ok
                 type: string
             type: object
       schemes:
       - https
       summary: Healthz
+      tags:
+      - Operations
   /readyz:
     get:
       operationId: opsReadyz
@@ -500,11 +680,14 @@ paths:
           schema:
             properties:
               status:
+                example: ready
                 type: string
             type: object
       schemes:
       - https
       summary: Readyz
+      tags:
+      - Operations
   /ws:
     get:
       operationId: opsWs
@@ -516,17 +699,26 @@ paths:
           schema:
             properties:
               ok:
+                example: true
                 type: boolean
             type: object
       schemes:
       - https
       summary: Ws
+      tags:
+      - Operations
 produces:
 - application/json
 schemes:
+- http
 - https
+securityDefinitions:
+  bearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
-x-date: "2026-04-19 20:05:34"
+x-date: "2026-04-22 21:42:31"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

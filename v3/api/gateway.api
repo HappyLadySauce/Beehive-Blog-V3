@@ -1,155 +1,200 @@
 syntax = "v1"
 
 info (
-	title:   "Beehive Blog v3 Gateway"
-	desc:    "v3 网关 HTTP 契约：/auth 映射 identity RPC，/healthz /readyz /ws 为系统入口"
-	author:  "Beehive"
-	version: "v3"
+	title:       "Beehive Blog v3 Gateway API"
+	description: "Beehive Blog v3 gateway HTTP contract for authentication, session management, system probes, and websocket entrypoints. 适用于 Swagger UI、Apifox、Postman 等接口测试工具的联调与测试。"
+	version:     "v3"
+
+	termsOfService: "https://github.com/happyladysauce/Beehive-Blog-v3"
+	contactName:    "Beehive Blog Maintainers"
+	contactURL:     "https://github.com/happyladysauce/Beehive-Blog-v3"
+	contactEmail:   "maintainers@beehive.local"
+	licenseName:    "Proprietary"
+	licenseURL:     "https://github.com/happyladysauce/Beehive-Blog-v3"
+
+	consumes: "application/json"
+	produces: "application/json"
+	schemes:  "http,https"
+	basePath: "/"
+
+	securityDefinitionsFromJson: `{"bearerAuth":{"type":"apiKey","name":"Authorization","in":"header"}}`
 )
 
 type (
 	AuthRegisterReq {
-		Username string `json:"username" validate:"required,min=3,max=64"`
-		Email    string `json:"email" validate:"required,email,max=320"`
-		Password string `json:"password" validate:"required,min=8,max=128"`
-		Nickname string `json:"nickname,optional" validate:"omitempty,max=128"`
+		Username string `json:"username,example=beehive_user_01" validate:"required,min=3,max=64"`
+		Email    string `json:"email,example=alice@example.com" validate:"required,email,max=320"`
+		Password string `json:"password,example=Str0ngP@ssw0rd!" validate:"required,min=8,max=128"`
+		Nickname string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
 	}
 	AuthRegisterResp {
-		AccessToken  string          `json:"access_token"`
-		RefreshToken string          `json:"refresh_token"`
-		ExpiresIn    int64           `json:"expires_in"`
-		TokenType    string          `json:"token_type"`
-		SessionId    string          `json:"session_id"`
+		AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.register_access"`
+		RefreshToken string          `json:"refresh_token,example=refresh_token_register_example"`
+		ExpiresIn    int64           `json:"expires_in,example=3600"`
+		TokenType    string          `json:"token_type,example=Bearer"`
+		SessionId    string          `json:"session_id,example=sess_01J8REGISTEREXAMPLE"`
 		User         AuthUserProfile `json:"user"`
 		Session      AuthSessionView `json:"session"`
 	}
 	AuthLoginReq {
-		LoginIdentifier string `json:"login_identifier" validate:"required,min=1,max=320"`
-		Password        string `json:"password" validate:"required,min=1,max=128"`
-		ClientType      string `json:"client_type,optional" validate:"omitempty,max=32"`
-		DeviceId        string `json:"device_id,optional" validate:"omitempty,max=128"`
-		DeviceName      string `json:"device_name,optional" validate:"omitempty,max=128"`
-		UserAgent       string `json:"user_agent,optional" validate:"omitempty,max=512"`
+		LoginIdentifier string `json:"login_identifier,example=alice@example.com" validate:"required,min=1,max=320"`
+		Password        string `json:"password,example=Str0ngP@ssw0rd!" validate:"required,min=1,max=128"`
+		ClientType      string `json:"client_type,optional,options=web|ios|android,example=web" validate:"omitempty,max=32"`
+		DeviceId        string `json:"device_id,optional,example=device_web_chrome_001" validate:"omitempty,max=128"`
+		DeviceName      string `json:"device_name,optional,example=Chrome on macOS" validate:"omitempty,max=128"`
+		UserAgent       string `json:"user_agent,optional,example=Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36" validate:"omitempty,max=512"`
 	}
 	AuthLoginResp {
-		AccessToken  string          `json:"access_token"`
-		RefreshToken string          `json:"refresh_token"`
-		ExpiresIn    int64           `json:"expires_in"`
-		TokenType    string          `json:"token_type"`
-		SessionId    string          `json:"session_id"`
+		AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.login_access"`
+		RefreshToken string          `json:"refresh_token,example=refresh_token_login_example"`
+		ExpiresIn    int64           `json:"expires_in,example=3600"`
+		TokenType    string          `json:"token_type,example=Bearer"`
+		SessionId    string          `json:"session_id,example=sess_01J8LOGINEXAMPLE"`
 		User         AuthUserProfile `json:"user"`
 		Session      AuthSessionView `json:"session"`
 	}
 	AuthUserProfile {
-		UserId    string `json:"user_id"`
-		Username  string `json:"username"`
-		Email     string `json:"email"`
-		Nickname  string `json:"nickname,optional"`
-		AvatarUrl string `json:"avatar_url,optional"`
-		Role      string `json:"role"`
-		Status    string `json:"status"`
+		UserId    string `json:"user_id,example=user_01J8PROFILEEXAMPLE"`
+		Username  string `json:"username,example=beehive_user_01"`
+		Email     string `json:"email,example=alice@example.com"`
+		Nickname  string `json:"nickname,optional,example=Alice"`
+		AvatarUrl string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png"`
+		Role      string `json:"role,example=user"`
+		Status    string `json:"status,example=active"`
 	}
 	AuthSessionView {
-		SessionId  string `json:"session_id"`
-		UserId     string `json:"user_id"`
-		AuthSource string `json:"auth_source"`
-		ClientType string `json:"client_type,optional"`
-		DeviceId   string `json:"device_id,optional"`
-		DeviceName string `json:"device_name,optional"`
-		Status     string `json:"status"`
-		LastSeenAt int64  `json:"last_seen_at,optional"`
-		ExpiresAt  int64  `json:"expires_at,optional"`
+		SessionId  string `json:"session_id,example=sess_01J8SESSIONEXAMPLE"`
+		UserId     string `json:"user_id,example=user_01J8PROFILEEXAMPLE"`
+		AuthSource string `json:"auth_source,example=password"`
+		ClientType string `json:"client_type,optional,options=web|ios|android,example=web"`
+		DeviceId   string `json:"device_id,optional,example=device_web_chrome_001"`
+		DeviceName string `json:"device_name,optional,example=Chrome on macOS"`
+		Status     string `json:"status,example=active"`
+		LastSeenAt int64  `json:"last_seen_at,optional,example=1713772800"`
+		ExpiresAt  int64  `json:"expires_at,optional,example=1713776400"`
 	}
 	AuthSsoStartReq {
-		Provider    string `json:"provider" validate:"required,min=1,max=64"`
-		RedirectUri string `json:"redirect_uri" validate:"required,url,max=2048"`
-		State       string `json:"state,optional" validate:"omitempty,max=512"`
+		Provider    string `json:"provider,options=github|qq|wechat,example=github" validate:"required,min=1,max=64"`
+		RedirectUri string `json:"redirect_uri,example=https://app.example.com/auth/callback/github" validate:"required,url,max=2048"`
+		State       string `json:"state,optional,example=state_01J8SSOSTARTEXAMPLE" validate:"omitempty,max=512"`
 	}
 	AuthSsoStartResp {
-		Provider string `json:"provider"`
-		AuthUrl  string `json:"auth_url"`
-		State    string `json:"state"`
+		Provider string `json:"provider,example=github"`
+		AuthUrl  string `json:"auth_url,example=https://github.com/login/oauth/authorize?client_id=xxx&redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fcallback%2Fgithub&state=state_01J8SSOSTARTEXAMPLE"`
+		State    string `json:"state,example=state_01J8SSOSTARTEXAMPLE"`
 	}
 	AuthSsoCallbackReq {
-		Provider    string `json:"provider" validate:"required,min=1,max=64"`
-		Code        string `json:"code" validate:"required,min=1,max=4096"`
-		State       string `json:"state" validate:"required,min=1,max=512"`
-		RedirectUri string `json:"redirect_uri" validate:"required,url,max=2048"`
-		ClientType  string `json:"client_type,optional" validate:"omitempty,max=32"`
-		DeviceId    string `json:"device_id,optional" validate:"omitempty,max=128"`
-		DeviceName  string `json:"device_name,optional" validate:"omitempty,max=128"`
-		UserAgent   string `json:"user_agent,optional" validate:"omitempty,max=512"`
+		Provider    string `json:"provider,options=github|qq|wechat,example=github" validate:"required,min=1,max=64"`
+		Code        string `json:"code,example=gho_example_callback_code" validate:"required,min=1,max=4096"`
+		State       string `json:"state,example=state_01J8SSOSTARTEXAMPLE" validate:"required,min=1,max=512"`
+		RedirectUri string `json:"redirect_uri,example=https://app.example.com/auth/callback/github" validate:"required,url,max=2048"`
+		ClientType  string `json:"client_type,optional,options=web|ios|android,example=web" validate:"omitempty,max=32"`
+		DeviceId    string `json:"device_id,optional,example=device_web_chrome_001" validate:"omitempty,max=128"`
+		DeviceName  string `json:"device_name,optional,example=Chrome on macOS" validate:"omitempty,max=128"`
+		UserAgent   string `json:"user_agent,optional,example=Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36" validate:"omitempty,max=512"`
 	}
 	AuthSsoCallbackResp {
-		AccessToken  string          `json:"access_token"`
-		RefreshToken string          `json:"refresh_token"`
-		ExpiresIn    int64           `json:"expires_in"`
-		TokenType    string          `json:"token_type"`
-		SessionId    string          `json:"session_id"`
+		AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sso_access"`
+		RefreshToken string          `json:"refresh_token,example=refresh_token_sso_example"`
+		ExpiresIn    int64           `json:"expires_in,example=3600"`
+		TokenType    string          `json:"token_type,example=Bearer"`
+		SessionId    string          `json:"session_id,example=sess_01J8SSOEXAMPLE"`
 		User         AuthUserProfile `json:"user"`
 		Session      AuthSessionView `json:"session"`
 	}
 	AuthRefreshReq {
-		RefreshToken string `json:"refresh_token" validate:"required,min=1,max=4096"`
-		UserAgent    string `json:"user_agent,optional" validate:"omitempty,max=512"`
+		RefreshToken string `json:"refresh_token,example=refresh_token_login_example" validate:"required,min=1,max=4096"`
+		UserAgent    string `json:"user_agent,optional,example=Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36" validate:"omitempty,max=512"`
 	}
 	AuthRefreshResp {
-		AccessToken  string          `json:"access_token"`
-		RefreshToken string          `json:"refresh_token"`
-		ExpiresIn    int64           `json:"expires_in"`
-		TokenType    string          `json:"token_type"`
-		SessionId    string          `json:"session_id"`
+		AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh_access"`
+		RefreshToken string          `json:"refresh_token,example=refresh_token_refresh_example"`
+		ExpiresIn    int64           `json:"expires_in,example=3600"`
+		TokenType    string          `json:"token_type,example=Bearer"`
+		SessionId    string          `json:"session_id,example=sess_01J8REFRESHEXAMPLE"`
 		Session      AuthSessionView `json:"session"`
 	}
-	// 当前会话登出：session 由 gateway 从 Bearer access token 解析后调用 identity；可选 body 仅用于提交 refresh_token 以吊销轮换链
+	// Logout the current session and optionally revoke the refresh-token chain.
+	// 当前会话登出；可选提交 refresh token 以吊销对应刷新链。
 	AuthLogoutReq {
-		Authorization string `header:"Authorization" validate:"required"`
-		RefreshToken  string `json:"refresh_token,optional" validate:"omitempty,max=4096"`
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		RefreshToken  string `json:"refresh_token,optional,example=refresh_token_login_example" validate:"omitempty,max=4096"`
 	}
 	AuthLogoutResp {
-		Ok bool `json:"ok"`
+		Ok bool `json:"ok,example=true"`
 	}
-	// 受保护接口：须携带 Bearer access token（与中间件语义一致，避免契约与实现/文档脱节）
+	// Read the authenticated user profile from the current access token.
+	// 读取当前访问令牌对应的已认证用户资料。
 	AuthMeReq {
-		Authorization string `header:"Authorization" validate:"required"`
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 	}
 	AuthMeResp {
 		User AuthUserProfile `json:"user"`
 	}
 	HealthzResp {
-		Status string `json:"status"`
+		Status string `json:"status,example=ok"`
 	}
 	ReadyzResp {
-		Status string `json:"status"`
+		Status string `json:"status,example=ready"`
 	}
 	WsStubResp {
-		Ok bool `json:"ok"`
+		Ok bool `json:"ok,example=true"`
 	}
 )
 
 @server (
 	prefix: /api/v3/auth
 	group:  auth
+	tags:   "Authentication"
 )
 service gateway {
+	@doc (
+		bizCodeEnumDescription: "110101-invalid argument<br>110502-username already exists<br>110503-email already exists<br>119901-internal error"
+	)
 	@handler AuthRegister
 	post /register (AuthRegisterReq) returns (AuthRegisterResp)
 
+	@doc (
+		bizCodeEnumDescription: "110101-invalid argument<br>110201-invalid credentials<br>110205-account pending<br>110206-account disabled<br>110207-account locked<br>119901-internal error"
+	)
 	@handler AuthLogin
 	post /login (AuthLoginReq) returns (AuthLoginResp)
 
+	@doc (
+		bizCodeEnumDescription: "110101-invalid argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>119901-internal error"
+	)
 	@handler AuthSsoStart
 	post /sso/start (AuthSsoStartReq) returns (AuthSsoStartResp)
 
+	@doc (
+		bizCodeEnumDescription: "110101-invalid argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>110403-sso state invalid<br>119901-internal error"
+	)
 	@handler AuthSsoCallback
 	post /sso/callback (AuthSsoCallbackReq) returns (AuthSsoCallbackResp)
 
+	@doc (
+		bizCodeEnumDescription: "110101-invalid argument<br>110202-invalid refresh token<br>110203-refresh token expired<br>110204-session revoked<br>119901-internal error"
+	)
 	@handler AuthRefresh
 	post /refresh (AuthRefreshReq) returns (AuthRefreshResp)
+}
 
+@server (
+	prefix:   /api/v3/auth
+	group:    auth
+	tags:     "Authentication"
+	authType: bearerAuth
+)
+service gateway {
+	@doc (
+		bizCodeEnumDescription: "100201-authorization required<br>100202-invalid authorization scheme<br>100203-access token invalid<br>100204-access token inactive<br>109901-internal error"
+	)
 	@handler AuthLogout
 	post /logout (AuthLogoutReq) returns (AuthLogoutResp)
 
+	@doc (
+		bizCodeEnumDescription: "100201-authorization required<br>100202-invalid authorization scheme<br>100203-access token invalid<br>100204-access token inactive<br>109901-internal error"
+	)
 	@handler AuthMe
 	get /me (AuthMeReq) returns (AuthMeResp)
 }
@@ -157,15 +202,24 @@ service gateway {
 @server (
 	prefix: "/"
 	group:  ops
+	tags:   "Operations"
 )
 service gateway {
+	@doc (
+		bizCodeEnumDescription: "109901-internal error"
+	)
 	@handler Healthz
 	get /healthz returns (HealthzResp)
 
+	@doc (
+		bizCodeEnumDescription: "100401-gateway not ready<br>100601-auth service unavailable<br>100602-upstream timeout<br>109901-internal error"
+	)
 	@handler Readyz
 	get /readyz returns (ReadyzResp)
 
+	@doc (
+		bizCodeEnumDescription: "109901-internal error"
+	)
 	@handler Ws
 	get /ws returns (WsStubResp)
 }
-

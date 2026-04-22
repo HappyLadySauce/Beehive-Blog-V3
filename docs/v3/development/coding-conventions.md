@@ -131,6 +131,12 @@
 
 ## 服务级约束
 
+### API 契约与 Swagger 真相源
+
+- `v3/api/gateway.api` 同时承担 HTTP 契约与 Swagger 文档真相源职责
+- 接口测试需要的说明、示例、可选值与关键业务错误码描述应优先写在 `.api`
+- `v3/api/gateway.yaml` 只通过 `goctl` 生成，不手工维护
+
 ### `identity`
 
 - 使用 `internal/model/entity` 承载账户、会话、refresh token、SSO 绑定、审计等表结构映射
