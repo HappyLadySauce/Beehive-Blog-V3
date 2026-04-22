@@ -6,6 +6,25 @@
 
 ## 分层规则
 
+### `qa/`
+
+- 作为仓库根目录下的独立 HTTP 回归与性能测试工程
+- 技术栈固定为：
+  - `Python + uv`
+  - `pytest`
+  - `httpx`
+  - `pydantic`
+  - `locust`
+- 主要负责：
+  - `gateway` HTTP 接口回归
+  - 登录态串联
+  - 跨接口状态流转
+  - 后续压测入口
+- 不替代 Go 包内测试
+- 默认连接**已启动**的 `gateway/identity/infra`
+- 第一阶段不负责自动启动服务
+- 目标环境探测统一通过 `qa.scripts.check_env`
+
 ### `internal/auth`
 
 - 作为纯单元测试入口
@@ -81,6 +100,7 @@
 
 - `logic` 不是主要业务测试入口
 - `service` 是后续身份域测试的核心入口
+- HTTP 接口级联调、真实鉴权串联与回归测试优先进入 `qa/`
 - provider client 必须实例化注入，测试不依赖包级 HTTP/OAuth 钩子
 - `GitHub`、`QQ`、`WeChat` 当前都属于完整 provider
 - SSO provider 的 token / profile / callback 测试统一使用 `httptest.Server`

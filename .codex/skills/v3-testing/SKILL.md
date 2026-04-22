@@ -25,11 +25,14 @@ It covers test layering, Testcontainers defaults, and which layer should own whi
 - Keep `service` as the main business test entry.
 - Keep `logic` as smoke-test only.
 - Use Testcontainers as the default integration-test path where the repository already requires it.
+- When the task needs real gateway HTTP regression, chained auth validation, or repository-managed API test scripts, prefer the root `qa/` project.
+- Treat `qa/` as the standard entry for Python + uv + pytest + locust based HTTP regression and load-test scaffolding.
 
 ## Do Not
 
 - Do not move heavy business coverage into `logic` tests.
 - Do not default to local env fallback when the repository standard says Testcontainers first.
+- Do not replace package-level Go tests with `qa/`; they serve different purposes.
 - Do not duplicate full coding or error/logging rules here.
 
 ## Hand-off
