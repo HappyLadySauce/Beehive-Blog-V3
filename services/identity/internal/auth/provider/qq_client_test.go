@@ -191,3 +191,34 @@ func TestQQClientFetchProfileAcceptsStringRet(t *testing.T) {
 		t.Fatalf("expected qq profile to be returned, got %#v", profile)
 	}
 }
+
+// TestQQClientFetchProfileUsesStructuredErrorMessage verifies userinfo errors prefer structured messages.
+// TestQQClientFetchProfileUsesStructuredErrorMessage 验证 userinfo 错误优先使用结构化错误信息。
+func TestQQClientFetchProfileUsesStructuredErrorMessage(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"ret":10001,"msg":"nickname denied"}`))
+	}))
+	defer server.Close()
+
+	client := provider.NewQQClient(config.OAuthProviderConf{
+		Enabled:      true,
+		ClientID:     "qq-client-id",
+		ClientSecret: "qq-client-secret",
+		RedirectURL:  "https://example.com/auth/qq/callback",
+	})
+	client.HTTPClient = server.Client()
+	client.UserInfoURL = server.URL
+
+	_, _, err := client.FetchProfile(context.Background(), &provider.AccessToken{
+		Token:  "qq-access-token",
+		OpenID: "qq-openid-123",
+	})
+	if err == nil {
+		t.Fatalf("expected structured qq userinfo error")
+	}
+	if got := err.Error(); got != "qq user info API returned error 10001: nickname denied" {
+		t.Fatalf("expected structured qq error message, got %q", got)
+	}
+}

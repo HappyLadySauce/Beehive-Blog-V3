@@ -182,18 +182,18 @@ func (c *GitHubClient) fetchVerifiedEmail(ctx context.Context, token string) (*s
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, false, err
+		return nil, false, nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, false, fmt.Errorf("github user emails API returned status %d: %s", resp.StatusCode, bodyPreview(body))
+		_, _ = io.ReadAll(resp.Body)
+		return nil, false, nil
 	}
 
 	var emails []githubEmailRecord
 	if err := json.NewDecoder(resp.Body).Decode(&emails); err != nil {
-		return nil, false, err
+		return nil, false, nil
 	}
 
 	var fallback *string
@@ -204,7 +204,7 @@ func (c *GitHubClient) fetchVerifiedEmail(ctx context.Context, token string) (*s
 		}
 		normalized, err := auth.NormalizeEmail(email)
 		if err != nil {
-			return nil, false, err
+			continue
 		}
 		if item.Primary {
 			return stringPtr(normalized), true, nil

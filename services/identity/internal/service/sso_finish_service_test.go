@@ -510,6 +510,53 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		}
 	})
 
+	t.Run("existing federated identity ignores github emails endpoint failure", func(t *testing.T) {
+		deps := newDeps(t, now)
+		user := testkit.CreateUser(t, deps.Store)
+		testkit.CreateFederatedIdentity(t, deps.Store, user.ID, auth.ProviderGitHub, "12345")
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderGitHub, "state-emails-fallback", deps.Config.SSO.GitHub.RedirectURL)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "github-access-token",
+					"token_type":   "bearer",
+				})
+			case "/user":
+				writeGitHubUserResponse(w, 12345, "octocat", "The Octocat", "")
+			case "/user/emails":
+				http.Error(w, "forbidden", http.StatusForbidden)
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := githubClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.APIBaseURL = server.URL
+		client.OAuthEndpoint = oauth2.Endpoint{
+			AuthURL:  server.URL + "/authorize",
+			TokenURL: server.URL + "/token",
+		}
+
+		svc := service.NewSSOFinishService(deps)
+		result, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-emails-fallback",
+			State:       "state-emails-fallback",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if err != nil {
+			t.Fatalf("expected federated identity login to survive emails fallback, got %v", err)
+		}
+		if result.User == nil || result.User.ID != user.ID {
+			t.Fatalf("expected existing user_id=%d, got %#v", user.ID, result.User)
+		}
+	})
+
 	t.Run("verified github email links existing local user", func(t *testing.T) {
 		deps := newDeps(t, now)
 		existingUser := testkit.CreateUser(t, deps.Store, func(user *entity.User) {
@@ -620,6 +667,58 @@ func TestSSOFinishServiceExecute(t *testing.T) {
 		}
 		if result.User.ID == existingUser.ID {
 			t.Fatalf("expected unverified github email not to link existing user_id=%d", existingUser.ID)
+		}
+	})
+
+	t.Run("github emails endpoint failure does not auto link existing local email user", func(t *testing.T) {
+		deps := newDeps(t, now)
+		existingUser := testkit.CreateUser(t, deps.Store, func(user *entity.User) {
+			email := "octocat@example.com"
+			user.Email = &email
+		})
+		testkit.CreateOAuthState(t, deps.Store, auth.ProviderGitHub, "state-link-fallback", deps.Config.SSO.GitHub.RedirectURL)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/token":
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"access_token": "github-access-token",
+					"token_type":   "bearer",
+				})
+			case "/user":
+				writeGitHubUserResponse(w, 77777, "octocat-fallback", "The Octocat", "octocat@example.com")
+			case "/user/emails":
+				http.Error(w, "forbidden", http.StatusForbidden)
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+
+		client := githubClientFromDeps(t, deps)
+		client.HTTPClient = server.Client()
+		client.APIBaseURL = server.URL
+		client.OAuthEndpoint = oauth2.Endpoint{
+			AuthURL:  server.URL + "/authorize",
+			TokenURL: server.URL + "/token",
+		}
+
+		svc := service.NewSSOFinishService(deps)
+		result, err := svc.Execute(context.Background(), service.FinishSSOInput{
+			Provider:    auth.ProviderGitHub,
+			Code:        "code-link-fallback",
+			State:       "state-link-fallback",
+			RedirectURI: deps.Config.SSO.GitHub.RedirectURL,
+		})
+		if err != nil {
+			t.Fatalf("expected emails fallback flow to succeed, got %v", err)
+		}
+		if result.User == nil {
+			t.Fatalf("expected user to be returned")
+		}
+		if result.User.ID == existingUser.ID {
+			t.Fatalf("expected emails fallback not to auto link existing user_id=%d", existingUser.ID)
 		}
 	})
 }

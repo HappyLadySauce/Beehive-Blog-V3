@@ -188,7 +188,7 @@ func (c *QQClient) FetchProfile(ctx context.Context, accessToken *AccessToken) (
 		return nil, nil, err
 	}
 	if ret, ok := qqErrorCode(rawMap["ret"]); ok && ret != "0" {
-		return nil, nil, fmt.Errorf("qq user info API returned error %s: %s", ret, bodyPreview(body))
+		return nil, nil, fmt.Errorf("qq user info API returned error %s: %s", ret, qqErrorMessage(rawMap))
 	}
 
 	nickname, _ := rawMap["nickname"].(string)

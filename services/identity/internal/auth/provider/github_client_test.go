@@ -167,6 +167,89 @@ func TestGitHubClientFetchProfileWithoutVerifiedEmail(t *testing.T) {
 	}
 }
 
+// TestGitHubClientFetchProfileEmailsEndpointFailureFallsBack verifies `/user/emails` failures do not block login.
+// TestGitHubClientFetchProfileEmailsEndpointFailureFallsBack 验证 `/user/emails` 失败不会阻断登录。
+func TestGitHubClientFetchProfileEmailsEndpointFailureFallsBack(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/user":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":    12345,
+				"login": "octocat",
+				"name":  "The Octocat",
+				"email": "octocat@example.com",
+			})
+		case "/user/emails":
+			http.Error(w, "forbidden", http.StatusForbidden)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client := provider.NewGitHubClient(config.OAuthProviderConf{
+		Enabled:      true,
+		ClientID:     "github-client-id",
+		ClientSecret: "github-client-secret",
+		RedirectURL:  "https://example.com/callback",
+		Scopes:       []string{"read:user"},
+	})
+	client.HTTPClient = server.Client()
+	client.APIBaseURL = server.URL
+
+	profile, _, err := client.FetchProfile(context.Background(), &provider.AccessToken{Token: "access-token"})
+	if err != nil {
+		t.Fatalf("expected fetch profile to degrade successfully, got %v", err)
+	}
+	if profile.Email != nil {
+		t.Fatalf("expected email to be cleared on emails endpoint failure, got %#v", profile.Email)
+	}
+	if profile.EmailVerified {
+		t.Fatalf("expected email to be marked unverified after fallback")
+	}
+}
+
+// TestGitHubClientFetchProfileEmailsEndpointInvalidJSONFallsBack verifies invalid `/user/emails` JSON degrades safely.
+// TestGitHubClientFetchProfileEmailsEndpointInvalidJSONFallsBack 验证 `/user/emails` 非法 JSON 会安全降级。
+func TestGitHubClientFetchProfileEmailsEndpointInvalidJSONFallsBack(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/user":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":    12345,
+				"login": "octocat",
+				"name":  "The Octocat",
+			})
+		case "/user/emails":
+			_, _ = w.Write([]byte(`{"invalid":`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client := provider.NewGitHubClient(config.OAuthProviderConf{
+		Enabled:      true,
+		ClientID:     "github-client-id",
+		ClientSecret: "github-client-secret",
+		RedirectURL:  "https://example.com/callback",
+	})
+	client.HTTPClient = server.Client()
+	client.APIBaseURL = server.URL
+
+	profile, _, err := client.FetchProfile(context.Background(), &provider.AccessToken{Token: "access-token"})
+	if err != nil {
+		t.Fatalf("expected invalid emails JSON to degrade successfully, got %v", err)
+	}
+	if profile.Email != nil || profile.EmailVerified {
+		t.Fatalf("expected invalid emails JSON to fall back to no verified email, got %#v", profile)
+	}
+}
+
 // TestGitHubClientFetchProfileRejectsIncompleteProfile verifies required field checks.
 // TestGitHubClientFetchProfileRejectsIncompleteProfile 验证缺少关键字段时的拒绝行为。
 func TestGitHubClientFetchProfileRejectsIncompleteProfile(t *testing.T) {
