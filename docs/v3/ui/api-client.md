@@ -17,10 +17,11 @@
 
 ```text
 VITE_API_MODE=mock|live
-VITE_GATEWAY_BASE_URL=http://127.0.0.1:8888
+VITE_GATEWAY_BASE_URL=
 ```
 
 默认 `mock`，页面不依赖后端即可运行。
+开发环境默认留空 `VITE_GATEWAY_BASE_URL`，让 `/api` 请求走 Vite proxy；部署到已配置 CORS 或同源网关时再填写绝对地址。
 
 `live` 只用于 auth 链路：
 

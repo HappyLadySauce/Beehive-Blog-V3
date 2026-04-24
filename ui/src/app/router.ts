@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
+import { useAuthStore } from '@/features/auth/stores/authStore';
+
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -26,6 +28,7 @@ export const router = createRouter({
     {
       path: '/studio',
       component: () => import('@/shared/layouts/StudioLayout.vue'),
+      meta: { requiresAuth: true },
       children: [
         { path: '', name: 'studio-dashboard', component: () => import('@/pages/studio/StudioDashboardPage.vue') },
         { path: 'content', name: 'studio-content', component: () => import('@/pages/studio/StudioContentPage.vue') },
@@ -40,4 +43,20 @@ export const router = createRouter({
   scrollBehavior() {
     return { top: 0 };
   },
+});
+
+router.beforeEach((to) => {
+  if (!to.matched.some((route) => route.meta.requiresAuth === true)) {
+    return true;
+  }
+
+  const authStore = useAuthStore();
+  if (authStore.isAuthenticated) {
+    return true;
+  }
+
+  return {
+    name: 'auth-login',
+    query: { redirect: to.fullPath },
+  };
 });

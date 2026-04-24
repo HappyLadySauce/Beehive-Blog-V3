@@ -39,7 +39,7 @@ describe('authApi', () => {
 
     expect(response.user.user_id).toBe('user_live_001');
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8888/api/v3/auth/me',
+      '/api/v3/auth/me',
       expect.objectContaining({
         method: 'GET',
       }),

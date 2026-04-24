@@ -66,7 +66,7 @@ auth 实联调：
 
 ```text
 VITE_API_MODE=live
-VITE_GATEWAY_BASE_URL=http://127.0.0.1:8888
+VITE_GATEWAY_BASE_URL=
 ```
 
-live 模式只要求 `gateway` 和 `identity` auth 链路可用；不要求 content ready。
+live 模式只要求 `gateway` 和 `identity` auth 链路可用；不要求 content ready。开发环境默认留空 `VITE_GATEWAY_BASE_URL`，让 `/api` 请求走 Vite proxy；部署到已配置 CORS 或同源网关时再填写绝对地址。

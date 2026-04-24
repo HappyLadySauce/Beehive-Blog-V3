@@ -3,7 +3,6 @@ package content
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
@@ -58,13 +57,38 @@ func MapUpstreamError(ctx context.Context, action string, route string, err erro
 	return errs.New(errs.CodeContentInternal, "content internal error")
 }
 
+var alreadyExistsCodesByAction = map[string]errs.Code{
+	"content_create":          errs.CodeContentSlugAlreadyExists,
+	"content_update":          errs.CodeContentSlugAlreadyExists,
+	"content_relation_create": errs.CodeContentRelationAlreadyExists,
+	"content_tag_create":      errs.CodeContentTagAlreadyExists,
+	"content_tag_update":      errs.CodeContentTagAlreadyExists,
+}
+
+var alreadyExistsCodesByRoute = map[string]errs.Code{
+	"/api/v3/studio/content/items":                       errs.CodeContentSlugAlreadyExists,
+	"/api/v3/studio/content/items/:content_id":           errs.CodeContentSlugAlreadyExists,
+	"/api/v3/studio/content/items/:content_id/relations": errs.CodeContentRelationAlreadyExists,
+	"/api/v3/studio/content/tags":                        errs.CodeContentTagAlreadyExists,
+	"/api/v3/studio/content/tags/:tag_id":                errs.CodeContentTagAlreadyExists,
+}
+
 func alreadyExistsFallback(action string, route string) error {
-	value := strings.ToLower(action + " " + route)
-	switch {
-	case strings.Contains(value, "relation"):
-		return errs.New(errs.CodeContentRelationAlreadyExists, "content relation already exists")
-	case strings.Contains(value, "tag"):
-		return errs.New(errs.CodeContentTagAlreadyExists, "content tag already exists")
+	if code, ok := alreadyExistsCodesByAction[action]; ok {
+		return alreadyExistsError(code)
+	}
+	if code, ok := alreadyExistsCodesByRoute[route]; ok {
+		return alreadyExistsError(code)
+	}
+	return alreadyExistsError(errs.CodeContentSlugAlreadyExists)
+}
+
+func alreadyExistsError(code errs.Code) error {
+	switch code {
+	case errs.CodeContentRelationAlreadyExists:
+		return errs.New(code, "content relation already exists")
+	case errs.CodeContentTagAlreadyExists:
+		return errs.New(code, "content tag already exists")
 	default:
 		return errs.New(errs.CodeContentSlugAlreadyExists, "content slug already exists")
 	}

@@ -1268,11 +1268,6 @@ paths:
           - title
           - slug
           - body_markdown
-          - visibility
-          - ai_access
-          - source_type
-          - is_featured
-          - sort_order
           type: object
       produces:
       - application/json
@@ -2689,7 +2684,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-24 20:56:16"
+x-date: "2026-04-24 22:43:57"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

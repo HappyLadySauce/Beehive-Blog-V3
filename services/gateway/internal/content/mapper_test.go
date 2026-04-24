@@ -196,6 +196,12 @@ func TestMapUpstreamErrorMapsAlreadyExistsFallbackByRoute(t *testing.T) {
 			route:  "/api/v3/studio/content/items",
 			code:   errs.CodeContentSlugAlreadyExists,
 		},
+		{
+			name:   "unknown stage route does not match tag substring",
+			action: "content_stage_create",
+			route:  "/api/v3/studio/content/stages",
+			code:   errs.CodeContentSlugAlreadyExists,
+		},
 	}
 
 	for _, tc := range cases {

@@ -6,5 +6,5 @@ function readApiMode(value: string | undefined): ApiMode {
 
 export const appConfig = {
   apiMode: readApiMode(import.meta.env.VITE_API_MODE),
-  gatewayBaseUrl: import.meta.env.VITE_GATEWAY_BASE_URL ?? 'http://127.0.0.1:8888',
+  gatewayBaseUrl: import.meta.env.VITE_GATEWAY_BASE_URL ?? '',
 };

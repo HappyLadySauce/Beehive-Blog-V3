@@ -1,18 +1,26 @@
 <script setup lang="ts">
 import { ArrowRight, Home } from 'lucide-vue-next';
 import { reactive } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import BaseButton from '@/shared/components/BaseButton.vue';
 import BaseInput from '@/shared/components/BaseInput.vue';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const form = reactive({
   login_identifier: 'demo@beehive.local',
   password: 'Demo@123456',
 });
+
+function safeRedirectTarget(value: unknown): string {
+  if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')) {
+    return value;
+  }
+  return '/studio';
+}
 
 async function submitLogin() {
   await authStore.login({
@@ -22,7 +30,7 @@ async function submitLogin() {
     device_name: 'Beehive UI',
     user_agent: navigator.userAgent,
   });
-  await router.push('/studio');
+  await router.push(safeRedirectTarget(route.query.redirect));
 }
 </script>
 
