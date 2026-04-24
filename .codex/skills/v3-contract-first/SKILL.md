@@ -39,15 +39,15 @@ It only defines the correct source-of-truth order and contract sequencing.
 
 - Do not start from generated files.
 - Do not hand-edit `v3/api/gateway.yaml`; regenerate it from `v3/api/gateway.api`.
+- Do not regenerate gateway Go code from `v3/api/gateway.api`; gateway handler, logic, and route wiring are maintained as handwritten code.
 - Do not move business orchestration into `gateway`.
 - Do not duplicate project-wide coding or logging rules here.
 
 ## Hand-off
 
-- After the contract shape is clear, continue with `$v3-goctl`.
-- After generation, continue with `$v3-during-task`.
+- After the contract shape is clear, continue with `$v3-goctl` only for Swagger or RPC generation.
+- After allowed generation, continue with `$v3-during-task`.
 
 ## References
 
-- [goctl 参考](../goctl-workflow/references/goctl.md)
 - [编码规范](../../docs/v3/development/coding-conventions.md)

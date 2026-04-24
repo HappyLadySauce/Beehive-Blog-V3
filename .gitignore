@@ -6,4 +6,5 @@ uploads/
 
 .env
 .tmp
+logs/
 designs/

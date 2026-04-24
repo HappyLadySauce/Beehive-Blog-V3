@@ -28,18 +28,12 @@
   - `v3-error-and-logging`
   - `v3-testing`
 
-旧 skill：
-
-- `goctl-workflow`
-- `contract-first-goctl`
-
-当前只作为过渡入口保留，后续应优先使用新的拆分 skill，而不是继续把所有规则一次性加载。
-
 当前约定：
 
 - 本目录是 `v3` 编码与配置规范的唯一基线
 - 架构边界继续以 `docs/v3/contracts`、`docs/v3/gateway`、`docs/v3/identity` 为准
 - 实现层目录职责、技术栈边界、配置写法优先以本目录为准
+- `v3-goctl` 只允许生成 Swagger 与 RPC 代码，不再生成或覆盖 `services/gateway` Go 代码
 - 新服务默认参考 `identity` 的配置结构与校验模式，不再继续使用“全量 optional”风格
 - 代码注释统一采用“英文在上、中文在下”的双语格式
 - 运行时日志统一使用英文
