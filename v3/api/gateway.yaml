@@ -6,8 +6,9 @@ info:
     email: maintainers@beehive.local
     name: Beehive Blog Maintainers
     url: https://github.com/happyladysauce/Beehive-Blog-v3
-  description: Beehive Blog v3 gateway HTTP contract for authentication, session management,
-    system probes, and websocket entrypoints. 适用于 Swagger UI、Apifox、Postman 等接口测试工具的联调与测试。
+  description: Beehive Blog v3 gateway HTTP contract for authentication, content management,
+    public content reading, system probes, and websocket entrypoints. 适用于 Swagger
+    UI、Apifox、Postman 等接口测试工具的联调与测试。
   license:
     name: Proprietary
     url: https://github.com/happyladysauce/Beehive-Blog-v3
@@ -650,6 +651,1712 @@ paths:
       summary: AuthSsoStart
       tags:
       - Authentication
+  /api/v3/public/content/items:
+    get:
+      operationId: publiccontentPublicContentList
+      parameters:
+      - allowEmptyValue: true
+        default: 1
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - allowEmptyValue: true
+        default: 20
+        example: 20
+        in: query
+        name: page_size
+        type: integer
+      - allowEmptyValue: true
+        enum:
+        - article
+        - note
+        - project
+        - experience
+        - timeline_event
+        - insight
+        - portfolio
+        - page
+        example: article
+        in: query
+        name: type
+        type: string
+      - allowEmptyValue: true
+        example: beehive
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    ai_access:
+                      enum:
+                      - allowed
+                      - denied
+                      example: allowed
+                      type: string
+                    archived_at:
+                      example: 0
+                      type: integer
+                    content_id:
+                      example: "1001"
+                      type: string
+                    cover_image_url:
+                      example: https://cdn.example.com/covers/beehive-v3.png
+                      type: string
+                    created_at:
+                      example: 1713772000
+                      type: integer
+                    published_at:
+                      example: 1713772800
+                      type: integer
+                    slug:
+                      example: building-beehive-blog-v3
+                      type: string
+                    status:
+                      enum:
+                      - draft
+                      - review
+                      - published
+                      - archived
+                      example: published
+                      type: string
+                    summary:
+                      example: Design notes for the v3 content platform.
+                      type: string
+                    tags:
+                      items:
+                        properties:
+                          color:
+                            example: '#00ADD8'
+                            type: string
+                          created_at:
+                            example: 1713772800
+                            type: integer
+                          description:
+                            example: Go language notes
+                            type: string
+                          name:
+                            example: Go
+                            type: string
+                          slug:
+                            example: go
+                            type: string
+                          tag_id:
+                            example: tag_1001
+                            type: string
+                          updated_at:
+                            example: 1713776400
+                            type: integer
+                        required:
+                        - tag_id
+                        - name
+                        - slug
+                        - created_at
+                        - updated_at
+                        type: object
+                      type: array
+                    title:
+                      example: Building Beehive Blog v3
+                      type: string
+                    type:
+                      enum:
+                      - article
+                      - note
+                      - project
+                      - experience
+                      - timeline_event
+                      - insight
+                      - portfolio
+                      - page
+                      example: article
+                      type: string
+                    updated_at:
+                      example: 1713776400
+                      type: integer
+                    visibility:
+                      enum:
+                      - public
+                      - member
+                      - private
+                      example: public
+                      type: string
+                  required:
+                  - content_id
+                  - type
+                  - title
+                  - slug
+                  - status
+                  - visibility
+                  - ai_access
+                  - created_at
+                  - updated_at
+                  - tags
+                  type: object
+                type: array
+              page:
+                example: 1
+                type: integer
+              page_size:
+                example: 20
+                type: integer
+              total:
+                example: 1
+                type: integer
+            type: object
+      schemes:
+      - https
+      summary: List public content items
+      tags:
+      - Public Content
+  /api/v3/public/content/items/{slug}:
+    get:
+      operationId: publiccontentPublicContentGet
+      parameters:
+      - example: building-beehive-blog-v3
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              content:
+                properties:
+                  ai_access:
+                    enum:
+                    - allowed
+                    - denied
+                    example: allowed
+                    type: string
+                  archived_at:
+                    example: 0
+                    type: integer
+                  author_user_id:
+                    example: "1"
+                    type: string
+                  body_json:
+                    example: '{"type":"doc"'
+                    type: string
+                  body_markdown:
+                    example: '# Building Beehive Blog v3'
+                    type: string
+                  comment_enabled:
+                    example: true
+                    type: boolean
+                  content_id:
+                    example: "1001"
+                    type: string
+                  cover_image_url:
+                    example: https://cdn.example.com/covers/beehive-v3.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  current_revision_id:
+                    example: "2001"
+                    type: string
+                  is_featured:
+                    example: false
+                    type: boolean
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  published_at:
+                    example: 1713772800
+                    type: integer
+                  slug:
+                    example: building-beehive-blog-v3
+                    type: string
+                  sort_order:
+                    example: 0
+                    type: integer
+                  source_type:
+                    enum:
+                    - manual
+                    - import_v1
+                    - import_markdown
+                    - agent_generated
+                    - agent_assisted
+                    example: manual
+                    type: string
+                  status:
+                    enum:
+                    - draft
+                    - review
+                    - published
+                    - archived
+                    example: published
+                    type: string
+                  summary:
+                    example: Design notes for the v3 content platform.
+                    type: string
+                  tags:
+                    items:
+                      properties:
+                        color:
+                          example: '#00ADD8'
+                          type: string
+                        created_at:
+                          example: 1713772800
+                          type: integer
+                        description:
+                          example: Go language notes
+                          type: string
+                        name:
+                          example: Go
+                          type: string
+                        slug:
+                          example: go
+                          type: string
+                        tag_id:
+                          example: tag_1001
+                          type: string
+                        updated_at:
+                          example: 1713776400
+                          type: integer
+                      required:
+                      - tag_id
+                      - name
+                      - slug
+                      - created_at
+                      - updated_at
+                      type: object
+                    type: array
+                  title:
+                    example: Building Beehive Blog v3
+                    type: string
+                  type:
+                    enum:
+                    - article
+                    - note
+                    - project
+                    - experience
+                    - timeline_event
+                    - insight
+                    - portfolio
+                    - page
+                    example: article
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - member
+                    - private
+                    example: public
+                    type: string
+                required:
+                - content_id
+                - type
+                - title
+                - slug
+                - body_markdown
+                - status
+                - visibility
+                - ai_access
+                - owner_user_id
+                - author_user_id
+                - source_type
+                - comment_enabled
+                - is_featured
+                - sort_order
+                - created_at
+                - updated_at
+                - tags
+                type: object
+            type: object
+      schemes:
+      - https
+      summary: Get public content item by slug
+      tags:
+      - Public Content
+  /api/v3/studio/content/items:
+    get:
+      operationId: contentContentList
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - allowEmptyValue: true
+        default: 1
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - allowEmptyValue: true
+        default: 20
+        example: 20
+        in: query
+        name: page_size
+        type: integer
+      - allowEmptyValue: true
+        enum:
+        - article
+        - note
+        - project
+        - experience
+        - timeline_event
+        - insight
+        - portfolio
+        - page
+        example: article
+        in: query
+        name: type
+        type: string
+      - allowEmptyValue: true
+        enum:
+        - draft
+        - review
+        - published
+        - archived
+        example: published
+        in: query
+        name: status
+        type: string
+      - allowEmptyValue: true
+        enum:
+        - public
+        - member
+        - private
+        example: public
+        in: query
+        name: visibility
+        type: string
+      - allowEmptyValue: true
+        example: beehive
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    ai_access:
+                      enum:
+                      - allowed
+                      - denied
+                      example: allowed
+                      type: string
+                    archived_at:
+                      example: 0
+                      type: integer
+                    content_id:
+                      example: "1001"
+                      type: string
+                    cover_image_url:
+                      example: https://cdn.example.com/covers/beehive-v3.png
+                      type: string
+                    created_at:
+                      example: 1713772000
+                      type: integer
+                    published_at:
+                      example: 1713772800
+                      type: integer
+                    slug:
+                      example: building-beehive-blog-v3
+                      type: string
+                    status:
+                      enum:
+                      - draft
+                      - review
+                      - published
+                      - archived
+                      example: published
+                      type: string
+                    summary:
+                      example: Design notes for the v3 content platform.
+                      type: string
+                    tags:
+                      items:
+                        properties:
+                          color:
+                            example: '#00ADD8'
+                            type: string
+                          created_at:
+                            example: 1713772800
+                            type: integer
+                          description:
+                            example: Go language notes
+                            type: string
+                          name:
+                            example: Go
+                            type: string
+                          slug:
+                            example: go
+                            type: string
+                          tag_id:
+                            example: tag_1001
+                            type: string
+                          updated_at:
+                            example: 1713776400
+                            type: integer
+                        required:
+                        - tag_id
+                        - name
+                        - slug
+                        - created_at
+                        - updated_at
+                        type: object
+                      type: array
+                    title:
+                      example: Building Beehive Blog v3
+                      type: string
+                    type:
+                      enum:
+                      - article
+                      - note
+                      - project
+                      - experience
+                      - timeline_event
+                      - insight
+                      - portfolio
+                      - page
+                      example: article
+                      type: string
+                    updated_at:
+                      example: 1713776400
+                      type: integer
+                    visibility:
+                      enum:
+                      - public
+                      - member
+                      - private
+                      example: public
+                      type: string
+                  required:
+                  - content_id
+                  - type
+                  - title
+                  - slug
+                  - status
+                  - visibility
+                  - ai_access
+                  - created_at
+                  - updated_at
+                  - tags
+                  type: object
+                type: array
+              page:
+                example: 1
+                type: integer
+              page_size:
+                example: 20
+                type: integer
+              total:
+                example: 1
+                type: integer
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List studio content items
+      tags:
+      - Studio Content
+    post:
+      consumes:
+      - application/json
+      operationId: contentContentCreate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            ai_access:
+              default: denied
+              enum:
+              - allowed
+              - denied
+              example: denied
+              type: string
+            body_json:
+              example: '{"type":"doc"'
+              type: string
+            body_markdown:
+              example: '# Building Beehive Blog v3'
+              type: string
+            change_summary:
+              example: Initial draft
+              type: string
+            comment_enabled:
+              default: true
+              example: true
+              type: boolean
+            cover_image_url:
+              example: https://cdn.example.com/covers/beehive-v3.png
+              type: string
+            is_featured:
+              default: false
+              example: false
+              type: boolean
+            slug:
+              example: building-beehive-blog-v3
+              type: string
+            sort_order:
+              default: 0
+              example: 0
+              type: integer
+            source_type:
+              default: manual
+              enum:
+              - manual
+              - import_v1
+              - import_markdown
+              - agent_generated
+              - agent_assisted
+              example: manual
+              type: string
+            summary:
+              example: Design notes for the v3 content platform.
+              type: string
+            tag_ids:
+              example: '["tag_1001"]'
+              items:
+                type: string
+              type: array
+            title:
+              example: Building Beehive Blog v3
+              type: string
+            type:
+              enum:
+              - article
+              - note
+              - project
+              - experience
+              - timeline_event
+              - insight
+              - portfolio
+              - page
+              example: article
+              type: string
+            visibility:
+              default: private
+              enum:
+              - public
+              - member
+              - private
+              example: private
+              type: string
+          required:
+          - type
+          - title
+          - slug
+          - body_markdown
+          - visibility
+          - ai_access
+          - source_type
+          - comment_enabled
+          - is_featured
+          - sort_order
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              content:
+                properties:
+                  ai_access:
+                    enum:
+                    - allowed
+                    - denied
+                    example: allowed
+                    type: string
+                  archived_at:
+                    example: 0
+                    type: integer
+                  author_user_id:
+                    example: "1"
+                    type: string
+                  body_json:
+                    example: '{"type":"doc"'
+                    type: string
+                  body_markdown:
+                    example: '# Building Beehive Blog v3'
+                    type: string
+                  comment_enabled:
+                    example: true
+                    type: boolean
+                  content_id:
+                    example: "1001"
+                    type: string
+                  cover_image_url:
+                    example: https://cdn.example.com/covers/beehive-v3.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  current_revision_id:
+                    example: "2001"
+                    type: string
+                  is_featured:
+                    example: false
+                    type: boolean
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  published_at:
+                    example: 1713772800
+                    type: integer
+                  slug:
+                    example: building-beehive-blog-v3
+                    type: string
+                  sort_order:
+                    example: 0
+                    type: integer
+                  source_type:
+                    enum:
+                    - manual
+                    - import_v1
+                    - import_markdown
+                    - agent_generated
+                    - agent_assisted
+                    example: manual
+                    type: string
+                  status:
+                    enum:
+                    - draft
+                    - review
+                    - published
+                    - archived
+                    example: published
+                    type: string
+                  summary:
+                    example: Design notes for the v3 content platform.
+                    type: string
+                  tags:
+                    items:
+                      properties:
+                        color:
+                          example: '#00ADD8'
+                          type: string
+                        created_at:
+                          example: 1713772800
+                          type: integer
+                        description:
+                          example: Go language notes
+                          type: string
+                        name:
+                          example: Go
+                          type: string
+                        slug:
+                          example: go
+                          type: string
+                        tag_id:
+                          example: tag_1001
+                          type: string
+                        updated_at:
+                          example: 1713776400
+                          type: integer
+                      required:
+                      - tag_id
+                      - name
+                      - slug
+                      - created_at
+                      - updated_at
+                      type: object
+                    type: array
+                  title:
+                    example: Building Beehive Blog v3
+                    type: string
+                  type:
+                    enum:
+                    - article
+                    - note
+                    - project
+                    - experience
+                    - timeline_event
+                    - insight
+                    - portfolio
+                    - page
+                    example: article
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - member
+                    - private
+                    example: public
+                    type: string
+                required:
+                - content_id
+                - type
+                - title
+                - slug
+                - body_markdown
+                - status
+                - visibility
+                - ai_access
+                - owner_user_id
+                - author_user_id
+                - source_type
+                - comment_enabled
+                - is_featured
+                - sort_order
+                - created_at
+                - updated_at
+                - tags
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Create content item
+      tags:
+      - Studio Content
+  /api/v3/studio/content/items/{content_id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      operationId: contentContentArchive
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Archive content item
+      tags:
+      - Studio Content
+    get:
+      operationId: contentContentGet
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              content:
+                properties:
+                  ai_access:
+                    enum:
+                    - allowed
+                    - denied
+                    example: allowed
+                    type: string
+                  archived_at:
+                    example: 0
+                    type: integer
+                  author_user_id:
+                    example: "1"
+                    type: string
+                  body_json:
+                    example: '{"type":"doc"'
+                    type: string
+                  body_markdown:
+                    example: '# Building Beehive Blog v3'
+                    type: string
+                  comment_enabled:
+                    example: true
+                    type: boolean
+                  content_id:
+                    example: "1001"
+                    type: string
+                  cover_image_url:
+                    example: https://cdn.example.com/covers/beehive-v3.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  current_revision_id:
+                    example: "2001"
+                    type: string
+                  is_featured:
+                    example: false
+                    type: boolean
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  published_at:
+                    example: 1713772800
+                    type: integer
+                  slug:
+                    example: building-beehive-blog-v3
+                    type: string
+                  sort_order:
+                    example: 0
+                    type: integer
+                  source_type:
+                    enum:
+                    - manual
+                    - import_v1
+                    - import_markdown
+                    - agent_generated
+                    - agent_assisted
+                    example: manual
+                    type: string
+                  status:
+                    enum:
+                    - draft
+                    - review
+                    - published
+                    - archived
+                    example: published
+                    type: string
+                  summary:
+                    example: Design notes for the v3 content platform.
+                    type: string
+                  tags:
+                    items:
+                      properties:
+                        color:
+                          example: '#00ADD8'
+                          type: string
+                        created_at:
+                          example: 1713772800
+                          type: integer
+                        description:
+                          example: Go language notes
+                          type: string
+                        name:
+                          example: Go
+                          type: string
+                        slug:
+                          example: go
+                          type: string
+                        tag_id:
+                          example: tag_1001
+                          type: string
+                        updated_at:
+                          example: 1713776400
+                          type: integer
+                      required:
+                      - tag_id
+                      - name
+                      - slug
+                      - created_at
+                      - updated_at
+                      type: object
+                    type: array
+                  title:
+                    example: Building Beehive Blog v3
+                    type: string
+                  type:
+                    enum:
+                    - article
+                    - note
+                    - project
+                    - experience
+                    - timeline_event
+                    - insight
+                    - portfolio
+                    - page
+                    example: article
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - member
+                    - private
+                    example: public
+                    type: string
+                required:
+                - content_id
+                - type
+                - title
+                - slug
+                - body_markdown
+                - status
+                - visibility
+                - ai_access
+                - owner_user_id
+                - author_user_id
+                - source_type
+                - comment_enabled
+                - is_featured
+                - sort_order
+                - created_at
+                - updated_at
+                - tags
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Get studio content item
+      tags:
+      - Studio Content
+    put:
+      consumes:
+      - application/json
+      operationId: contentContentUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            ai_access:
+              enum:
+              - allowed
+              - denied
+              example: denied
+              type: string
+            body_json:
+              example: '{"type":"doc"'
+              type: string
+            body_markdown:
+              example: '# Building Beehive Blog v3'
+              type: string
+            change_summary:
+              example: Update body
+              type: string
+            comment_enabled:
+              example: true
+              type: boolean
+            cover_image_url:
+              example: https://cdn.example.com/covers/beehive-v3.png
+              type: string
+            is_featured:
+              example: false
+              type: boolean
+            slug:
+              example: building-beehive-blog-v3
+              type: string
+            sort_order:
+              example: 0
+              type: integer
+            status:
+              enum:
+              - draft
+              - review
+              - published
+              - archived
+              example: draft
+              type: string
+            summary:
+              example: Design notes for the v3 content platform.
+              type: string
+            tag_ids:
+              example: '["tag_1001"]'
+              items:
+                type: string
+              type: array
+            title:
+              example: Building Beehive Blog v3
+              type: string
+            type:
+              enum:
+              - article
+              - note
+              - project
+              - experience
+              - timeline_event
+              - insight
+              - portfolio
+              - page
+              example: article
+              type: string
+            visibility:
+              enum:
+              - public
+              - member
+              - private
+              example: private
+              type: string
+          required:
+          - type
+          - title
+          - slug
+          - body_markdown
+          - status
+          - visibility
+          - ai_access
+          - comment_enabled
+          - is_featured
+          - sort_order
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              content:
+                properties:
+                  ai_access:
+                    enum:
+                    - allowed
+                    - denied
+                    example: allowed
+                    type: string
+                  archived_at:
+                    example: 0
+                    type: integer
+                  author_user_id:
+                    example: "1"
+                    type: string
+                  body_json:
+                    example: '{"type":"doc"'
+                    type: string
+                  body_markdown:
+                    example: '# Building Beehive Blog v3'
+                    type: string
+                  comment_enabled:
+                    example: true
+                    type: boolean
+                  content_id:
+                    example: "1001"
+                    type: string
+                  cover_image_url:
+                    example: https://cdn.example.com/covers/beehive-v3.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  current_revision_id:
+                    example: "2001"
+                    type: string
+                  is_featured:
+                    example: false
+                    type: boolean
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  published_at:
+                    example: 1713772800
+                    type: integer
+                  slug:
+                    example: building-beehive-blog-v3
+                    type: string
+                  sort_order:
+                    example: 0
+                    type: integer
+                  source_type:
+                    enum:
+                    - manual
+                    - import_v1
+                    - import_markdown
+                    - agent_generated
+                    - agent_assisted
+                    example: manual
+                    type: string
+                  status:
+                    enum:
+                    - draft
+                    - review
+                    - published
+                    - archived
+                    example: published
+                    type: string
+                  summary:
+                    example: Design notes for the v3 content platform.
+                    type: string
+                  tags:
+                    items:
+                      properties:
+                        color:
+                          example: '#00ADD8'
+                          type: string
+                        created_at:
+                          example: 1713772800
+                          type: integer
+                        description:
+                          example: Go language notes
+                          type: string
+                        name:
+                          example: Go
+                          type: string
+                        slug:
+                          example: go
+                          type: string
+                        tag_id:
+                          example: tag_1001
+                          type: string
+                        updated_at:
+                          example: 1713776400
+                          type: integer
+                      required:
+                      - tag_id
+                      - name
+                      - slug
+                      - created_at
+                      - updated_at
+                      type: object
+                    type: array
+                  title:
+                    example: Building Beehive Blog v3
+                    type: string
+                  type:
+                    enum:
+                    - article
+                    - note
+                    - project
+                    - experience
+                    - timeline_event
+                    - insight
+                    - portfolio
+                    - page
+                    example: article
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - member
+                    - private
+                    example: public
+                    type: string
+                required:
+                - content_id
+                - type
+                - title
+                - slug
+                - body_markdown
+                - status
+                - visibility
+                - ai_access
+                - owner_user_id
+                - author_user_id
+                - source_type
+                - comment_enabled
+                - is_featured
+                - sort_order
+                - created_at
+                - updated_at
+                - tags
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update content item
+      tags:
+      - Studio Content
+  /api/v3/studio/content/items/{content_id}/revisions:
+    get:
+      operationId: contentContentRevisionList
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      - allowEmptyValue: true
+        default: 1
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - allowEmptyValue: true
+        default: 20
+        example: 20
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    change_summary:
+                      example: Initial draft
+                      type: string
+                    content_id:
+                      example: "1001"
+                      type: string
+                    created_at:
+                      example: 1713772800
+                      type: integer
+                    editor_type:
+                      enum:
+                      - human
+                      - agent
+                      - system
+                      example: human
+                      type: string
+                    revision_id:
+                      example: "2001"
+                      type: string
+                    revision_no:
+                      example: 1
+                      type: integer
+                    source_type:
+                      enum:
+                      - manual
+                      - import_v1
+                      - import_markdown
+                      - agent_generated
+                      - agent_assisted
+                      example: manual
+                      type: string
+                  required:
+                  - revision_id
+                  - content_id
+                  - revision_no
+                  - editor_type
+                  - source_type
+                  - created_at
+                  type: object
+                type: array
+              page:
+                example: 1
+                type: integer
+              page_size:
+                example: 20
+                type: integer
+              total:
+                example: 1
+                type: integer
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List content revisions
+      tags:
+      - Studio Content
+  /api/v3/studio/content/items/{content_id}/revisions/{revision_id}:
+    get:
+      operationId: contentContentRevisionGet
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      - example: "2001"
+        in: path
+        name: revision_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              revision:
+                properties:
+                  body_json:
+                    example: '{"type":"doc"'
+                    type: string
+                  body_markdown:
+                    example: '# Building Beehive Blog v3'
+                    type: string
+                  change_summary:
+                    example: Initial draft
+                    type: string
+                  content_id:
+                    example: "1001"
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  editor_agent_client_id:
+                    example: agent_1001
+                    type: string
+                  editor_type:
+                    enum:
+                    - human
+                    - agent
+                    - system
+                    example: human
+                    type: string
+                  editor_user_id:
+                    example: "1"
+                    type: string
+                  revision_id:
+                    example: "2001"
+                    type: string
+                  revision_no:
+                    example: 1
+                    type: integer
+                  source_type:
+                    enum:
+                    - manual
+                    - import_v1
+                    - import_markdown
+                    - agent_generated
+                    - agent_assisted
+                    example: manual
+                    type: string
+                  summary_snapshot:
+                    example: Design notes for the v3 content platform.
+                    type: string
+                  title_snapshot:
+                    example: Building Beehive Blog v3
+                    type: string
+                required:
+                - revision_id
+                - content_id
+                - revision_no
+                - title_snapshot
+                - body_markdown
+                - editor_type
+                - source_type
+                - created_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Get content revision
+      tags:
+      - Studio Content
+  /api/v3/studio/content/tags:
+    get:
+      operationId: contentContentTagList
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - allowEmptyValue: true
+        default: 1
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - allowEmptyValue: true
+        default: 20
+        example: 20
+        in: query
+        name: page_size
+        type: integer
+      - allowEmptyValue: true
+        example: go
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    color:
+                      example: '#00ADD8'
+                      type: string
+                    created_at:
+                      example: 1713772800
+                      type: integer
+                    description:
+                      example: Go language notes
+                      type: string
+                    name:
+                      example: Go
+                      type: string
+                    slug:
+                      example: go
+                      type: string
+                    tag_id:
+                      example: tag_1001
+                      type: string
+                    updated_at:
+                      example: 1713776400
+                      type: integer
+                  required:
+                  - tag_id
+                  - name
+                  - slug
+                  - created_at
+                  - updated_at
+                  type: object
+                type: array
+              page:
+                example: 1
+                type: integer
+              page_size:
+                example: 20
+                type: integer
+              total:
+                example: 1
+                type: integer
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List content tags
+      tags:
+      - Studio Content
+    post:
+      consumes:
+      - application/json
+      operationId: contentContentTagCreate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            color:
+              example: '#00ADD8'
+              type: string
+            description:
+              example: Go language notes
+              type: string
+            name:
+              example: Go
+              type: string
+            slug:
+              example: go
+              type: string
+          required:
+          - name
+          - slug
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              tag:
+                properties:
+                  color:
+                    example: '#00ADD8'
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  description:
+                    example: Go language notes
+                    type: string
+                  name:
+                    example: Go
+                    type: string
+                  slug:
+                    example: go
+                    type: string
+                  tag_id:
+                    example: tag_1001
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                required:
+                - tag_id
+                - name
+                - slug
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Create content tag
+      tags:
+      - Studio Content
+  /api/v3/studio/content/tags/{tag_id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      operationId: contentContentTagDelete
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: tag_1001
+        in: path
+        name: tag_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Delete content tag
+      tags:
+      - Studio Content
+    put:
+      consumes:
+      - application/json
+      operationId: contentContentTagUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: tag_1001
+        in: path
+        name: tag_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            color:
+              example: '#00ADD8'
+              type: string
+            description:
+              example: Go language notes
+              type: string
+            name:
+              example: Go
+              type: string
+            slug:
+              example: go
+              type: string
+          required:
+          - name
+          - slug
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              tag:
+                properties:
+                  color:
+                    example: '#00ADD8'
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  description:
+                    example: Go language notes
+                    type: string
+                  name:
+                    example: Go
+                    type: string
+                  slug:
+                    example: go
+                    type: string
+                  tag_id:
+                    example: tag_1001
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                required:
+                - tag_id
+                - name
+                - slug
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update content tag
+      tags:
+      - Studio Content
   /healthz:
     get:
       operationId: opsHealthz
@@ -718,7 +2425,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-22 21:42:31"
+x-date: "2026-04-24 14:34:31"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

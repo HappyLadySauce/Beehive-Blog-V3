@@ -93,6 +93,40 @@ const (
 	// CodeIdentityInternal identifies identity internal failures.
 	// CodeIdentityInternal 标识 identity 内部错误。
 	CodeIdentityInternal Code = 119901
+
+	// CodeContentInvalidArgument identifies content validation failures.
+	// CodeContentInvalidArgument 标识 content 参数校验失败。
+	CodeContentInvalidArgument Code = 120101
+	// CodeContentInvalidType identifies invalid content types.
+	// CodeContentInvalidType 标识非法内容类型。
+	CodeContentInvalidType Code = 120102
+	// CodeContentInvalidStatus identifies invalid content status values.
+	// CodeContentInvalidStatus 标识非法内容状态。
+	CodeContentInvalidStatus Code = 120103
+	// CodeContentInvalidVisibility identifies invalid visibility values.
+	// CodeContentInvalidVisibility 标识非法可见性。
+	CodeContentInvalidVisibility Code = 120104
+	// CodeContentInvalidAIAccess identifies invalid AI access values.
+	// CodeContentInvalidAIAccess 标识非法 AI 访问策略。
+	CodeContentInvalidAIAccess Code = 120105
+	// CodeContentInvalidTransition identifies invalid content state transitions.
+	// CodeContentInvalidTransition 标识非法内容状态流转。
+	CodeContentInvalidTransition Code = 120401
+	// CodeContentNotFound identifies missing content items.
+	// CodeContentNotFound 标识内容不存在。
+	CodeContentNotFound Code = 120501
+	// CodeContentSlugAlreadyExists identifies content slug conflicts.
+	// CodeContentSlugAlreadyExists 标识内容 slug 冲突。
+	CodeContentSlugAlreadyExists Code = 120502
+	// CodeContentTagNotFound identifies missing content tags.
+	// CodeContentTagNotFound 标识内容标签不存在。
+	CodeContentTagNotFound Code = 120503
+	// CodeContentTagAlreadyExists identifies tag name or slug conflicts.
+	// CodeContentTagAlreadyExists 标识标签名称或 slug 冲突。
+	CodeContentTagAlreadyExists Code = 120504
+	// CodeContentInternal identifies content internal failures.
+	// CodeContentInternal 标识 content 内部错误。
+	CodeContentInternal Code = 129901
 )
 
 // String returns the decimal business code string.

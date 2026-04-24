@@ -2,7 +2,7 @@ syntax = "v1"
 
 info (
 	title:       "Beehive Blog v3 Gateway API"
-	description: "Beehive Blog v3 gateway HTTP contract for authentication, session management, system probes, and websocket entrypoints. 适用于 Swagger UI、Apifox、Postman 等接口测试工具的联调与测试。"
+	description: "Beehive Blog v3 gateway HTTP contract for authentication, content management, public content reading, system probes, and websocket entrypoints. 适用于 Swagger UI、Apifox、Postman 等接口测试工具的联调与测试。"
 	version:     "v3"
 
 	termsOfService: "https://github.com/happyladysauce/Beehive-Blog-v3"
@@ -140,6 +140,208 @@ type (
 	WsStubResp {
 		Ok bool `json:"ok,example=true"`
 	}
+	ContentTagView {
+		TagId       string `json:"tag_id,example=tag_1001"`
+		Name        string `json:"name,example=Go"`
+		Slug        string `json:"slug,example=go"`
+		Description string `json:"description,optional,example=Go language notes"`
+		Color       string `json:"color,optional,example=#00ADD8"`
+		CreatedAt   int64  `json:"created_at,example=1713772800"`
+		UpdatedAt   int64  `json:"updated_at,example=1713776400"`
+	}
+	ContentSummaryView {
+		ContentId     string           `json:"content_id,example=1001"`
+		Type          string           `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+		Title         string           `json:"title,example=Building Beehive Blog v3"`
+		Slug          string           `json:"slug,example=building-beehive-blog-v3"`
+		Summary       string           `json:"summary,optional,example=Design notes for the v3 content platform."`
+		CoverImageUrl string           `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png"`
+		Status        string           `json:"status,options=draft|review|published|archived,example=published"`
+		Visibility    string           `json:"visibility,options=public|member|private,example=public"`
+		AiAccess      string           `json:"ai_access,options=allowed|denied,example=allowed"`
+		PublishedAt   int64            `json:"published_at,optional,example=1713772800"`
+		ArchivedAt    int64            `json:"archived_at,optional,example=0"`
+		CreatedAt     int64            `json:"created_at,example=1713772000"`
+		UpdatedAt     int64            `json:"updated_at,example=1713776400"`
+		Tags          []ContentTagView `json:"tags"`
+	}
+	ContentDetailView {
+		ContentId         string           `json:"content_id,example=1001"`
+		Type              string           `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+		Title             string           `json:"title,example=Building Beehive Blog v3"`
+		Slug              string           `json:"slug,example=building-beehive-blog-v3"`
+		Summary           string           `json:"summary,optional,example=Design notes for the v3 content platform."`
+		BodyMarkdown      string           `json:"body_markdown,example=# Building Beehive Blog v3"`
+		BodyJson          string           `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}"`
+		CoverImageUrl     string           `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png"`
+		Status            string           `json:"status,options=draft|review|published|archived,example=published"`
+		Visibility        string           `json:"visibility,options=public|member|private,example=public"`
+		AiAccess          string           `json:"ai_access,options=allowed|denied,example=allowed"`
+		OwnerUserId       string           `json:"owner_user_id,example=1"`
+		AuthorUserId      string           `json:"author_user_id,example=1"`
+		SourceType        string           `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,example=manual"`
+		CurrentRevisionId string           `json:"current_revision_id,optional,example=2001"`
+		CommentEnabled    bool             `json:"comment_enabled,example=true"`
+		IsFeatured        bool             `json:"is_featured,example=false"`
+		SortOrder         int              `json:"sort_order,example=0"`
+		PublishedAt       int64            `json:"published_at,optional,example=1713772800"`
+		ArchivedAt        int64            `json:"archived_at,optional,example=0"`
+		CreatedAt         int64            `json:"created_at,example=1713772000"`
+		UpdatedAt         int64            `json:"updated_at,example=1713776400"`
+		Tags              []ContentTagView `json:"tags"`
+	}
+	ContentCreateReq {
+		Authorization   string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		Type            string   `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article" validate:"required"`
+		Title           string   `json:"title,example=Building Beehive Blog v3" validate:"required,min=1,max=255"`
+		Slug            string   `json:"slug,example=building-beehive-blog-v3" validate:"required,min=1,max=255"`
+		Summary         string   `json:"summary,optional,example=Design notes for the v3 content platform." validate:"omitempty,max=4096"`
+		BodyMarkdown    string   `json:"body_markdown,example=# Building Beehive Blog v3" validate:"max=1048576"`
+		BodyJson        string   `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}" validate:"omitempty,max=1048576"`
+		CoverImageUrl   string   `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png" validate:"omitempty,url,max=2048"`
+		Visibility      string   `json:"visibility,options=public|member|private,default=private,example=private" validate:"omitempty"`
+		AiAccess        string   `json:"ai_access,options=allowed|denied,default=denied,example=denied" validate:"omitempty"`
+		SourceType      string   `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,default=manual,example=manual" validate:"omitempty"`
+		CommentEnabled  bool     `json:"comment_enabled,default=true,example=true"`
+		IsFeatured      bool     `json:"is_featured,default=false,example=false"`
+		SortOrder       int      `json:"sort_order,default=0,example=0"`
+		TagIds          []string `json:"tag_ids,optional,example=[\"tag_1001\"]"`
+		ChangeSummary   string   `json:"change_summary,optional,example=Initial draft" validate:"omitempty,max=1024"`
+	}
+	ContentUpdateReq {
+		Authorization   string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		ContentId       string   `path:"content_id,example=1001" validate:"required"`
+		Type            string   `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article" validate:"required"`
+		Title           string   `json:"title,example=Building Beehive Blog v3" validate:"required,min=1,max=255"`
+		Slug            string   `json:"slug,example=building-beehive-blog-v3" validate:"required,min=1,max=255"`
+		Summary         string   `json:"summary,optional,example=Design notes for the v3 content platform." validate:"omitempty,max=4096"`
+		BodyMarkdown    string   `json:"body_markdown,example=# Building Beehive Blog v3" validate:"max=1048576"`
+		BodyJson        string   `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}" validate:"omitempty,max=1048576"`
+		CoverImageUrl   string   `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png" validate:"omitempty,url,max=2048"`
+		Status          string   `json:"status,options=draft|review|published|archived,example=draft" validate:"required"`
+		Visibility      string   `json:"visibility,options=public|member|private,example=private" validate:"required"`
+		AiAccess        string   `json:"ai_access,options=allowed|denied,example=denied" validate:"required"`
+		CommentEnabled  bool     `json:"comment_enabled,example=true"`
+		IsFeatured      bool     `json:"is_featured,example=false"`
+		SortOrder       int      `json:"sort_order,example=0"`
+		TagIds          []string `json:"tag_ids,optional,example=[\"tag_1001\"]"`
+		ChangeSummary   string   `json:"change_summary,optional,example=Update body" validate:"omitempty,max=1024"`
+	}
+	ContentIdReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		ContentId     string `path:"content_id,example=1001" validate:"required"`
+	}
+	ContentRevisionIdReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		ContentId     string `path:"content_id,example=1001" validate:"required"`
+		RevisionId    string `path:"revision_id,example=2001" validate:"required"`
+	}
+	ContentListReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+		PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+		Type          string `form:"type,optional,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+		Status        string `form:"status,optional,options=draft|review|published|archived,example=published"`
+		Visibility    string `form:"visibility,optional,options=public|member|private,example=public"`
+		Keyword       string `form:"keyword,optional,example=beehive" validate:"omitempty,max=128"`
+	}
+	ContentListResp {
+		Items    []ContentSummaryView `json:"items"`
+		Total    int64                `json:"total,example=1"`
+		Page     int                  `json:"page,example=1"`
+		PageSize int                  `json:"page_size,example=20"`
+	}
+	ContentDetailResp {
+		Content ContentDetailView `json:"content"`
+	}
+	ContentArchiveResp {
+		Ok bool `json:"ok,example=true"`
+	}
+	ContentRevisionSummaryView {
+		RevisionId    string `json:"revision_id,example=2001"`
+		ContentId     string `json:"content_id,example=1001"`
+		RevisionNo    int    `json:"revision_no,example=1"`
+		EditorType    string `json:"editor_type,options=human|agent|system,example=human"`
+		ChangeSummary string `json:"change_summary,optional,example=Initial draft"`
+		SourceType    string `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,example=manual"`
+		CreatedAt     int64  `json:"created_at,example=1713772800"`
+	}
+	ContentRevisionDetailView {
+		RevisionId          string `json:"revision_id,example=2001"`
+		ContentId           string `json:"content_id,example=1001"`
+		RevisionNo          int    `json:"revision_no,example=1"`
+		TitleSnapshot       string `json:"title_snapshot,example=Building Beehive Blog v3"`
+		SummarySnapshot     string `json:"summary_snapshot,optional,example=Design notes for the v3 content platform."`
+		BodyMarkdown        string `json:"body_markdown,example=# Building Beehive Blog v3"`
+		BodyJson            string `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}"`
+		EditorType          string `json:"editor_type,options=human|agent|system,example=human"`
+		EditorUserId        string `json:"editor_user_id,optional,example=1"`
+		EditorAgentClientId string `json:"editor_agent_client_id,optional,example=agent_1001"`
+		ChangeSummary       string `json:"change_summary,optional,example=Initial draft"`
+		SourceType          string `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,example=manual"`
+		CreatedAt           int64  `json:"created_at,example=1713772800"`
+	}
+	ContentRevisionListReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		ContentId     string `path:"content_id,example=1001" validate:"required"`
+		Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+		PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+	}
+	ContentRevisionListResp {
+		Items    []ContentRevisionSummaryView `json:"items"`
+		Total    int64                        `json:"total,example=1"`
+		Page     int                          `json:"page,example=1"`
+		PageSize int                          `json:"page_size,example=20"`
+	}
+	ContentRevisionDetailResp {
+		Revision ContentRevisionDetailView `json:"revision"`
+	}
+	ContentTagCreateReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		Name          string `json:"name,example=Go" validate:"required,min=1,max=64"`
+		Slug          string `json:"slug,example=go" validate:"required,min=1,max=128"`
+		Description   string `json:"description,optional,example=Go language notes" validate:"omitempty,max=1024"`
+		Color         string `json:"color,optional,example=#00ADD8" validate:"omitempty,max=32"`
+	}
+	ContentTagUpdateReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		TagId         string `path:"tag_id,example=tag_1001" validate:"required"`
+		Name          string `json:"name,example=Go" validate:"required,min=1,max=64"`
+		Slug          string `json:"slug,example=go" validate:"required,min=1,max=128"`
+		Description   string `json:"description,optional,example=Go language notes" validate:"omitempty,max=1024"`
+		Color         string `json:"color,optional,example=#00ADD8" validate:"omitempty,max=32"`
+	}
+	ContentTagIdReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		TagId         string `path:"tag_id,example=tag_1001" validate:"required"`
+	}
+	ContentTagListReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+		PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+		Keyword       string `form:"keyword,optional,example=go" validate:"omitempty,max=128"`
+	}
+	ContentTagResp {
+		Tag ContentTagView `json:"tag"`
+	}
+	ContentTagListResp {
+		Items    []ContentTagView `json:"items"`
+		Total    int64            `json:"total,example=1"`
+		Page     int              `json:"page,example=1"`
+		PageSize int              `json:"page_size,example=20"`
+	}
+	ContentTagDeleteResp {
+		Ok bool `json:"ok,example=true"`
+	}
+	PublicContentListReq {
+		Page     int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+		PageSize int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+		Type     string `form:"type,optional,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+		Keyword  string `form:"keyword,optional,example=beehive" validate:"omitempty,max=128"`
+	}
+	PublicContentSlugReq {
+		Slug string `path:"slug,example=building-beehive-blog-v3" validate:"required"`
+	}
 )
 
 @server (
@@ -197,6 +399,112 @@ service gateway {
 	)
 	@handler AuthMe
 	get /me (AuthMeReq) returns (AuthMeResp)
+}
+
+@server (
+	prefix:   /api/v3/studio/content
+	group:    content
+	tags:     "Studio Content"
+	authType: bearerAuth
+)
+service gateway {
+	@doc (
+		summary: "List studio content items"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>129901-content internal error"
+	)
+	@handler ContentList
+	get /items (ContentListReq) returns (ContentListResp)
+
+	@doc (
+		summary: "Create content item"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120102-invalid content type<br>120104-invalid visibility<br>120105-invalid ai access<br>120502-slug already exists<br>129901-content internal error"
+	)
+	@handler ContentCreate
+	post /items (ContentCreateReq) returns (ContentDetailResp)
+
+	@doc (
+		summary: "Get studio content item"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>129901-content internal error"
+	)
+	@handler ContentGet
+	get /items/:content_id (ContentIdReq) returns (ContentDetailResp)
+
+	@doc (
+		summary: "Update content item"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120102-invalid content type<br>120103-invalid content status<br>120104-invalid visibility<br>120105-invalid ai access<br>120401-invalid content transition<br>120501-content not found<br>120502-slug already exists<br>129901-content internal error"
+	)
+	@handler ContentUpdate
+	put /items/:content_id (ContentUpdateReq) returns (ContentDetailResp)
+
+	@doc (
+		summary: "Archive content item"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120401-invalid content transition<br>120501-content not found<br>129901-content internal error"
+	)
+	@handler ContentArchive
+	delete /items/:content_id (ContentIdReq) returns (ContentArchiveResp)
+
+	@doc (
+		summary: "List content revisions"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>129901-content internal error"
+	)
+	@handler ContentRevisionList
+	get /items/:content_id/revisions (ContentRevisionListReq) returns (ContentRevisionListResp)
+
+	@doc (
+		summary: "Get content revision"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>129901-content internal error"
+	)
+	@handler ContentRevisionGet
+	get /items/:content_id/revisions/:revision_id (ContentRevisionIdReq) returns (ContentRevisionDetailResp)
+
+	@doc (
+		summary: "List content tags"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>129901-content internal error"
+	)
+	@handler ContentTagList
+	get /tags (ContentTagListReq) returns (ContentTagListResp)
+
+	@doc (
+		summary: "Create content tag"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120504-tag already exists<br>129901-content internal error"
+	)
+	@handler ContentTagCreate
+	post /tags (ContentTagCreateReq) returns (ContentTagResp)
+
+	@doc (
+		summary: "Update content tag"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120503-tag not found<br>120504-tag already exists<br>129901-content internal error"
+	)
+	@handler ContentTagUpdate
+	put /tags/:tag_id (ContentTagUpdateReq) returns (ContentTagResp)
+
+	@doc (
+		summary: "Delete content tag"
+		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120503-tag not found<br>129901-content internal error"
+	)
+	@handler ContentTagDelete
+	delete /tags/:tag_id (ContentTagIdReq) returns (ContentTagDeleteResp)
+}
+
+@server (
+	prefix: /api/v3/public/content
+	group:  publiccontent
+	tags:   "Public Content"
+)
+service gateway {
+	@doc (
+		summary: "List public content items"
+		bizCodeEnumDescription: "120101-invalid argument<br>129901-content internal error"
+	)
+	@handler PublicContentList
+	get /items (PublicContentListReq) returns (ContentListResp)
+
+	@doc (
+		summary: "Get public content item by slug"
+		bizCodeEnumDescription: "120101-invalid argument<br>120501-content not found<br>129901-content internal error"
+	)
+	@handler PublicContentGet
+	get /items/:slug (PublicContentSlugReq) returns (ContentDetailResp)
 }
 
 @server (

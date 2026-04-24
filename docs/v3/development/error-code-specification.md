@@ -84,6 +84,20 @@
 - `110601`：identity dependency unavailable
 - `119901`：internal error
 
+### Content
+
+- `120101`：invalid argument
+- `120102`：invalid content type
+- `120103`：invalid content status
+- `120104`：invalid visibility
+- `120105`：invalid ai access
+- `120401`：invalid content transition
+- `120501`：content not found
+- `120502`：slug already exists
+- `120503`：tag not found
+- `120504`：tag already exists
+- `129901`：content internal error
+
 ## message 规范
 
 - `message` 面向客户端，必须是稳定英文短句

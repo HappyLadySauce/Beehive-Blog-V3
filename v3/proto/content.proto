@@ -1,0 +1,362 @@
+syntax = "proto3";
+
+package content;
+
+option go_package = "services/content/pb";
+
+// -----------------------------------------------------------------------------
+// Enums
+// 枚举
+// -----------------------------------------------------------------------------
+
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  CONTENT_TYPE_ARTICLE = 1;
+  CONTENT_TYPE_NOTE = 2;
+  CONTENT_TYPE_PROJECT = 3;
+  CONTENT_TYPE_EXPERIENCE = 4;
+  CONTENT_TYPE_TIMELINE_EVENT = 5;
+  CONTENT_TYPE_INSIGHT = 6;
+  CONTENT_TYPE_PORTFOLIO = 7;
+  CONTENT_TYPE_PAGE = 8;
+}
+
+enum ContentStatus {
+  CONTENT_STATUS_UNSPECIFIED = 0;
+  CONTENT_STATUS_DRAFT = 1;
+  CONTENT_STATUS_REVIEW = 2;
+  CONTENT_STATUS_PUBLISHED = 3;
+  CONTENT_STATUS_ARCHIVED = 4;
+}
+
+enum ContentVisibility {
+  CONTENT_VISIBILITY_UNSPECIFIED = 0;
+  CONTENT_VISIBILITY_PUBLIC = 1;
+  CONTENT_VISIBILITY_MEMBER = 2;
+  CONTENT_VISIBILITY_PRIVATE = 3;
+}
+
+enum AIAccess {
+  AI_ACCESS_UNSPECIFIED = 0;
+  AI_ACCESS_ALLOWED = 1;
+  AI_ACCESS_DENIED = 2;
+}
+
+enum EditorType {
+  EDITOR_TYPE_UNSPECIFIED = 0;
+  EDITOR_TYPE_HUMAN = 1;
+  EDITOR_TYPE_AGENT = 2;
+  EDITOR_TYPE_SYSTEM = 3;
+}
+
+enum SourceType {
+  SOURCE_TYPE_UNSPECIFIED = 0;
+  SOURCE_TYPE_MANUAL = 1;
+  SOURCE_TYPE_IMPORT_V1 = 2;
+  SOURCE_TYPE_IMPORT_MARKDOWN = 3;
+  SOURCE_TYPE_AGENT_GENERATED = 4;
+  SOURCE_TYPE_AGENT_ASSISTED = 5;
+}
+
+// -----------------------------------------------------------------------------
+// Shared views
+// 共享视图
+// -----------------------------------------------------------------------------
+
+message ContentTag {
+  string tag_id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  string color = 5;
+  int64 created_at = 6;
+  int64 updated_at = 7;
+}
+
+message ContentSummary {
+  string content_id = 1;
+  ContentType type = 2;
+  string title = 3;
+  string slug = 4;
+  string summary = 5;
+  string cover_image_url = 6;
+  ContentStatus status = 7;
+  ContentVisibility visibility = 8;
+  AIAccess ai_access = 9;
+  int64 published_at = 10;
+  int64 archived_at = 11;
+  int64 created_at = 12;
+  int64 updated_at = 13;
+  repeated ContentTag tags = 14;
+}
+
+message ContentDetail {
+  string content_id = 1;
+  ContentType type = 2;
+  string title = 3;
+  string slug = 4;
+  string summary = 5;
+  string body_markdown = 6;
+  string body_json = 7;
+  string cover_image_url = 8;
+  ContentStatus status = 9;
+  ContentVisibility visibility = 10;
+  AIAccess ai_access = 11;
+  string owner_user_id = 12;
+  string author_user_id = 13;
+  SourceType source_type = 14;
+  string current_revision_id = 15;
+  bool comment_enabled = 16;
+  bool is_featured = 17;
+  int32 sort_order = 18;
+  int64 published_at = 19;
+  int64 archived_at = 20;
+  int64 created_at = 21;
+  int64 updated_at = 22;
+  repeated ContentTag tags = 23;
+}
+
+message ContentRevisionSummary {
+  string revision_id = 1;
+  string content_id = 2;
+  int32 revision_no = 3;
+  EditorType editor_type = 4;
+  string change_summary = 5;
+  SourceType source_type = 6;
+  int64 created_at = 7;
+}
+
+message ContentRevisionDetail {
+  string revision_id = 1;
+  string content_id = 2;
+  int32 revision_no = 3;
+  string title_snapshot = 4;
+  string summary_snapshot = 5;
+  string body_markdown = 6;
+  string body_json = 7;
+  EditorType editor_type = 8;
+  string editor_user_id = 9;
+  string editor_agent_client_id = 10;
+  string change_summary = 11;
+  SourceType source_type = 12;
+  int64 created_at = 13;
+}
+
+// -----------------------------------------------------------------------------
+// Studio content requests / responses
+// Studio 内容请求 / 响应
+// -----------------------------------------------------------------------------
+
+message CreateContentRequest {
+  ContentType type = 1;
+  string title = 2;
+  string slug = 3;
+  string summary = 4;
+  string body_markdown = 5;
+  string body_json = 6;
+  string cover_image_url = 7;
+  ContentVisibility visibility = 8;
+  AIAccess ai_access = 9;
+  SourceType source_type = 10;
+  bool comment_enabled = 11;
+  bool is_featured = 12;
+  int32 sort_order = 13;
+  repeated string tag_ids = 14;
+  string change_summary = 15;
+}
+
+message CreateContentResponse {
+  ContentDetail content = 1;
+}
+
+message UpdateContentRequest {
+  string content_id = 1;
+  ContentType type = 2;
+  string title = 3;
+  string slug = 4;
+  string summary = 5;
+  string body_markdown = 6;
+  string body_json = 7;
+  string cover_image_url = 8;
+  ContentStatus status = 9;
+  ContentVisibility visibility = 10;
+  AIAccess ai_access = 11;
+  bool comment_enabled = 12;
+  bool is_featured = 13;
+  int32 sort_order = 14;
+  repeated string tag_ids = 15;
+  string change_summary = 16;
+}
+
+message UpdateContentResponse {
+  ContentDetail content = 1;
+}
+
+message GetContentRequest {
+  string content_id = 1;
+}
+
+message GetContentResponse {
+  ContentDetail content = 1;
+}
+
+message ListStudioContentsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  ContentType type = 3;
+  ContentStatus status = 4;
+  ContentVisibility visibility = 5;
+  string keyword = 6;
+}
+
+message ListStudioContentsResponse {
+  repeated ContentSummary items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ArchiveContentRequest {
+  string content_id = 1;
+}
+
+message ArchiveContentResponse {
+  bool ok = 1;
+}
+
+// -----------------------------------------------------------------------------
+// Revision requests / responses
+// 版本请求 / 响应
+// -----------------------------------------------------------------------------
+
+message ListContentRevisionsRequest {
+  string content_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListContentRevisionsResponse {
+  repeated ContentRevisionSummary items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetContentRevisionRequest {
+  string content_id = 1;
+  string revision_id = 2;
+}
+
+message GetContentRevisionResponse {
+  ContentRevisionDetail revision = 1;
+}
+
+// -----------------------------------------------------------------------------
+// Tag requests / responses
+// 标签请求 / 响应
+// -----------------------------------------------------------------------------
+
+message CreateTagRequest {
+  string name = 1;
+  string slug = 2;
+  string description = 3;
+  string color = 4;
+}
+
+message CreateTagResponse {
+  ContentTag tag = 1;
+}
+
+message UpdateTagRequest {
+  string tag_id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  string color = 5;
+}
+
+message UpdateTagResponse {
+  ContentTag tag = 1;
+}
+
+message DeleteTagRequest {
+  string tag_id = 1;
+}
+
+message DeleteTagResponse {
+  bool ok = 1;
+}
+
+message ListTagsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string keyword = 3;
+}
+
+message ListTagsResponse {
+  repeated ContentTag items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// -----------------------------------------------------------------------------
+// Public content requests / responses
+// 公开内容请求 / 响应
+// -----------------------------------------------------------------------------
+
+message ListPublicContentsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  ContentType type = 3;
+  string keyword = 4;
+}
+
+message ListPublicContentsResponse {
+  repeated ContentSummary items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetPublicContentBySlugRequest {
+  string slug = 1;
+}
+
+message GetPublicContentBySlugResponse {
+  ContentDetail content = 1;
+}
+
+message PingRequest {}
+
+message PingResponse {
+  bool ok = 1;
+  string service = 2;
+  string version = 3;
+}
+
+// -----------------------------------------------------------------------------
+// Content service
+// Content 服务
+// -----------------------------------------------------------------------------
+
+service Content {
+  rpc CreateContent(CreateContentRequest) returns (CreateContentResponse);
+  rpc UpdateContent(UpdateContentRequest) returns (UpdateContentResponse);
+  rpc GetContent(GetContentRequest) returns (GetContentResponse);
+  rpc ListStudioContents(ListStudioContentsRequest) returns (ListStudioContentsResponse);
+  rpc ArchiveContent(ArchiveContentRequest) returns (ArchiveContentResponse);
+
+  rpc ListContentRevisions(ListContentRevisionsRequest) returns (ListContentRevisionsResponse);
+  rpc GetContentRevision(GetContentRevisionRequest) returns (GetContentRevisionResponse);
+
+  rpc CreateTag(CreateTagRequest) returns (CreateTagResponse);
+  rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse);
+  rpc DeleteTag(DeleteTagRequest) returns (DeleteTagResponse);
+  rpc ListTags(ListTagsRequest) returns (ListTagsResponse);
+
+  rpc ListPublicContents(ListPublicContentsRequest) returns (ListPublicContentsResponse);
+  rpc GetPublicContentBySlug(GetPublicContentBySlugRequest) returns (GetPublicContentBySlugResponse);
+
+  rpc Ping(PingRequest) returns (PingResponse);
+}

@@ -422,7 +422,14 @@ func listMigrationFiles(dir, catalog string) ([]migrationFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(relPaths)
+	sort.Slice(relPaths, func(i, j int) bool {
+		iBase := filepath.Base(relPaths[i])
+		jBase := filepath.Base(relPaths[j])
+		if iBase == jBase {
+			return relPaths[i] < relPaths[j]
+		}
+		return iBase < jBase
+	})
 
 	files := make([]migrationFile, 0, len(relPaths))
 	for _, rel := range relPaths {

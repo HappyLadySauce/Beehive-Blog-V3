@@ -59,6 +59,7 @@ var (
 	}
 	excludedDirs = []string{
 		filepath.Clean(filepath.Join("pkg", "logs")),
+		filepath.Clean(filepath.Join("services", "content", "pb")),
 		filepath.Clean(filepath.Join("services", "identity", "pb")),
 	}
 )

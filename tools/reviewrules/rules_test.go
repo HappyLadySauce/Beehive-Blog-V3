@@ -130,6 +130,26 @@ func test() {
 	})
 }
 
+func TestRunAllowsGeneratedContentPB(t *testing.T) {
+	t.Helper()
+
+	root := t.TempDir()
+	writeTestFile(t, root, filepath.Join("services", "content", "pb", "content.pb.go"), `package pb
+
+import "github.com/zeromicro/go-zero/core/logx"
+
+func test() {
+	logx.Info("generated code is excluded")
+}
+`)
+
+	runWithTempRepo(t, root, func() {
+		if err := Run(); err != nil {
+			t.Fatalf("expected services/content/pb to be excluded, got %v", err)
+		}
+	})
+}
+
 func runWithTempRepo(t *testing.T, root string, fn func()) {
 	t.Helper()
 
