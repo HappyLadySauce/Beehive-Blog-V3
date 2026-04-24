@@ -58,6 +58,21 @@ func (s *ContentServer) GetContentRevision(ctx context.Context, in *pb.GetConten
 	return l.GetContentRevision(in)
 }
 
+func (s *ContentServer) CreateContentRelation(ctx context.Context, in *pb.CreateContentRelationRequest) (*pb.CreateContentRelationResponse, error) {
+	l := logic.NewCreateContentRelationLogic(ctx, s.svcCtx)
+	return l.CreateContentRelation(in)
+}
+
+func (s *ContentServer) DeleteContentRelation(ctx context.Context, in *pb.DeleteContentRelationRequest) (*pb.DeleteContentRelationResponse, error) {
+	l := logic.NewDeleteContentRelationLogic(ctx, s.svcCtx)
+	return l.DeleteContentRelation(in)
+}
+
+func (s *ContentServer) ListContentRelations(ctx context.Context, in *pb.ListContentRelationsRequest) (*pb.ListContentRelationsResponse, error) {
+	l := logic.NewListContentRelationsLogic(ctx, s.svcCtx)
+	return l.ListContentRelations(in)
+}
+
 func (s *ContentServer) CreateTag(ctx context.Context, in *pb.CreateTagRequest) (*pb.CreateTagResponse, error) {
 	l := logic.NewCreateTagLogic(ctx, s.svcCtx)
 	return l.CreateTag(in)

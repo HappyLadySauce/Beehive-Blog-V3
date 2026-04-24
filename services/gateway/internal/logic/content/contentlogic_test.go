@@ -24,6 +24,9 @@ type fakeContentClient struct {
 	archiveFn    func(context.Context, *pb.ArchiveContentRequest, ...grpc.CallOption) (*pb.ArchiveContentResponse, error)
 	listRevsFn   func(context.Context, *pb.ListContentRevisionsRequest, ...grpc.CallOption) (*pb.ListContentRevisionsResponse, error)
 	getRevFn     func(context.Context, *pb.GetContentRevisionRequest, ...grpc.CallOption) (*pb.GetContentRevisionResponse, error)
+	createRelFn  func(context.Context, *pb.CreateContentRelationRequest, ...grpc.CallOption) (*pb.CreateContentRelationResponse, error)
+	deleteRelFn  func(context.Context, *pb.DeleteContentRelationRequest, ...grpc.CallOption) (*pb.DeleteContentRelationResponse, error)
+	listRelsFn   func(context.Context, *pb.ListContentRelationsRequest, ...grpc.CallOption) (*pb.ListContentRelationsResponse, error)
 	createTagFn  func(context.Context, *pb.CreateTagRequest, ...grpc.CallOption) (*pb.CreateTagResponse, error)
 	updateTagFn  func(context.Context, *pb.UpdateTagRequest, ...grpc.CallOption) (*pb.UpdateTagResponse, error)
 	deleteTagFn  func(context.Context, *pb.DeleteTagRequest, ...grpc.CallOption) (*pb.DeleteTagResponse, error)
@@ -53,6 +56,15 @@ func (f *fakeContentClient) ListContentRevisions(ctx context.Context, in *pb.Lis
 }
 func (f *fakeContentClient) GetContentRevision(ctx context.Context, in *pb.GetContentRevisionRequest, opts ...grpc.CallOption) (*pb.GetContentRevisionResponse, error) {
 	return f.getRevFn(ctx, in, opts...)
+}
+func (f *fakeContentClient) CreateContentRelation(ctx context.Context, in *pb.CreateContentRelationRequest, opts ...grpc.CallOption) (*pb.CreateContentRelationResponse, error) {
+	return f.createRelFn(ctx, in, opts...)
+}
+func (f *fakeContentClient) DeleteContentRelation(ctx context.Context, in *pb.DeleteContentRelationRequest, opts ...grpc.CallOption) (*pb.DeleteContentRelationResponse, error) {
+	return f.deleteRelFn(ctx, in, opts...)
+}
+func (f *fakeContentClient) ListContentRelations(ctx context.Context, in *pb.ListContentRelationsRequest, opts ...grpc.CallOption) (*pb.ListContentRelationsResponse, error) {
+	return f.listRelsFn(ctx, in, opts...)
 }
 func (f *fakeContentClient) CreateTag(ctx context.Context, in *pb.CreateTagRequest, opts ...grpc.CallOption) (*pb.CreateTagResponse, error) {
 	return f.createTagFn(ctx, in, opts...)
@@ -114,6 +126,21 @@ func TestContentLogicSmoke(t *testing.T) {
 			assertActorMetadata(t, ctx)
 			return &pb.GetContentRevisionResponse{Revision: &pb.ContentRevisionDetail{RevisionId: in.GetRevisionId(), ContentId: in.GetContentId(), RevisionNo: 1}}, nil
 		},
+		createRelFn: func(ctx context.Context, in *pb.CreateContentRelationRequest, _ ...grpc.CallOption) (*pb.CreateContentRelationResponse, error) {
+			assertActorMetadata(t, ctx)
+			if in.GetRelationType() != pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO {
+				t.Fatalf("unexpected relation type: %s", in.GetRelationType())
+			}
+			return &pb.CreateContentRelationResponse{Relation: contentRelation("30", in.GetContentId(), in.GetToContentId())}, nil
+		},
+		deleteRelFn: func(ctx context.Context, in *pb.DeleteContentRelationRequest, _ ...grpc.CallOption) (*pb.DeleteContentRelationResponse, error) {
+			assertActorMetadata(t, ctx)
+			return &pb.DeleteContentRelationResponse{Ok: in.GetRelationId() == "30"}, nil
+		},
+		listRelsFn: func(ctx context.Context, in *pb.ListContentRelationsRequest, _ ...grpc.CallOption) (*pb.ListContentRelationsResponse, error) {
+			assertActorMetadata(t, ctx)
+			return &pb.ListContentRelationsResponse{Items: []*pb.ContentRelationView{contentRelation("30", in.GetContentId(), "2")}, Total: 1, Page: 1, PageSize: 20}, nil
+		},
 		createTagFn: func(ctx context.Context, in *pb.CreateTagRequest, _ ...grpc.CallOption) (*pb.CreateTagResponse, error) {
 			assertActorMetadata(t, ctx)
 			return &pb.CreateTagResponse{Tag: &pb.ContentTag{TagId: "10", Name: in.GetName(), Slug: in.GetSlug()}}, nil
@@ -154,6 +181,15 @@ func TestContentLogicSmoke(t *testing.T) {
 	}
 	if resp, err := NewContentRevisionGetLogic(ctx, svcCtx).ContentRevisionGet(&types.ContentRevisionIdReq{ContentId: "1", RevisionId: "2"}); err != nil || resp.Revision.RevisionId != "2" {
 		t.Fatalf("revision get failed: resp=%+v err=%v", resp, err)
+	}
+	if resp, err := NewContentRelationCreateLogic(ctx, svcCtx).ContentRelationCreate(&types.ContentRelationCreateReq{ContentId: "1", ToContentId: "2", RelationType: "related_to"}); err != nil || resp.Relation.RelationId != "30" {
+		t.Fatalf("relation create failed: resp=%+v err=%v", resp, err)
+	}
+	if resp, err := NewContentRelationListLogic(ctx, svcCtx).ContentRelationList(&types.ContentRelationListReq{ContentId: "1", Page: 1, PageSize: 20}); err != nil || resp.Total != 1 {
+		t.Fatalf("relation list failed: resp=%+v err=%v", resp, err)
+	}
+	if resp, err := NewContentRelationDeleteLogic(ctx, svcCtx).ContentRelationDelete(&types.ContentRelationIdReq{ContentId: "1", RelationId: "30"}); err != nil || !resp.Ok {
+		t.Fatalf("relation delete failed: resp=%+v err=%v", resp, err)
 	}
 	if resp, err := NewContentTagCreateLogic(ctx, svcCtx).ContentTagCreate(&types.ContentTagCreateReq{Name: "Go", Slug: "go"}); err != nil || resp.Tag.TagId != "10" {
 		t.Fatalf("tag create failed: resp=%+v err=%v", resp, err)
@@ -215,5 +251,14 @@ func contentDetail(id string) *pb.ContentDetail {
 		Title:     "Title",
 		Slug:      "title",
 		Status:    pb.ContentStatus_CONTENT_STATUS_DRAFT,
+	}
+}
+
+func contentRelation(id, fromID, toID string) *pb.ContentRelationView {
+	return &pb.ContentRelationView{
+		RelationId:    id,
+		FromContentId: fromID,
+		ToContentId:   toID,
+		RelationType:  pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO,
 	}
 }

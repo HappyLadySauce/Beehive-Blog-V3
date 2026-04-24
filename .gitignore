@@ -5,3 +5,5 @@ design/
 uploads/
 
 .env
+.tmp
+designs/

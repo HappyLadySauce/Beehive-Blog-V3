@@ -29,6 +29,14 @@ const (
 	AIAccessAllowed = "allowed"
 	AIAccessDenied  = "denied"
 
+	RelationBelongsTo   = "belongs_to"
+	RelationRelatedTo   = "related_to"
+	RelationDerivedFrom = "derived_from"
+	RelationReferences  = "references"
+	RelationPartOf      = "part_of"
+	RelationDependsOn   = "depends_on"
+	RelationTimelineOf  = "timeline_of"
+
 	RoleAdmin = "admin"
 
 	EditorHuman = "human"
@@ -42,6 +50,9 @@ type Manager struct {
 	ArchiveContent         *ArchiveContentService
 	ListContentRevisions   *ListContentRevisionsService
 	GetContentRevision     *GetContentRevisionService
+	CreateContentRelation  *CreateContentRelationService
+	DeleteContentRelation  *DeleteContentRelationService
+	ListContentRelations   *ListContentRelationsService
 	CreateTag              *CreateTagService
 	UpdateTag              *UpdateTagService
 	DeleteTag              *DeleteTagService
@@ -76,6 +87,9 @@ func NewManager(deps Dependencies) *Manager {
 		ArchiveContent:         &ArchiveContentService{deps: deps},
 		ListContentRevisions:   &ListContentRevisionsService{deps: deps},
 		GetContentRevision:     &GetContentRevisionService{deps: deps},
+		CreateContentRelation:  &CreateContentRelationService{deps: deps},
+		DeleteContentRelation:  &DeleteContentRelationService{deps: deps},
+		ListContentRelations:   &ListContentRelationsService{deps: deps},
 		CreateTag:              &CreateTagService{deps: deps},
 		UpdateTag:              &UpdateTagService{deps: deps},
 		DeleteTag:              &DeleteTagService{deps: deps},
@@ -126,12 +140,20 @@ func stringPtr(value string) *string {
 }
 
 func bodyJSONPtr(value string) (*string, error) {
+	return jsonPtr(value, "body_json")
+}
+
+func metadataJSONPtr(value string) (*string, error) {
+	return jsonPtr(value, "metadata_json")
+}
+
+func jsonPtr(value, fieldName string) (*string, error) {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
 		return nil, nil
 	}
 	if !json.Valid([]byte(trimmed)) {
-		return nil, errs.New(errs.CodeContentInvalidArgument, "body_json must be valid JSON")
+		return nil, errs.New(errs.CodeContentInvalidArgument, fieldName+" must be valid JSON")
 	}
 	return &trimmed, nil
 }
@@ -314,6 +336,51 @@ func sourceProto(value string) pb.SourceType {
 	}
 }
 
+func relationTypeName(value pb.ContentRelationType, allowUnspecified bool) (string, error) {
+	switch value {
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_UNSPECIFIED:
+		if allowUnspecified {
+			return "", nil
+		}
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_BELONGS_TO:
+		return RelationBelongsTo, nil
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO:
+		return RelationRelatedTo, nil
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_DERIVED_FROM:
+		return RelationDerivedFrom, nil
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_REFERENCES:
+		return RelationReferences, nil
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_PART_OF:
+		return RelationPartOf, nil
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_DEPENDS_ON:
+		return RelationDependsOn, nil
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_TIMELINE_OF:
+		return RelationTimelineOf, nil
+	}
+	return "", errs.New(errs.CodeContentInvalidArgument, "invalid relation type")
+}
+
+func relationTypeProto(value string) pb.ContentRelationType {
+	switch value {
+	case RelationBelongsTo:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_BELONGS_TO
+	case RelationRelatedTo:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO
+	case RelationDerivedFrom:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_DERIVED_FROM
+	case RelationReferences:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_REFERENCES
+	case RelationPartOf:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_PART_OF
+	case RelationDependsOn:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_DEPENDS_ON
+	case RelationTimelineOf:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_TIMELINE_OF
+	default:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_UNSPECIFIED
+	}
+}
+
 func mapRepoErr(err error, notFoundCode errs.Code, notFoundMessage string) error {
 	if err == nil {
 		return nil
@@ -326,6 +393,8 @@ func mapRepoErr(err error, notFoundCode errs.Code, notFoundMessage string) error
 		return errs.Wrap(err, errs.CodeContentSlugAlreadyExists, "slug already exists")
 	case repo.ConstraintTagName, repo.ConstraintTagSlug:
 		return errs.Wrap(err, errs.CodeContentTagAlreadyExists, "tag already exists")
+	case repo.ConstraintContentRelation:
+		return errs.Wrap(err, errs.CodeContentRelationAlreadyExists, "content relation already exists")
 	}
 	return errs.Wrap(err, errs.CodeContentInternal, "content internal error")
 }
@@ -444,6 +513,31 @@ func toRevisionDetail(revision *entity.Revision) *pb.ContentRevisionDetail {
 		SourceType:          sourceProto(revision.SourceType),
 		CreatedAt:           revision.CreatedAt.Unix(),
 	}
+}
+
+func toRelation(relation *entity.Relation) *pb.ContentRelationView {
+	if relation == nil {
+		return nil
+	}
+	return &pb.ContentRelationView{
+		RelationId:    strconv.FormatInt(relation.ID, 10),
+		FromContentId: strconv.FormatInt(relation.FromContentID, 10),
+		ToContentId:   strconv.FormatInt(relation.ToContentID, 10),
+		RelationType:  relationTypeProto(relation.RelationType),
+		Weight:        relation.Weight,
+		SortOrder:     relation.SortOrder,
+		MetadataJson:  deref(relation.MetadataJSON),
+		CreatedAt:     relation.CreatedAt.Unix(),
+		UpdatedAt:     relation.UpdatedAt.Unix(),
+	}
+}
+
+func toRelations(relations []entity.Relation) []*pb.ContentRelationView {
+	result := make([]*pb.ContentRelationView, 0, len(relations))
+	for _, relation := range relations {
+		result = append(result, toRelation(&relation))
+	}
+	return result
 }
 
 func toTags(tags []entity.Tag) []*pb.ContentTag {

@@ -7,13 +7,13 @@
 当前第一阶段的领域中心为：
 
 ```text
-content_item + content_revision + tag + content_tag
+content_item + content_revision + tag + content_tag + content_relation
 ```
 
 后续扩展中心为：
 
 ```text
-content_relation + attachment + content_attachment + comment
+attachment + content_attachment + comment
 ```
 
 ## 2. 核心枚举
@@ -183,16 +183,14 @@ content_relation + attachment + content_attachment + comment
 - 删除 content 时级联删除绑定
 - 删除 tag 时若存在绑定则被拒绝
 
-## 4. 下一阶段实体
-
-### 4.1 content_relation
+### 3.5 content_relation
 
 作用：
 
 - 表示内容之间的结构化关系
 - 支撑知识图谱、相关内容、经历链路、引用网络
 
-建议字段：
+当前字段：
 
 - `id`
 - `from_content_id`
@@ -220,8 +218,11 @@ content_relation + attachment + content_attachment + comment
 - 两端内容必须存在
 - 默认用唯一约束防止重复关系
 - 删除 content 时级联删除相关关系
+- `metadata_json` 非空时必须是合法 JSON
 
-### 4.2 attachment
+## 4. 下一阶段实体
+
+### 4.1 attachment
 
 作用：
 
@@ -243,7 +244,7 @@ content_relation + attachment + content_attachment + comment
 - `ai_access`
 - `created_at`
 
-### 4.3 content_attachment
+### 4.2 content_attachment
 
 作用：
 
@@ -265,7 +266,7 @@ content_relation + attachment + content_attachment + comment
 - `resource`
 - `source_material`
 
-### 4.4 comment
+### 4.3 comment
 
 作用：
 

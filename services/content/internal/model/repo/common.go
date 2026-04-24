@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	ConstraintItemSlug = "ux_content_items_slug"
-	ConstraintTagName  = "ux_content_tags_name"
-	ConstraintTagSlug  = "ux_content_tags_slug"
+	ConstraintItemSlug        = "ux_content_items_slug"
+	ConstraintTagName         = "ux_content_tags_name"
+	ConstraintTagSlug         = "ux_content_tags_slug"
+	ConstraintContentRelation = "ux_content_relations_from_to_type"
 )
 
 func IsNotFound(err error) bool {

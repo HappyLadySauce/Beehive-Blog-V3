@@ -13,5 +13,5 @@
 - `gateway` 只做认证、HTTP 适配和身份透传，不做内容资源级授权。
 - `identity` 提供主体身份、角色和账号状态真相，不裁决内容可见性。
 - `search`、`indexer`、`agent` 只能消费 content 规则、事件和投影，不成为内容真相源。
-- 第一阶段已落地 `items`、`revisions`、`tags`、`content_tags`、Studio 管理接口和公开读取接口。
-- 下一阶段实现优先级为 `content_relation` -> content events -> search/indexer -> attachments/comments。
+- 第一阶段已落地 `items`、`revisions`、`tags`、`content_tags`、`content_relation`、Studio 管理接口和公开读取接口。
+- 下一阶段实现优先级为 content events -> search/indexer -> attachments/comments。

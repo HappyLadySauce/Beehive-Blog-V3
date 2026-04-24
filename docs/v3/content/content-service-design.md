@@ -8,8 +8,8 @@
 
 - 管理统一内容主实体
 - 管理内容版本
-- 管理标签与内容标签绑定
-- 后续管理内容关系、附件、评论
+- 管理标签、内容标签绑定与内容关系
+- 后续管理附件、评论
 - 执行内容状态、可见性、AI 访问策略
 - 为公开站、Studio、search、indexer、agent 提供可信内容来源
 
@@ -77,6 +77,9 @@ server -> logic -> service -> repo -> entity
 - `ArchiveContent`
 - `ListContentRevisions`
 - `GetContentRevision`
+- `CreateContentRelation`
+- `DeleteContentRelation`
+- `ListContentRelations`
 - `CreateTag`
 - `UpdateTag`
 - `DeleteTag`
@@ -89,6 +92,7 @@ server -> logic -> service -> repo -> entity
 
 - `content.items`
 - `content.revisions`
+- `content.relations`
 - `content.tags`
 - `content.content_tags`
 
@@ -97,24 +101,16 @@ server -> logic -> service -> repo -> entity
 - Studio service 层要求 `role=admin`
 - 新内容默认 `draft + private + ai_access=denied`
 - `body_json` 非空时必须是合法 JSON
+- `metadata_json` 非空时必须是合法 JSON
+- 内容关系只允许出边管理，不允许自关联
 - 删除已绑定 tag 返回 `CodeContentTagInUse`
 - `content_tags.tag_id` 使用 `ON DELETE RESTRICT`
 
 ## 4. 后续能力顺序
 
-### 4.1 content_relation
+### 4.1 content events
 
-优先实现内容关系。
-
-目标：
-
-- 支持文章、项目、经历、时间线事件、笔记之间建立结构化关系
-- 支撑知识图谱、相关内容、经历链路
-- 为 search 和 agent 提供关系上下文
-
-### 4.2 content events
-
-第二优先级实现内容事件。
+下一优先级实现内容事件。
 
 目标：
 
@@ -122,7 +118,7 @@ server -> logic -> service -> repo -> entity
 - 为 `indexer`、`search`、`realtime` 提供异步输入
 - 通过 `pkg/mq` 抽象 RabbitMQ，业务层只依赖 publisher 接口
 
-### 4.3 search / indexer
+### 4.2 search / indexer
 
 事件稳定后实现 search/indexer。
 
@@ -133,7 +129,7 @@ server -> logic -> service -> repo -> entity
 - 公开搜索只索引 `published + public`
 - 后续再扩展 member search 和 agent search
 
-### 4.4 attachments / comments
+### 4.3 attachments / comments
 
 附件和评论在 content 主体、关系和事件稳定后补齐。
 

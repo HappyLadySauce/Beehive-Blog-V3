@@ -35,8 +35,10 @@ func TestContentCodeToHTTP(t *testing.T) {
 		errs.CodeContentNotFound:                   404,
 		errs.CodeContentTagNotFound:                404,
 		errs.CodeContentRevisionNotFound:           404,
+		errs.CodeContentRelationNotFound:           404,
 		errs.CodeContentSlugAlreadyExists:          409,
 		errs.CodeContentTagAlreadyExists:           409,
+		errs.CodeContentRelationAlreadyExists:      409,
 		errs.CodeContentTagInUse:                   412,
 	}
 	for code, want := range cases {

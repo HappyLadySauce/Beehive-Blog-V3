@@ -200,6 +200,57 @@ type ContentListResp struct {
 	PageSize int                  `json:"page_size,example=20"`
 }
 
+type ContentRelationCreateReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	ContentId     string `path:"content_id,example=1001" validate:"required"`
+	ToContentId   string `json:"to_content_id,example=1002" validate:"required"`
+	RelationType  string `json:"relation_type,options=belongs_to|related_to|derived_from|references|part_of|depends_on|timeline_of,example=related_to" validate:"required"`
+	Weight        int    `json:"weight,default=0,example=10"`
+	SortOrder     int    `json:"sort_order,default=0,example=0"`
+	MetadataJson  string `json:"metadata_json,optional,example={\"reason\":\"same topic\"}" validate:"omitempty,max=1048576"`
+}
+
+type ContentRelationDeleteResp struct {
+	Ok bool `json:"ok,example=true"`
+}
+
+type ContentRelationIdReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	ContentId     string `path:"content_id,example=1001" validate:"required"`
+	RelationId    string `path:"relation_id,example=3001" validate:"required"`
+}
+
+type ContentRelationListReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	ContentId     string `path:"content_id,example=1001" validate:"required"`
+	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+	RelationType  string `form:"relation_type,optional,options=belongs_to|related_to|derived_from|references|part_of|depends_on|timeline_of,example=related_to"`
+}
+
+type ContentRelationListResp struct {
+	Items    []ContentRelationView `json:"items"`
+	Total    int64                 `json:"total,example=1"`
+	Page     int                   `json:"page,example=1"`
+	PageSize int                   `json:"page_size,example=20"`
+}
+
+type ContentRelationResp struct {
+	Relation ContentRelationView `json:"relation"`
+}
+
+type ContentRelationView struct {
+	RelationId    string `json:"relation_id,example=3001"`
+	FromContentId string `json:"from_content_id,example=1001"`
+	ToContentId   string `json:"to_content_id,example=1002"`
+	RelationType  string `json:"relation_type,options=belongs_to|related_to|derived_from|references|part_of|depends_on|timeline_of,example=related_to"`
+	Weight        int    `json:"weight,default=0,example=10"`
+	SortOrder     int    `json:"sort_order,default=0,example=0"`
+	MetadataJson  string `json:"metadata_json,optional,example={\"reason\":\"same topic\"}"`
+	CreatedAt     int64  `json:"created_at,example=1713772800"`
+	UpdatedAt     int64  `json:"updated_at,example=1713776400"`
+}
+
 type ContentRevisionDetailResp struct {
 	Revision ContentRevisionDetailView `json:"revision"`
 }

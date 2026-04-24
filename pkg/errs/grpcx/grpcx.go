@@ -19,7 +19,7 @@ func CodeToGRPC(code errs.Code) codes.Code {
 		return codes.Unavailable
 	case errs.CodeGatewayUpstreamTimeout:
 		return codes.DeadlineExceeded
-	case errs.CodeContentNotFound, errs.CodeContentTagNotFound, errs.CodeContentRevisionNotFound:
+	case errs.CodeContentNotFound, errs.CodeContentTagNotFound, errs.CodeContentRevisionNotFound, errs.CodeContentRelationNotFound:
 		return codes.NotFound
 	case errs.CodeContentTagInUse:
 		return codes.FailedPrecondition

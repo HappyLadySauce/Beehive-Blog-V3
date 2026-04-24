@@ -25,7 +25,7 @@ func CodeToHTTP(code errs.Code) int {
 		return http.StatusServiceUnavailable
 	case errs.CodeGatewayUpstreamTimeout:
 		return http.StatusGatewayTimeout
-	case errs.CodeContentNotFound, errs.CodeContentTagNotFound, errs.CodeContentRevisionNotFound:
+	case errs.CodeContentNotFound, errs.CodeContentTagNotFound, errs.CodeContentRevisionNotFound, errs.CodeContentRelationNotFound:
 		return http.StatusNotFound
 	case errs.CodeContentTagInUse:
 		return http.StatusPreconditionFailed

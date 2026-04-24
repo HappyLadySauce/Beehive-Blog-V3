@@ -40,6 +40,15 @@ func (f *fakePublicContentClient) ListContentRevisions(context.Context, *pb.List
 func (f *fakePublicContentClient) GetContentRevision(context.Context, *pb.GetContentRevisionRequest, ...grpc.CallOption) (*pb.GetContentRevisionResponse, error) {
 	return nil, nil
 }
+func (f *fakePublicContentClient) CreateContentRelation(context.Context, *pb.CreateContentRelationRequest, ...grpc.CallOption) (*pb.CreateContentRelationResponse, error) {
+	return nil, nil
+}
+func (f *fakePublicContentClient) DeleteContentRelation(context.Context, *pb.DeleteContentRelationRequest, ...grpc.CallOption) (*pb.DeleteContentRelationResponse, error) {
+	return nil, nil
+}
+func (f *fakePublicContentClient) ListContentRelations(context.Context, *pb.ListContentRelationsRequest, ...grpc.CallOption) (*pb.ListContentRelationsResponse, error) {
+	return nil, nil
+}
 func (f *fakePublicContentClient) CreateTag(context.Context, *pb.CreateTagRequest, ...grpc.CallOption) (*pb.CreateTagResponse, error) {
 	return nil, nil
 }

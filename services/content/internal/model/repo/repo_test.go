@@ -76,6 +76,55 @@ func TestContentRepositories(t *testing.T) {
 		t.Fatalf("expected bound tag delete to fail")
 	}
 
+	relatedItem := &entity.Item{
+		Type:         "article",
+		Title:        "Related Post",
+		Slug:         "related-post",
+		Status:       "published",
+		Visibility:   "public",
+		AIAccess:     "allowed",
+		OwnerUserID:  1,
+		AuthorUserID: 1,
+		SourceType:   "manual",
+	}
+	if err := store.Items.Create(ctx, relatedItem); err != nil {
+		t.Fatalf("create related item failed: %v", err)
+	}
+	relation := &entity.Relation{
+		FromContentID: item.ID,
+		ToContentID:   relatedItem.ID,
+		RelationType:  "related_to",
+		Weight:        10,
+	}
+	if err := store.Relations.Create(ctx, relation); err != nil {
+		t.Fatalf("create relation failed: %v", err)
+	}
+	duplicateRelation := *relation
+	duplicateRelation.ID = 0
+	if err := store.Relations.Create(ctx, &duplicateRelation); repo.UniqueConstraint(err) != repo.ConstraintContentRelation {
+		t.Fatalf("expected relation unique constraint, got %v", err)
+	}
+	if err := store.Relations.Create(ctx, &entity.Relation{FromContentID: item.ID, ToContentID: 999, RelationType: "related_to"}); err == nil {
+		t.Fatalf("expected dangling relation to fail")
+	}
+	relations, total, err := store.Relations.List(ctx, repo.RelationFilter{FromContentID: item.ID, RelationType: "related_to"}, 1, 20)
+	if err != nil {
+		t.Fatalf("list relations failed: %v", err)
+	}
+	if total != 1 || len(relations) != 1 || relations[0].ID != relation.ID {
+		t.Fatalf("unexpected relation list: total=%d relations=%+v", total, relations)
+	}
+	if err := store.DB().WithContext(ctx).Delete(&entity.Item{}, "id = ?", relatedItem.ID).Error; err != nil {
+		t.Fatalf("delete related item failed: %v", err)
+	}
+	relationTotal, err := store.Relations.CountByContent(ctx, item.ID)
+	if err != nil {
+		t.Fatalf("count relations after cascade failed: %v", err)
+	}
+	if relationTotal != 0 {
+		t.Fatalf("expected cascaded relation delete, got %d", relationTotal)
+	}
+
 	privateItem := *item
 	privateItem.ID = 0
 	privateItem.Slug = "private-post"

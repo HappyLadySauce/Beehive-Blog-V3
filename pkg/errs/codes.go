@@ -139,6 +139,12 @@ const (
 	// CodeContentTagInUse identifies tags that are still bound to content.
 	// CodeContentTagInUse 标识仍被内容绑定的标签。
 	CodeContentTagInUse Code = 120506
+	// CodeContentRelationNotFound identifies missing content relations.
+	// CodeContentRelationNotFound 标识内容关系不存在。
+	CodeContentRelationNotFound Code = 120507
+	// CodeContentRelationAlreadyExists identifies duplicate content relations.
+	// CodeContentRelationAlreadyExists 标识内容关系已存在。
+	CodeContentRelationAlreadyExists Code = 120508
 	// CodeContentInternal identifies content internal failures.
 	// CodeContentInternal 标识 content 内部错误。
 	CodeContentInternal Code = 129901

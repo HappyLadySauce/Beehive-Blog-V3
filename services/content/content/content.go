@@ -19,12 +19,17 @@ type (
 	ContentDetail                  = pb.ContentDetail
 	ContentRevisionDetail          = pb.ContentRevisionDetail
 	ContentRevisionSummary         = pb.ContentRevisionSummary
+	ContentRelationView            = pb.ContentRelationView
 	ContentSummary                 = pb.ContentSummary
 	ContentTag                     = pb.ContentTag
 	CreateContentRequest           = pb.CreateContentRequest
 	CreateContentResponse          = pb.CreateContentResponse
+	CreateContentRelationRequest   = pb.CreateContentRelationRequest
+	CreateContentRelationResponse  = pb.CreateContentRelationResponse
 	CreateTagRequest               = pb.CreateTagRequest
 	CreateTagResponse              = pb.CreateTagResponse
+	DeleteContentRelationRequest   = pb.DeleteContentRelationRequest
+	DeleteContentRelationResponse  = pb.DeleteContentRelationResponse
 	DeleteTagRequest               = pb.DeleteTagRequest
 	DeleteTagResponse              = pb.DeleteTagResponse
 	GetContentRequest              = pb.GetContentRequest
@@ -33,6 +38,8 @@ type (
 	GetContentRevisionResponse     = pb.GetContentRevisionResponse
 	GetPublicContentBySlugRequest  = pb.GetPublicContentBySlugRequest
 	GetPublicContentBySlugResponse = pb.GetPublicContentBySlugResponse
+	ListContentRelationsRequest    = pb.ListContentRelationsRequest
+	ListContentRelationsResponse   = pb.ListContentRelationsResponse
 	ListContentRevisionsRequest    = pb.ListContentRevisionsRequest
 	ListContentRevisionsResponse   = pb.ListContentRevisionsResponse
 	ListPublicContentsRequest      = pb.ListPublicContentsRequest
@@ -56,6 +63,9 @@ type (
 		ArchiveContent(ctx context.Context, in *ArchiveContentRequest, opts ...grpc.CallOption) (*ArchiveContentResponse, error)
 		ListContentRevisions(ctx context.Context, in *ListContentRevisionsRequest, opts ...grpc.CallOption) (*ListContentRevisionsResponse, error)
 		GetContentRevision(ctx context.Context, in *GetContentRevisionRequest, opts ...grpc.CallOption) (*GetContentRevisionResponse, error)
+		CreateContentRelation(ctx context.Context, in *CreateContentRelationRequest, opts ...grpc.CallOption) (*CreateContentRelationResponse, error)
+		DeleteContentRelation(ctx context.Context, in *DeleteContentRelationRequest, opts ...grpc.CallOption) (*DeleteContentRelationResponse, error)
+		ListContentRelations(ctx context.Context, in *ListContentRelationsRequest, opts ...grpc.CallOption) (*ListContentRelationsResponse, error)
 		CreateTag(ctx context.Context, in *CreateTagRequest, opts ...grpc.CallOption) (*CreateTagResponse, error)
 		UpdateTag(ctx context.Context, in *UpdateTagRequest, opts ...grpc.CallOption) (*UpdateTagResponse, error)
 		DeleteTag(ctx context.Context, in *DeleteTagRequest, opts ...grpc.CallOption) (*DeleteTagResponse, error)
@@ -109,6 +119,21 @@ func (m *defaultContent) ListContentRevisions(ctx context.Context, in *ListConte
 func (m *defaultContent) GetContentRevision(ctx context.Context, in *GetContentRevisionRequest, opts ...grpc.CallOption) (*GetContentRevisionResponse, error) {
 	client := pb.NewContentClient(m.cli.Conn())
 	return client.GetContentRevision(ctx, in, opts...)
+}
+
+func (m *defaultContent) CreateContentRelation(ctx context.Context, in *CreateContentRelationRequest, opts ...grpc.CallOption) (*CreateContentRelationResponse, error) {
+	client := pb.NewContentClient(m.cli.Conn())
+	return client.CreateContentRelation(ctx, in, opts...)
+}
+
+func (m *defaultContent) DeleteContentRelation(ctx context.Context, in *DeleteContentRelationRequest, opts ...grpc.CallOption) (*DeleteContentRelationResponse, error) {
+	client := pb.NewContentClient(m.cli.Conn())
+	return client.DeleteContentRelation(ctx, in, opts...)
+}
+
+func (m *defaultContent) ListContentRelations(ctx context.Context, in *ListContentRelationsRequest, opts ...grpc.CallOption) (*ListContentRelationsResponse, error) {
+	client := pb.NewContentClient(m.cli.Conn())
+	return client.ListContentRelations(ctx, in, opts...)
 }
 
 func (m *defaultContent) CreateTag(ctx context.Context, in *CreateTagRequest, opts ...grpc.CallOption) (*CreateTagResponse, error) {

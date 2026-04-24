@@ -9,6 +9,7 @@
 - `sql/migrations/v3/content/030_v3_content_items.sql`
 - `sql/migrations/v3/content/031_v3_content_revisions.sql`
 - `sql/migrations/v3/content/032_v3_content_tags.sql`
+- `sql/migrations/v3/content/033_v3_content_relations.sql`
 
 所有 content 主数据统一使用 PostgreSQL `content` schema。
 
@@ -98,36 +99,25 @@
 - service 层仍需要先检查绑定并返回 `CodeContentTagInUse`。
 - 这是“业务友好错误 + 数据库兜底”的双保险。
 
+### 2.5 content.relations
+
+作用：
+
+- 保存内容之间的结构化出边关系。
+
+关键约束：
+
+- `from_content_id` 与 `to_content_id` 均引用 `content.items(id)`，删除 content 时级联删除关系。
+- `from_content_id <> to_content_id` 禁止自关联。
+- `(from_content_id, to_content_id, relation_type)` 唯一。
+- `relation_type` 限定为 `belongs_to/related_to/derived_from/references/part_of/depends_on/timeline_of`。
+- `metadata_json` 使用 JSONB。
+
 ## 3. 后续迁移规划
 
-后续迁移编号建议从 `033` 开始。
+后续迁移编号建议从 `034` 开始。
 
-### 3.1 033_v3_content_relations.sql
-
-规划表：
-
-- `content.relations`
-
-建议字段：
-
-- `id BIGSERIAL PRIMARY KEY`
-- `from_content_id BIGINT NOT NULL`
-- `to_content_id BIGINT NOT NULL`
-- `relation_type VARCHAR(32) NOT NULL`
-- `weight INT NOT NULL DEFAULT 0`
-- `sort_order INT NOT NULL DEFAULT 0`
-- `metadata_json JSONB NULL`
-- `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
-- `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`
-
-建议约束：
-
-- 两端 content 均引用 `content.items(id)` 并 `ON DELETE CASCADE`
-- 不允许 `from_content_id = to_content_id`
-- `(from_content_id, to_content_id, relation_type)` 唯一
-- `relation_type` 使用 CHECK 约束
-
-### 3.2 034_v3_content_attachments.sql
+### 3.1 034_v3_content_attachments.sql
 
 规划表：
 
@@ -140,7 +130,7 @@
 - `content_attachments` 管内容与附件绑定
 - 文件对象存储细节后续由 storage 配置或独立文件服务决定
 
-### 3.3 035_v3_content_comments.sql
+### 3.2 035_v3_content_comments.sql
 
 规划表：
 
@@ -152,7 +142,7 @@
 - 第一阶段评论状态建议为 `visible/hidden/deleted`
 - `member` 可发评论，`admin` 可管理评论
 
-### 3.4 content events 不落主数据表
+### 3.3 content events 不落主数据表
 
 内容事件优先通过 RabbitMQ 发布。
 
@@ -160,11 +150,10 @@
 
 ## 4. 当前不创建的表
 
-本轮文档补全不创建迁移文件。
+relations 第一阶段已创建 `content.relations` 迁移。
 
 当前不创建：
 
-- `content.relations`
 - `content.attachments`
 - `content.content_attachments`
 - `content.comments`

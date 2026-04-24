@@ -117,6 +117,34 @@ func BuildPublicListRequest(req *types.PublicContentListReq) (*pb.ListPublicCont
 	}, nil
 }
 
+func BuildCreateRelationRequest(req *types.ContentRelationCreateReq) (*pb.CreateContentRelationRequest, error) {
+	relationType, err := RelationTypeToProto(req.RelationType)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.CreateContentRelationRequest{
+		ContentId:    req.ContentId,
+		ToContentId:  req.ToContentId,
+		RelationType: relationType,
+		Weight:       int32(req.Weight),
+		SortOrder:    int32(req.SortOrder),
+		MetadataJson: req.MetadataJson,
+	}, nil
+}
+
+func BuildListRelationsRequest(req *types.ContentRelationListReq) (*pb.ListContentRelationsRequest, error) {
+	relationType, err := OptionalRelationTypeToProto(req.RelationType)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.ListContentRelationsRequest{
+		ContentId:    req.ContentId,
+		Page:         int32(req.Page),
+		PageSize:     int32(req.PageSize),
+		RelationType: relationType,
+	}, nil
+}
+
 func ToContentDetailResp(resp *pb.ContentDetail) *types.ContentDetailResp {
 	return &types.ContentDetailResp{Content: ToContentDetail(resp)}
 }
@@ -181,6 +209,18 @@ func ToTagListResp(items []*pb.ContentTag, total int64, page, pageSize int32) *t
 		result = append(result, ToTag(item))
 	}
 	return &types.ContentTagListResp{Items: result, Total: total, Page: int(page), PageSize: int(pageSize)}
+}
+
+func ToRelationResp(relation *pb.ContentRelationView) *types.ContentRelationResp {
+	return &types.ContentRelationResp{Relation: ToRelation(relation)}
+}
+
+func ToRelationListResp(items []*pb.ContentRelationView, total int64, page, pageSize int32) *types.ContentRelationListResp {
+	result := make([]types.ContentRelationView, 0, len(items))
+	for _, item := range items {
+		result = append(result, ToRelation(item))
+	}
+	return &types.ContentRelationListResp{Items: result, Total: total, Page: int(page), PageSize: int(pageSize)}
 }
 
 func ToContentDetail(item *pb.ContentDetail) types.ContentDetailView {
@@ -256,6 +296,23 @@ func ToTag(tag *pb.ContentTag) types.ContentTagView {
 		Color:       tag.GetColor(),
 		CreatedAt:   tag.GetCreatedAt(),
 		UpdatedAt:   tag.GetUpdatedAt(),
+	}
+}
+
+func ToRelation(relation *pb.ContentRelationView) types.ContentRelationView {
+	if relation == nil {
+		return types.ContentRelationView{}
+	}
+	return types.ContentRelationView{
+		RelationId:    relation.GetRelationId(),
+		FromContentId: relation.GetFromContentId(),
+		ToContentId:   relation.GetToContentId(),
+		RelationType:  RelationTypeToString(relation.GetRelationType()),
+		Weight:        int(relation.GetWeight()),
+		SortOrder:     int(relation.GetSortOrder()),
+		MetadataJson:  relation.GetMetadataJson(),
+		CreatedAt:     relation.GetCreatedAt(),
+		UpdatedAt:     relation.GetUpdatedAt(),
 	}
 }
 
@@ -460,6 +517,55 @@ func EditorTypeToString(value pb.EditorType) string {
 		return "agent"
 	case pb.EditorType_EDITOR_TYPE_SYSTEM:
 		return "system"
+	default:
+		return ""
+	}
+}
+
+func RelationTypeToProto(value string) (pb.ContentRelationType, error) {
+	switch normalize(value) {
+	case "belongs_to":
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_BELONGS_TO, nil
+	case "related_to":
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO, nil
+	case "derived_from":
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_DERIVED_FROM, nil
+	case "references":
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_REFERENCES, nil
+	case "part_of":
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_PART_OF, nil
+	case "depends_on":
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_DEPENDS_ON, nil
+	case "timeline_of":
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_TIMELINE_OF, nil
+	default:
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_UNSPECIFIED, errs.New(errs.CodeContentInvalidArgument, "invalid relation type")
+	}
+}
+
+func OptionalRelationTypeToProto(value string) (pb.ContentRelationType, error) {
+	if normalize(value) == "" {
+		return pb.ContentRelationType_CONTENT_RELATION_TYPE_UNSPECIFIED, nil
+	}
+	return RelationTypeToProto(value)
+}
+
+func RelationTypeToString(value pb.ContentRelationType) string {
+	switch value {
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_BELONGS_TO:
+		return "belongs_to"
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO:
+		return "related_to"
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_DERIVED_FROM:
+		return "derived_from"
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_REFERENCES:
+		return "references"
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_PART_OF:
+		return "part_of"
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_DEPENDS_ON:
+		return "depends_on"
+	case pb.ContentRelationType_CONTENT_RELATION_TYPE_TIMELINE_OF:
+		return "timeline_of"
 	default:
 		return ""
 	}

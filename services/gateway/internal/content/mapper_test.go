@@ -40,6 +40,10 @@ func TestEnumMapping(t *testing.T) {
 	if err != nil || sourceType != pb.SourceType_SOURCE_TYPE_AGENT_ASSISTED {
 		t.Fatalf("unexpected source type: %s %v", sourceType, err)
 	}
+	relationType, err := RelationTypeToProto("related_to")
+	if err != nil || relationType != pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO {
+		t.Fatalf("unexpected relation type: %s %v", relationType, err)
+	}
 	if EditorTypeToString(pb.EditorType_EDITOR_TYPE_SYSTEM) != "system" {
 		t.Fatalf("unexpected editor type mapping")
 	}
@@ -69,6 +73,16 @@ func TestResponseMapping(t *testing.T) {
 	}}, 1, 1, 20)
 	if revisions.Total != 1 || revisions.Items[0].EditorType != "human" || revisions.Items[0].SourceType != "manual" {
 		t.Fatalf("unexpected revision mapping: %+v", revisions)
+	}
+
+	relations := ToRelationListResp([]*pb.ContentRelationView{{
+		RelationId:    "30",
+		FromContentId: "1",
+		ToContentId:   "2",
+		RelationType:  pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO,
+	}}, 1, 1, 20)
+	if relations.Total != 1 || relations.Items[0].RelationType != "related_to" {
+		t.Fatalf("unexpected relation mapping: %+v", relations)
 	}
 }
 
@@ -135,12 +149,63 @@ func TestMapUpstreamErrorMapsContentUnavailable(t *testing.T) {
 	}
 }
 
+func TestMapUpstreamErrorPreservesTagInUse(t *testing.T) {
+	t.Parallel()
+
+	err := errgrpcx.ToStatus(errs.New(errs.CodeContentTagInUse, "tag is in use"), "fallback")
+	mapped := MapUpstreamError(context.Background(), "content_tag_delete", "/route", err)
+	if !errors.Is(mapped, errs.E(errs.CodeContentTagInUse)) {
+		t.Fatalf("expected tag in use error to be preserved, got %v", mapped)
+	}
+}
+
+func TestMapUpstreamErrorPreservesRelationConflict(t *testing.T) {
+	t.Parallel()
+
+	err := errgrpcx.ToStatus(errs.New(errs.CodeContentRelationAlreadyExists, "content relation already exists"), "fallback")
+	mapped := MapUpstreamError(context.Background(), "content_relation_create", "/route", err)
+	if !errors.Is(mapped, errs.E(errs.CodeContentRelationAlreadyExists)) {
+		t.Fatalf("expected relation conflict to be preserved, got %v", mapped)
+	}
+}
+
 func TestBuildCreateRequestRejectsInvalidEnum(t *testing.T) {
 	t.Parallel()
 
 	_, err := BuildCreateRequest(&types.ContentCreateReq{Type: "bad"})
 	if !errors.Is(err, errs.E(errs.CodeContentInvalidType)) {
 		t.Fatalf("expected invalid type error, got %v", err)
+	}
+}
+
+func TestBuildRelationRequests(t *testing.T) {
+	t.Parallel()
+
+	createReq, err := BuildCreateRelationRequest(&types.ContentRelationCreateReq{
+		ContentId:    "1",
+		ToContentId:  "2",
+		RelationType: "related_to",
+		Weight:       10,
+		MetadataJson: `{"reason":"same topic"}`,
+	})
+	if err != nil {
+		t.Fatalf("build create relation failed: %v", err)
+	}
+	if createReq.GetRelationType() != pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO || createReq.GetWeight() != 10 {
+		t.Fatalf("unexpected create relation request: %+v", createReq)
+	}
+
+	listReq, err := BuildListRelationsRequest(&types.ContentRelationListReq{ContentId: "1", RelationType: "references", Page: 2, PageSize: 10})
+	if err != nil {
+		t.Fatalf("build list relation failed: %v", err)
+	}
+	if listReq.GetRelationType() != pb.ContentRelationType_CONTENT_RELATION_TYPE_REFERENCES || listReq.GetPage() != 2 {
+		t.Fatalf("unexpected list relation request: %+v", listReq)
+	}
+
+	_, err = BuildCreateRelationRequest(&types.ContentRelationCreateReq{RelationType: "bad"})
+	if !errors.Is(err, errs.E(errs.CodeContentInvalidArgument)) {
+		t.Fatalf("expected invalid relation type, got %v", err)
 	}
 }
 

@@ -1271,7 +1271,6 @@ paths:
           - visibility
           - ai_access
           - source_type
-          - comment_enabled
           - is_featured
           - sort_order
           type: object
@@ -1902,6 +1901,271 @@ paths:
       summary: Update content item
       tags:
       - Studio Content
+  /api/v3/studio/content/items/{content_id}/relations:
+    get:
+      operationId: contentContentRelationList
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      - allowEmptyValue: true
+        default: 1
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - allowEmptyValue: true
+        default: 20
+        example: 20
+        in: query
+        name: page_size
+        type: integer
+      - allowEmptyValue: true
+        enum:
+        - belongs_to
+        - related_to
+        - derived_from
+        - references
+        - part_of
+        - depends_on
+        - timeline_of
+        example: related_to
+        in: query
+        name: relation_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    created_at:
+                      example: 1713772800
+                      type: integer
+                    from_content_id:
+                      example: "1001"
+                      type: string
+                    metadata_json:
+                      example: '{"reason":"same topic"}'
+                      type: string
+                    relation_id:
+                      example: "3001"
+                      type: string
+                    relation_type:
+                      enum:
+                      - belongs_to
+                      - related_to
+                      - derived_from
+                      - references
+                      - part_of
+                      - depends_on
+                      - timeline_of
+                      example: related_to
+                      type: string
+                    sort_order:
+                      default: 0
+                      example: 0
+                      type: integer
+                    to_content_id:
+                      example: "1002"
+                      type: string
+                    updated_at:
+                      example: 1713776400
+                      type: integer
+                    weight:
+                      default: 0
+                      example: 10
+                      type: integer
+                  required:
+                  - relation_id
+                  - from_content_id
+                  - to_content_id
+                  - relation_type
+                  - weight
+                  - sort_order
+                  - created_at
+                  - updated_at
+                  type: object
+                type: array
+              page:
+                example: 1
+                type: integer
+              page_size:
+                example: 20
+                type: integer
+              total:
+                example: 1
+                type: integer
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List content relations
+      tags:
+      - Studio Content
+    post:
+      consumes:
+      - application/json
+      operationId: contentContentRelationCreate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            metadata_json:
+              example: '{"reason":"same topic"}'
+              type: string
+            relation_type:
+              enum:
+              - belongs_to
+              - related_to
+              - derived_from
+              - references
+              - part_of
+              - depends_on
+              - timeline_of
+              example: related_to
+              type: string
+            sort_order:
+              default: 0
+              example: 0
+              type: integer
+            to_content_id:
+              example: "1002"
+              type: string
+            weight:
+              default: 0
+              example: 10
+              type: integer
+          required:
+          - to_content_id
+          - relation_type
+          - weight
+          - sort_order
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              relation:
+                properties:
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  from_content_id:
+                    example: "1001"
+                    type: string
+                  metadata_json:
+                    example: '{"reason":"same topic"}'
+                    type: string
+                  relation_id:
+                    example: "3001"
+                    type: string
+                  relation_type:
+                    enum:
+                    - belongs_to
+                    - related_to
+                    - derived_from
+                    - references
+                    - part_of
+                    - depends_on
+                    - timeline_of
+                    example: related_to
+                    type: string
+                  sort_order:
+                    default: 0
+                    example: 0
+                    type: integer
+                  to_content_id:
+                    example: "1002"
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  weight:
+                    default: 0
+                    example: 10
+                    type: integer
+                required:
+                - relation_id
+                - from_content_id
+                - to_content_id
+                - relation_type
+                - weight
+                - sort_order
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Create content relation
+      tags:
+      - Studio Content
+  /api/v3/studio/content/items/{content_id}/relations/{relation_id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      operationId: contentContentRelationDelete
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1001"
+        in: path
+        name: content_id
+        required: true
+        type: string
+      - example: "3001"
+        in: path
+        name: relation_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Delete content relation
+      tags:
+      - Studio Content
   /api/v3/studio/content/items/{content_id}/revisions:
     get:
       operationId: contentContentRevisionList
@@ -2425,7 +2689,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-24 14:34:31"
+x-date: "2026-04-24 20:56:16"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

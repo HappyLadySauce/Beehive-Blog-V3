@@ -10,7 +10,7 @@
 - HTTP：`v3/api/gateway.api`
 - Swagger：`v3/api/gateway.yaml`，只由 goctl 生成
 
-本轮文档补全不修改 proto、api 或生成代码。
+relations 第一阶段已经修改 proto、api 并完成生成。
 
 ## 2. 当前 RPC 能力
 
@@ -55,7 +55,22 @@
 - tag name 与 slug 唯一
 - 已绑定 tag 删除返回 `CodeContentTagInUse`
 
-### 2.4 Public content
+### 2.4 Relations
+
+- `CreateContentRelation`
+- `DeleteContentRelation`
+- `ListContentRelations`
+
+规则：
+
+- 需要 `admin`
+- 只管理 `from_content_id = content_id` 的出边关系
+- 两端 content 必须存在
+- 不允许自关联
+- 重复关系返回 `CodeContentRelationAlreadyExists`
+- `metadata_json` 非空时必须是合法 JSON
+
+### 2.5 Public content
 
 - `ListPublicContents`
 - `GetPublicContentBySlug`
@@ -66,7 +81,7 @@
 - 只返回 `status=published AND visibility=public`
 - archived 内容默认不可读
 
-### 2.5 Operations
+### 2.6 Operations
 
 - `Ping`
 
@@ -95,6 +110,9 @@
 - `DELETE /items/:content_id`
 - `GET /items/:content_id/revisions`
 - `GET /items/:content_id/revisions/:revision_id`
+- `GET /items/:content_id/relations`
+- `POST /items/:content_id/relations`
+- `DELETE /items/:content_id/relations/:relation_id`
 - `GET /tags`
 - `POST /tags`
 - `PUT /tags/:tag_id`
@@ -143,6 +161,8 @@
 - `120504`：tag already exists
 - `120505`：revision not found
 - `120506`：tag in use
+- `120507`：relation not found
+- `120508`：relation already exists
 - `129901`：content internal error
 
 规则：
@@ -154,28 +174,7 @@
 
 ## 5. 下一批接口优先级
 
-### 5.1 第一优先级：relations
-
-建议新增 RPC：
-
-- `CreateContentRelation`
-- `DeleteContentRelation`
-- `ListContentRelations`
-
-建议 HTTP：
-
-- `GET /api/v3/studio/content/items/:content_id/relations`
-- `POST /api/v3/studio/content/items/:content_id/relations`
-- `DELETE /api/v3/studio/content/items/:content_id/relations/:relation_id`
-
-规则：
-
-- Studio relation 管理只允许 `admin`
-- 两端 content 必须存在
-- 不允许自关联
-- 重复关系返回业务冲突错误
-
-### 5.2 第二优先级：content events
+### 5.1 第一优先级：content events
 
 建议先不对外暴露 HTTP。
 
@@ -195,7 +194,7 @@
 - `content.ai_access_changed`
 - `content.tag_changed`
 
-### 5.3 第三优先级：attachments / comments
+### 5.2 第二优先级：attachments / comments
 
 attachments 建议先开放 Studio 管理接口。
 
@@ -207,13 +206,6 @@ comments 建议同时考虑公开发表评论与 Studio 管理接口。
 - `admin` 可以隐藏、删除、查看所有评论
 - `agent` 不参与评论
 
-## 6. 当前不改 wire shape
-
-本轮文档补全不修改：
-
-- `v3/proto/content.proto`
-- `v3/api/gateway.api`
-- `services/content/pb/*`
-- `services/gateway/internal/types/types.go`
+## 6. 契约变更规则
 
 后续任何契约变更必须先更新 `.proto` 或 `.api` 真相源，再通过 goctl/protoc 生成。

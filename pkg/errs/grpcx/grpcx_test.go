@@ -50,8 +50,10 @@ func TestContentCodeToGRPC(t *testing.T) {
 		errs.CodeContentNotFound:                   codes.NotFound,
 		errs.CodeContentTagNotFound:                codes.NotFound,
 		errs.CodeContentRevisionNotFound:           codes.NotFound,
+		errs.CodeContentRelationNotFound:           codes.NotFound,
 		errs.CodeContentSlugAlreadyExists:          codes.AlreadyExists,
 		errs.CodeContentTagAlreadyExists:           codes.AlreadyExists,
+		errs.CodeContentRelationAlreadyExists:      codes.AlreadyExists,
 		errs.CodeContentTagInUse:                   codes.FailedPrecondition,
 	}
 	for code, want := range cases {
