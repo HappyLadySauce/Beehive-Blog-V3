@@ -8,6 +8,7 @@ type Store struct {
 	Items       *ItemRepository
 	Revisions   *RevisionRepository
 	Relations   *RelationRepository
+	Outbox      *OutboxRepository
 	Tags        *TagRepository
 	ContentTags *ContentTagRepository
 }
@@ -18,6 +19,7 @@ func NewStore(db *gorm.DB) *Store {
 		Items:       &ItemRepository{db: db},
 		Revisions:   &RevisionRepository{db: db},
 		Relations:   &RelationRepository{db: db},
+		Outbox:      &OutboxRepository{db: db},
 		Tags:        &TagRepository{db: db},
 		ContentTags: &ContentTagRepository{db: db},
 	}

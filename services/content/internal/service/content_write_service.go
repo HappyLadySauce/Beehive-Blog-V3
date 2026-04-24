@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
@@ -96,6 +97,20 @@ func (s *CreateContentService) Execute(ctx context.Context, actor Actor, req *pb
 		if err := txStore.ContentTags.ReplaceForContent(ctx, item.ID, tagIDs); err != nil {
 			return mapRepoErr(err, errs.CodeContentTagNotFound, "tag not found")
 		}
+		now := s.deps.Clock()
+		payload := baseContentPayload(item.ID, actor.UserID, now)
+		payload["revision_id"] = strconv.FormatInt(revision.ID, 10)
+		if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentCreated, ResourceID: item.ID, Payload: payload, OccurredAt: now}); err != nil {
+			return err
+		}
+		if len(tagIDs) > 0 {
+			tagPayload := baseContentPayload(item.ID, actor.UserID, now)
+			tagPayload["operation"] = "replace"
+			tagPayload["tag_ids"] = stringIDs(tagIDs)
+			if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentTagChanged, ResourceID: item.ID, Payload: tagPayload, OccurredAt: now}); err != nil {
+				return err
+			}
+		}
 		detail, err = itemDetail(ctx, txStore, item)
 		return err
 	})
@@ -171,6 +186,14 @@ func (s *UpdateContentService) Execute(ctx context.Context, actor Actor, req *pb
 			return mapRepoErr(err, errs.CodeContentRevisionNotFound, "content revision not found")
 		}
 
+		oldStatus := item.Status
+		oldVisibility := item.Visibility
+		oldAIAccess := item.AIAccess
+		currentTags, err := txStore.ContentTags.ListTags(ctx, item.ID)
+		if err != nil {
+			return mapRepoErr(err, errs.CodeContentInternal, "content internal error")
+		}
+
 		now := s.deps.Clock()
 		if item.PublishedAt == nil && statusValue == StatusPublished {
 			item.PublishedAt = &now
@@ -190,6 +213,7 @@ func (s *UpdateContentService) Execute(ctx context.Context, actor Actor, req *pb
 		changedBody := currentRevision.BodyMarkdown != req.BodyMarkdown || deref(currentRevision.BodyJSON) != deref(bodyJSON)
 		changedSnapshot := currentRevision.TitleSnapshot != item.Title || deref(currentRevision.SummarySnapshot) != deref(item.Summary)
 		changedSummary := strings.TrimSpace(req.ChangeSummary) != ""
+		revisionID := currentRevision.ID
 		if changedBody || changedSnapshot || changedSummary {
 			nextNo, err := txStore.Revisions.NextRevisionNo(ctx, item.ID)
 			if err != nil {
@@ -212,12 +236,52 @@ func (s *UpdateContentService) Execute(ctx context.Context, actor Actor, req *pb
 				return mapRepoErr(err, errs.CodeContentRevisionNotFound, "content revision not found")
 			}
 			item.CurrentRevisionID = &revision.ID
+			revisionID = revision.ID
 		}
 		if err := txStore.Items.Save(ctx, item); err != nil {
 			return mapRepoErr(err, errs.CodeContentNotFound, "content not found")
 		}
+		changedTags := tagIDsChanged(currentTags, tagIDs)
 		if err := txStore.ContentTags.ReplaceForContent(ctx, item.ID, tagIDs); err != nil {
 			return mapRepoErr(err, errs.CodeContentTagNotFound, "tag not found")
+		}
+		updatePayload := baseContentPayload(item.ID, actor.UserID, now)
+		updatePayload["revision_id"] = strconv.FormatInt(revisionID, 10)
+		if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentUpdated, ResourceID: item.ID, Payload: updatePayload, OccurredAt: now}); err != nil {
+			return err
+		}
+		if oldStatus != statusValue {
+			payload := baseContentPayload(item.ID, actor.UserID, now)
+			payload["old_status"] = oldStatus
+			payload["new_status"] = statusValue
+			if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentStatusChanged, ResourceID: item.ID, Payload: payload, OccurredAt: now}); err != nil {
+				return err
+			}
+		}
+		if oldVisibility != visibility {
+			payload := baseContentPayload(item.ID, actor.UserID, now)
+			payload["old_visibility"] = oldVisibility
+			payload["new_visibility"] = visibility
+			if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentVisibilityChanged, ResourceID: item.ID, Payload: payload, OccurredAt: now}); err != nil {
+				return err
+			}
+		}
+		if oldAIAccess != aiAccess {
+			payload := baseContentPayload(item.ID, actor.UserID, now)
+			payload["old_ai_access"] = oldAIAccess
+			payload["new_ai_access"] = aiAccess
+			if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentAIAccessChanged, ResourceID: item.ID, Payload: payload, OccurredAt: now}); err != nil {
+				return err
+			}
+		}
+		if changedTags {
+			payload := baseContentPayload(item.ID, actor.UserID, now)
+			payload["operation"] = "replace"
+			payload["old_tag_ids"] = tagStringIDs(currentTags)
+			payload["new_tag_ids"] = stringIDs(tagIDs)
+			if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentTagChanged, ResourceID: item.ID, Payload: payload, OccurredAt: now}); err != nil {
+				return err
+			}
 		}
 		detail, err = itemDetail(ctx, txStore, item)
 		return err
@@ -244,11 +308,18 @@ func (s *ArchiveContentService) Execute(ctx context.Context, actor Actor, req *p
 		if err != nil {
 			return mapRepoErr(err, errs.CodeContentNotFound, "content not found")
 		}
+		oldStatus := item.Status
 		now := s.deps.Clock()
 		item.Status = StatusArchived
 		item.ArchivedAt = &now
 		if err := txStore.Items.Save(ctx, item); err != nil {
 			return mapRepoErr(err, errs.CodeContentNotFound, "content not found")
+		}
+		payload := baseContentPayload(item.ID, actor.UserID, now)
+		payload["old_status"] = oldStatus
+		payload["new_status"] = StatusArchived
+		if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentArchived, ResourceID: item.ID, Payload: payload, OccurredAt: now}); err != nil {
+			return err
 		}
 		return nil
 	})

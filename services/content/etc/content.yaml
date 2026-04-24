@@ -17,6 +17,16 @@ Postgres:
   MaxIdleConns: 10
   ConnMaxLifetimeSeconds: 1800
   ConnMaxIdleTimeSeconds: 600
+RabbitMQ:
+  URL: amqp://Beehive-Blog-V3:Beehive-Blog-V3@127.0.0.1:5672/
+  Exchange: beehive.content.events
+  ExchangeType: topic
+  ConnectTimeoutSeconds: 5
+Outbox:
+  DispatchIntervalSeconds: 2
+  BatchSize: 50
+  MaxAttempts: 5
+  RetryDelaySeconds: 10
 InternalAuthToken: change-me-in-local-env
 AllowedCallers:
 - gateway

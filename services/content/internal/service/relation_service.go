@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/model/entity"
@@ -62,6 +63,15 @@ func (s *CreateContentRelationService) Execute(ctx context.Context, actor Actor,
 		if err := txStore.Relations.Create(ctx, relation); err != nil {
 			return mapRepoErr(err, errs.CodeContentRelationNotFound, "content relation not found")
 		}
+		now := s.deps.Clock()
+		payload := baseContentPayload(fromContentID, actor.UserID, now)
+		payload["relation_id"] = strconv.FormatInt(relation.ID, 10)
+		payload["operation"] = "create"
+		payload["to_content_id"] = strconv.FormatInt(toContentID, 10)
+		payload["relation_type"] = relationType
+		if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentRelationChanged, ResourceID: fromContentID, Payload: payload, OccurredAt: now}); err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {
@@ -95,6 +105,15 @@ func (s *DeleteContentRelationService) Execute(ctx context.Context, actor Actor,
 		}
 		if err := txStore.Relations.Delete(ctx, relation); err != nil {
 			return mapRepoErr(err, errs.CodeContentRelationNotFound, "content relation not found")
+		}
+		now := s.deps.Clock()
+		payload := baseContentPayload(contentID, actor.UserID, now)
+		payload["relation_id"] = strconv.FormatInt(relation.ID, 10)
+		payload["operation"] = "delete"
+		payload["to_content_id"] = strconv.FormatInt(relation.ToContentID, 10)
+		payload["relation_type"] = relation.RelationType
+		if err := writeOutboxEvent(ctx, txStore, outboxEventInput{EventType: EventContentRelationChanged, ResourceID: contentID, Payload: payload, OccurredAt: now}); err != nil {
+			return err
 		}
 		return nil
 	})

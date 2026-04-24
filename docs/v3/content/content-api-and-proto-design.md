@@ -89,6 +89,29 @@ relations 第一阶段已经修改 proto、api 并完成生成。
 
 - 用于 service readiness / health 适配
 
+### 2.7 Internal events
+
+content 领域事件不暴露 RPC 或 HTTP 契约。
+
+当前已落地事件：
+
+- `content.created`
+- `content.updated`
+- `content.archived`
+- `content.status_changed`
+- `content.visibility_changed`
+- `content.ai_access_changed`
+- `content.tag_changed`
+- `content.relation_changed`
+
+规则：
+
+- 写操作在业务数据库事务内写入 `content.outbox_events`。
+- 后台 dispatcher 从 outbox 发布到 RabbitMQ topic exchange。
+- routing key 直接使用事件类型。
+- 事件 payload 只放标识、变更摘要和 actor，不放正文全文。
+- gateway 不参与事件逻辑，也不承担事件投递授权。
+
 ## 3. 当前 HTTP 能力
 
 当前 gateway 已开放：
@@ -174,25 +197,15 @@ relations 第一阶段已经修改 proto、api 并完成生成。
 
 ## 5. 下一批接口优先级
 
-### 5.1 第一优先级：content events
+### 5.1 第一优先级：search / indexer
 
-建议先不对外暴露 HTTP。
+content events 已通过 outbox + RabbitMQ 落地，下一步可以实现 indexer/search 消费链路。
 
-实现方向：
+设计方向：
 
-- service 写操作发布内部事件
-- 事件通过 `pkg/mq` publisher 抽象投递
-- indexer/search/realtime 后续消费事件
-
-建议事件：
-
-- `content.created`
-- `content.updated`
-- `content.archived`
-- `content.status_changed`
-- `content.visibility_changed`
-- `content.ai_access_changed`
-- `content.tag_changed`
+- indexer 订阅 content 领域事件。
+- indexer 按 `content_id` 回源 content service 读取可索引内容。
+- search 服务维护搜索视图，不成为内容真相源。
 
 ### 5.2 第二优先级：attachments / comments
 

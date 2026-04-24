@@ -29,6 +29,11 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to initialize content service context: %v\n", err)
 		os.Exit(1)
 	}
+	defer func() {
+		if closeErr := ctx.Close(); closeErr != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "failed to close content service context: %v\n", closeErr)
+		}
+	}()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		pb.RegisterContentServer(grpcServer, server.NewContentServer(ctx))

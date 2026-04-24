@@ -13,6 +13,8 @@ func TestValidateRequiresInfrastructureAndInternalAuth(t *testing.T) {
 	c.Postgres.Host = "127.0.0.1"
 	c.Postgres.User = "postgres"
 	c.Postgres.DBName = "beehive"
+	c.RabbitMQ.URL = "amqp://guest:guest@127.0.0.1:5672/"
+	c.RabbitMQ.Exchange = "beehive.content.events"
 	c.InternalAuthToken = "secret"
 	c.AllowedCallers = []string{"gateway"}
 	if err := c.Validate(); err != nil {

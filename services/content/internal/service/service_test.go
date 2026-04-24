@@ -4,9 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strconv"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/mq"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/model/entity"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/model/repo"
 	contentservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/testkit"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/pb"
@@ -377,6 +384,189 @@ func TestContentRelationsRejectGuest(t *testing.T) {
 	}
 }
 
+func TestContentWritesOutboxEvents(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	manager := contentservice.NewManager(deps)
+	actor := contentservice.Actor{UserID: 1, SessionID: 10, Role: "admin"}
+	tag, err := manager.CreateTag.Execute(context.Background(), actor, &pb.CreateTagRequest{Name: "Event Tag", Slug: "event-tag"})
+	if err != nil {
+		t.Fatalf("create tag failed: %v", err)
+	}
+	created, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:   pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title:  "Event Source",
+		Slug:   "event-source",
+		TagIds: []string{tag.Tag.TagId},
+	})
+	if err != nil {
+		t.Fatalf("create content failed: %v", err)
+	}
+	contentID := mustParseID(t, created.Content.ContentId)
+
+	if _, err := manager.UpdateContent.Execute(context.Background(), actor, &pb.UpdateContentRequest{
+		ContentId:      created.Content.ContentId,
+		Type:           pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title:          "Event Source v2",
+		Slug:           "event-source",
+		Status:         pb.ContentStatus_CONTENT_STATUS_PUBLISHED,
+		Visibility:     pb.ContentVisibility_CONTENT_VISIBILITY_PUBLIC,
+		AiAccess:       pb.AIAccess_AI_ACCESS_ALLOWED,
+		CommentEnabled: true,
+		ChangeSummary:  "publish",
+	}); err != nil {
+		t.Fatalf("update content failed: %v", err)
+	}
+	related := createTestContent(t, manager, actor, "Event Target", "event-target")
+	relation, err := manager.CreateContentRelation.Execute(context.Background(), actor, &pb.CreateContentRelationRequest{
+		ContentId:    created.Content.ContentId,
+		ToContentId:  related.Content.ContentId,
+		RelationType: pb.ContentRelationType_CONTENT_RELATION_TYPE_RELATED_TO,
+	})
+	if err != nil {
+		t.Fatalf("create relation failed: %v", err)
+	}
+	if _, err := manager.DeleteContentRelation.Execute(context.Background(), actor, &pb.DeleteContentRelationRequest{ContentId: created.Content.ContentId, RelationId: relation.Relation.RelationId}); err != nil {
+		t.Fatalf("delete relation failed: %v", err)
+	}
+	if _, err := manager.ArchiveContent.Execute(context.Background(), actor, &pb.ArchiveContentRequest{ContentId: created.Content.ContentId}); err != nil {
+		t.Fatalf("archive content failed: %v", err)
+	}
+
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), contentservice.EventResourceContentItem, contentID)
+	if err != nil {
+		t.Fatalf("list outbox events failed: %v", err)
+	}
+	got := eventTypes(events)
+	for _, want := range []string{
+		contentservice.EventContentCreated,
+		contentservice.EventContentUpdated,
+		contentservice.EventContentStatusChanged,
+		contentservice.EventContentVisibilityChanged,
+		contentservice.EventContentAIAccessChanged,
+		contentservice.EventContentTagChanged,
+		contentservice.EventContentRelationChanged,
+		contentservice.EventContentArchived,
+	} {
+		if got[want] == 0 {
+			t.Fatalf("expected event %s, got %+v", want, got)
+		}
+	}
+}
+
+func TestBusinessFailureDoesNotWriteOutboxEvent(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	manager := contentservice.NewManager(deps)
+	actor := contentservice.Actor{UserID: 1, SessionID: 10, Role: "admin"}
+	if _, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:  pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title: "Bad event",
+		Slug:  "bad-event",
+	}); err != nil {
+		t.Fatalf("create content failed: %v", err)
+	}
+	_, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:  pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title: "Bad event duplicate",
+		Slug:  "bad-event",
+	})
+	if !errors.Is(err, errs.E(errs.CodeContentSlugAlreadyExists)) {
+		t.Fatalf("expected duplicate slug error, got %v", err)
+	}
+	var total int64
+	if err := deps.Store.DB().WithContext(context.Background()).Model(&entity.OutboxEvent{}).Where("event_type = ?", contentservice.EventContentCreated).Count(&total).Error; err != nil {
+		t.Fatalf("count outbox events failed: %v", err)
+	}
+	if total != 1 {
+		t.Fatalf("expected only first create event, got %d", total)
+	}
+}
+
+func TestOutboxDispatcherPublishesAndMarksDone(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	event := createOutboxEvent(t, deps.Store, 101, contentservice.EventContentCreated)
+	publisher := &fakePublisher{}
+	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
+		return time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, MaxAttempts: 3, RetryDelay: time.Second})
+
+	if processed, err := dispatcher.DispatchOnce(context.Background()); err != nil || processed != 1 {
+		t.Fatalf("dispatch once failed: processed=%d err=%v", processed, err)
+	}
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), "content_item", 101)
+	if err != nil {
+		t.Fatalf("list events failed: %v", err)
+	}
+	if events[0].ID != event.ID || events[0].Status != repo.OutboxStatusDone || events[0].PublishedAt == nil {
+		t.Fatalf("expected event done, got %+v", events[0])
+	}
+	if len(publisher.messages) != 1 || publisher.messages[0].RoutingKey != contentservice.EventContentCreated {
+		t.Fatalf("unexpected published messages: %+v", publisher.messages)
+	}
+}
+
+func TestOutboxDispatcherRetriesPublishFailure(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	createOutboxEvent(t, deps.Store, 102, contentservice.EventContentUpdated)
+	publisher := &fakePublisher{err: errors.New("broker down")}
+	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
+		return time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, MaxAttempts: 3, RetryDelay: time.Second})
+
+	if processed, err := dispatcher.DispatchOnce(context.Background()); err != nil || processed != 1 {
+		t.Fatalf("dispatch once failed: processed=%d err=%v", processed, err)
+	}
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), "content_item", 102)
+	if err != nil {
+		t.Fatalf("list events failed: %v", err)
+	}
+	if events[0].Status != repo.OutboxStatusPending || events[0].Attempts != 1 || events[0].LastError == "" {
+		t.Fatalf("expected retryable failed publish, got %+v", events[0])
+	}
+}
+
+func TestOutboxDispatcherConcurrentClaimDoesNotDuplicate(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	for i := 0; i < 5; i++ {
+		createOutboxEvent(t, deps.Store, int64(200+i), contentservice.EventContentUpdated)
+	}
+	publisher := &fakePublisher{}
+	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
+		return time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 3, MaxAttempts: 3, RetryDelay: time.Second})
+
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := dispatcher.DispatchOnce(context.Background()); err != nil {
+				t.Errorf("dispatch once failed: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+	if len(publisher.messages) != 5 {
+		t.Fatalf("expected 5 unique published messages, got %d", len(publisher.messages))
+	}
+	seen := map[string]struct{}{}
+	for _, message := range publisher.messages {
+		if _, ok := seen[message.ID]; ok {
+			t.Fatalf("duplicate message published: %s", message.ID)
+		}
+		seen[message.ID] = struct{}{}
+	}
+}
+
 func TestCreateContentDefaultsToPrivateAndAIDenied(t *testing.T) {
 	t.Parallel()
 
@@ -413,6 +603,67 @@ func createTestContent(t *testing.T, manager *contentservice.Manager, actor cont
 		t.Fatalf("create test content %s failed: %v", slug, err)
 	}
 	return created
+}
+
+func mustParseID(t *testing.T, value string) int64 {
+	t.Helper()
+
+	id, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		t.Fatalf("parse id failed: %v", err)
+	}
+	return id
+}
+
+func eventTypes(events []entity.OutboxEvent) map[string]int {
+	result := map[string]int{}
+	for _, event := range events {
+		result[event.EventType]++
+	}
+	return result
+}
+
+func createOutboxEvent(t *testing.T, store *repo.Store, resourceID int64, eventType string) entity.OutboxEvent {
+	t.Helper()
+
+	now := time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	event := entity.OutboxEvent{
+		EventID:      fmt.Sprintf("evt-%d-%s", resourceID, eventType),
+		EventType:    eventType,
+		ResourceType: "content_item",
+		ResourceID:   resourceID,
+		PayloadJSON:  `{"ok":true}`,
+		Status:       repo.OutboxStatusPending,
+		NextRetryAt:  now,
+	}
+	if err := store.Outbox.Create(context.Background(), &event); err != nil {
+		t.Fatalf("create outbox event failed: %v", err)
+	}
+	return event
+}
+
+type fakePublisher struct {
+	mu       sync.Mutex
+	messages []mq.Message
+	err      error
+}
+
+func (p *fakePublisher) Publish(_ context.Context, message mq.Message) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.err != nil {
+		return p.err
+	}
+	p.messages = append(p.messages, message)
+	return nil
+}
+
+func (p *fakePublisher) Health(context.Context) error {
+	return p.err
+}
+
+func (p *fakePublisher) Close() error {
+	return nil
 }
 
 func TestBodyJSONValidation(t *testing.T) {

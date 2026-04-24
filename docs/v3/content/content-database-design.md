@@ -10,6 +10,7 @@
 - `sql/migrations/v3/content/031_v3_content_revisions.sql`
 - `sql/migrations/v3/content/032_v3_content_tags.sql`
 - `sql/migrations/v3/content/033_v3_content_relations.sql`
+- `sql/migrations/v3/content/034_v3_content_outbox_events.sql`
 
 所有 content 主数据统一使用 PostgreSQL `content` schema。
 
@@ -113,11 +114,33 @@
 - `relation_type` 限定为 `belongs_to/related_to/derived_from/references/part_of/depends_on/timeline_of`。
 - `metadata_json` 使用 JSONB。
 
+### 2.6 content.outbox_events
+
+作用：
+
+- 保存 content 服务写操作产生的领域事件。
+- 作为 RabbitMQ 发布前的可靠投递缓冲，保证业务数据与事件记录在同一数据库事务内提交。
+
+关键约束：
+
+- `event_id` 全局唯一。
+- `event_type` 使用事件路由名，例如 `content.created`。
+- `payload_json` 使用 JSONB，但不保存正文全文。
+- `status` 限定为 `pending/processing/done/failed`。
+- `attempts >= 0`。
+
+投递策略：
+
+- dispatcher 使用 `FOR UPDATE SKIP LOCKED` 领取到期事件。
+- 发布成功后标记为 `done` 并写入 `published_at`。
+- 发布失败后增加 `attempts`、记录 `last_error`，未超过最大次数则回到 `pending` 等待重试。
+- 多 dispatcher 并发运行时，同一事件只允许一个 worker 处理。
+
 ## 3. 后续迁移规划
 
-后续迁移编号建议从 `034` 开始。
+后续迁移编号建议从 `035` 开始。
 
-### 3.1 034_v3_content_attachments.sql
+### 3.1 035_v3_content_attachments.sql
 
 规划表：
 
@@ -130,7 +153,7 @@
 - `content_attachments` 管内容与附件绑定
 - 文件对象存储细节后续由 storage 配置或独立文件服务决定
 
-### 3.2 035_v3_content_comments.sql
+### 3.2 036_v3_content_comments.sql
 
 规划表：
 
@@ -142,15 +165,9 @@
 - 第一阶段评论状态建议为 `visible/hidden/deleted`
 - `member` 可发评论，`admin` 可管理评论
 
-### 3.3 content events 不落主数据表
-
-内容事件优先通过 RabbitMQ 发布。
-
-是否需要 outbox 表后续按可靠性要求决定；第一阶段文档不强制引入 outbox。
-
 ## 4. 当前不创建的表
 
-relations 第一阶段已创建 `content.relations` 迁移。
+relations 第一阶段已创建 `content.relations` 迁移，content events 已创建 `content.outbox_events` 迁移。
 
 当前不创建：
 
@@ -158,6 +175,5 @@ relations 第一阶段已创建 `content.relations` 迁移。
 - `content.content_attachments`
 - `content.comments`
 - `search.search_documents`
-- `content.outbox_events`
 
 这些表必须在对应实现任务中按 contract-first 流程补齐。

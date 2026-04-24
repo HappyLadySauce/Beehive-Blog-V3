@@ -7,7 +7,7 @@
 当前第一阶段的领域中心为：
 
 ```text
-content_item + content_revision + tag + content_tag + content_relation
+content_item + content_revision + tag + content_tag + content_relation + content_outbox_event
 ```
 
 后续扩展中心为：
@@ -219,6 +219,48 @@ attachment + content_attachment + comment
 - 默认用唯一约束防止重复关系
 - 删除 content 时级联删除相关关系
 - `metadata_json` 非空时必须是合法 JSON
+
+### 3.6 content_outbox_event
+
+作用：
+
+- 记录 content 写操作产生的领域事件。
+- 支撑 RabbitMQ 可靠投递和失败重试。
+- 为后续 search/indexer/agent/realtime 消费链路提供事件来源。
+
+当前字段：
+
+- `id`
+- `event_id`
+- `event_type`
+- `resource_type`
+- `resource_id`
+- `payload_json`
+- `status`
+- `attempts`
+- `next_retry_at`
+- `last_error`
+- `published_at`
+- `created_at`
+- `updated_at`
+
+当前事件类型：
+
+- `content.created`
+- `content.updated`
+- `content.archived`
+- `content.status_changed`
+- `content.visibility_changed`
+- `content.ai_access_changed`
+- `content.tag_changed`
+- `content.relation_changed`
+
+约束：
+
+- `event_id` 唯一
+- `status` 只允许 `pending/processing/done/failed`
+- `payload_json` 不保存正文全文
+- 事件必须与对应业务写入在同一数据库事务内创建
 
 ## 4. 下一阶段实体
 

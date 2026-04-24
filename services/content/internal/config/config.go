@@ -11,6 +11,8 @@ type Config struct {
 	zrpc.RpcServerConf
 
 	Postgres          PostgresConf `json:"Postgres"`
+	RabbitMQ          RabbitMQConf `json:"RabbitMQ"`
+	Outbox            OutboxConf   `json:"Outbox"`
 	InternalAuthToken string       `json:"InternalAuthToken"`
 	AllowedCallers    []string     `json:"AllowedCallers"`
 }
@@ -30,6 +32,20 @@ type PostgresConf struct {
 	ConnMaxIdleTimeSeconds int    `json:"ConnMaxIdleTimeSeconds"`
 }
 
+type RabbitMQConf struct {
+	URL                   string `json:"URL"`
+	Exchange              string `json:"Exchange"`
+	ExchangeType          string `json:"ExchangeType"`
+	ConnectTimeoutSeconds int    `json:"ConnectTimeoutSeconds"`
+}
+
+type OutboxConf struct {
+	DispatchIntervalSeconds int `json:"DispatchIntervalSeconds"`
+	BatchSize               int `json:"BatchSize"`
+	MaxAttempts             int `json:"MaxAttempts"`
+	RetryDelaySeconds       int `json:"RetryDelaySeconds"`
+}
+
 func (c Config) Validate() error {
 	if strings.TrimSpace(c.Postgres.Host) == "" {
 		return fmt.Errorf("Postgres.Host is required")
@@ -39,6 +55,15 @@ func (c Config) Validate() error {
 	}
 	if strings.TrimSpace(c.Postgres.DBName) == "" {
 		return fmt.Errorf("Postgres.DBName is required")
+	}
+	if strings.TrimSpace(c.RabbitMQ.URL) == "" {
+		return fmt.Errorf("RabbitMQ.URL is required")
+	}
+	if strings.TrimSpace(c.RabbitMQ.Exchange) == "" {
+		return fmt.Errorf("RabbitMQ.Exchange is required")
+	}
+	if c.RabbitMQ.ExchangeType != "" && c.RabbitMQ.ExchangeType != "topic" && c.RabbitMQ.ExchangeType != "direct" && c.RabbitMQ.ExchangeType != "fanout" && c.RabbitMQ.ExchangeType != "headers" {
+		return fmt.Errorf("RabbitMQ.ExchangeType is invalid")
 	}
 	if strings.TrimSpace(c.InternalAuthToken) == "" {
 		return fmt.Errorf("InternalAuthToken is required")

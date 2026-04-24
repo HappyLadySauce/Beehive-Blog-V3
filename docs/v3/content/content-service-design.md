@@ -9,6 +9,7 @@
 - 管理统一内容主实体
 - 管理内容版本
 - 管理标签、内容标签绑定与内容关系
+- 通过 outbox + RabbitMQ 发布内容领域事件
 - 后续管理附件、评论
 - 执行内容状态、可见性、AI 访问策略
 - 为公开站、Studio、search、indexer、agent 提供可信内容来源
@@ -93,6 +94,7 @@ server -> logic -> service -> repo -> entity
 - `content.items`
 - `content.revisions`
 - `content.relations`
+- `content.outbox_events`
 - `content.tags`
 - `content.content_tags`
 
@@ -103,22 +105,13 @@ server -> logic -> service -> repo -> entity
 - `body_json` 非空时必须是合法 JSON
 - `metadata_json` 非空时必须是合法 JSON
 - 内容关系只允许出边管理，不允许自关联
+- 内容事件先写入 `content.outbox_events`，再异步投递 RabbitMQ
 - 删除已绑定 tag 返回 `CodeContentTagInUse`
 - `content_tags.tag_id` 使用 `ON DELETE RESTRICT`
 
 ## 4. 后续能力顺序
 
-### 4.1 content events
-
-下一优先级实现内容事件。
-
-目标：
-
-- 在内容创建、更新、归档、状态变化、可见性变化、AI 访问变化时发布事件
-- 为 `indexer`、`search`、`realtime` 提供异步输入
-- 通过 `pkg/mq` 抽象 RabbitMQ，业务层只依赖 publisher 接口
-
-### 4.2 search / indexer
+### 4.1 search / indexer
 
 事件稳定后实现 search/indexer。
 
@@ -129,7 +122,7 @@ server -> logic -> service -> repo -> entity
 - 公开搜索只索引 `published + public`
 - 后续再扩展 member search 和 agent search
 
-### 4.3 attachments / comments
+### 4.2 attachments / comments
 
 附件和评论在 content 主体、关系和事件稳定后补齐。
 
