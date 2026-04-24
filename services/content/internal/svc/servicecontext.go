@@ -61,10 +61,11 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	})
 	outboxCtx, cancelOutbox := context.WithCancel(context.Background())
 	dispatcher := contentservice.NewOutboxDispatcher(store, publisher, nil, contentservice.OutboxDispatcherConfig{
-		DispatchInterval: time.Duration(withOutboxDefaults(c.Outbox).DispatchIntervalSeconds) * time.Second,
-		BatchSize:        withOutboxDefaults(c.Outbox).BatchSize,
-		MaxAttempts:      withOutboxDefaults(c.Outbox).MaxAttempts,
-		RetryDelay:       time.Duration(withOutboxDefaults(c.Outbox).RetryDelaySeconds) * time.Second,
+		DispatchInterval:  time.Duration(withOutboxDefaults(c.Outbox).DispatchIntervalSeconds) * time.Second,
+		BatchSize:         withOutboxDefaults(c.Outbox).BatchSize,
+		MaxAttempts:       withOutboxDefaults(c.Outbox).MaxAttempts,
+		RetryDelay:        time.Duration(withOutboxDefaults(c.Outbox).RetryDelaySeconds) * time.Second,
+		ProcessingTimeout: time.Duration(withOutboxDefaults(c.Outbox).ProcessingTimeoutSeconds) * time.Second,
 	})
 	dispatcher.Start(outboxCtx)
 
@@ -202,6 +203,9 @@ func withOutboxDefaults(c config.OutboxConf) config.OutboxConf {
 	}
 	if c.RetryDelaySeconds <= 0 {
 		c.RetryDelaySeconds = 10
+	}
+	if c.ProcessingTimeoutSeconds <= 0 {
+		c.ProcessingTimeoutSeconds = 60
 	}
 	return c
 }

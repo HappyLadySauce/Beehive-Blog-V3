@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -14,10 +15,11 @@ import (
 )
 
 type OutboxDispatcherConfig struct {
-	DispatchInterval time.Duration
-	BatchSize        int
-	MaxAttempts      int
-	RetryDelay       time.Duration
+	DispatchInterval  time.Duration
+	BatchSize         int
+	MaxAttempts       int
+	RetryDelay        time.Duration
+	ProcessingTimeout time.Duration
 }
 
 // OutboxDispatcher polls pending events and publishes them to MQ.
@@ -46,6 +48,9 @@ func NewOutboxDispatcher(store *repo.Store, publisher mq.Publisher, clock func()
 	}
 	if config.RetryDelay <= 0 {
 		config.RetryDelay = 10 * time.Second
+	}
+	if config.ProcessingTimeout <= 0 {
+		config.ProcessingTimeout = time.Minute
 	}
 	return &OutboxDispatcher{store: store, publisher: publisher, clock: clock, config: config}
 }
@@ -84,16 +89,24 @@ func (d *OutboxDispatcher) DispatchOnce(ctx context.Context) (int, error) {
 		return 0, serviceNotInitialized()
 	}
 	now := d.clock()
-	events, err := d.store.Outbox.ClaimDue(ctx, now, d.config.BatchSize)
+	events, err := d.store.Outbox.ClaimDue(ctx, now, d.config.BatchSize, d.config.ProcessingTimeout)
 	if err != nil {
 		return 0, internalErr(err)
 	}
+	var markErrors []error
 	for _, event := range events {
 		if err := d.publishEvent(ctx, event); err != nil {
 			nextAttempts := event.Attempts + 1
 			nextRetryAt := d.clock().Add(d.config.RetryDelay)
 			if markErr := d.store.Outbox.MarkPublishFailed(ctx, event.ID, nextAttempts, d.config.MaxAttempts, nextRetryAt, truncateError(err.Error()), d.clock()); markErr != nil {
-				return 0, internalErr(markErr)
+				markErrors = append(markErrors, markErr)
+				logs.Ctx(ctx).Error(
+					"content_outbox_event_mark_failed_publish_failed",
+					markErr,
+					logs.String("event_id", event.EventID),
+					logs.String("event_type", event.EventType),
+				)
+				continue
 			}
 			logs.Ctx(ctx).Error(
 				"content_outbox_event_publish_failed",
@@ -104,8 +117,18 @@ func (d *OutboxDispatcher) DispatchOnce(ctx context.Context) (int, error) {
 			continue
 		}
 		if err := d.store.Outbox.MarkDone(ctx, event.ID, d.clock()); err != nil {
-			return 0, internalErr(err)
+			markErrors = append(markErrors, err)
+			logs.Ctx(ctx).Error(
+				"content_outbox_event_mark_done_failed",
+				err,
+				logs.String("event_id", event.EventID),
+				logs.String("event_type", event.EventType),
+			)
+			continue
 		}
+	}
+	if len(markErrors) > 0 {
+		return len(events), internalErr(errors.Join(markErrors...))
 	}
 	return len(events), nil
 }

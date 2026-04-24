@@ -51,19 +51,28 @@ func NewRabbitMQPublisher(ctx context.Context, cfg RabbitMQConfig) (*RabbitMQPub
 }
 
 func dialRabbitMQ(ctx context.Context, cfg RabbitMQConfig) (*amqp.Connection, error) {
+	done := make(chan struct{})
+	defer close(done)
 	result := make(chan struct {
 		conn *amqp.Connection
 		err  error
-	}, 1)
+	})
 	go func() {
 		conn, err := amqp.DialConfig(cfg.URL, amqp.Config{
 			Heartbeat: 10 * time.Second,
 			Locale:    "en_US",
 		})
-		result <- struct {
+		res := struct {
 			conn *amqp.Connection
 			err  error
 		}{conn: conn, err: err}
+		select {
+		case result <- res:
+		case <-done:
+			if conn != nil {
+				_ = conn.Close()
+			}
+		}
 	}()
 
 	timeout := time.NewTimer(time.Duration(cfg.ConnectTimeoutSeconds) * time.Second)

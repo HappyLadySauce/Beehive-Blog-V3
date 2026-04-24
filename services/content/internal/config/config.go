@@ -40,10 +40,11 @@ type RabbitMQConf struct {
 }
 
 type OutboxConf struct {
-	DispatchIntervalSeconds int `json:"DispatchIntervalSeconds"`
-	BatchSize               int `json:"BatchSize"`
-	MaxAttempts             int `json:"MaxAttempts"`
-	RetryDelaySeconds       int `json:"RetryDelaySeconds"`
+	DispatchIntervalSeconds  int `json:"DispatchIntervalSeconds"`
+	BatchSize                int `json:"BatchSize"`
+	MaxAttempts              int `json:"MaxAttempts"`
+	RetryDelaySeconds        int `json:"RetryDelaySeconds"`
+	ProcessingTimeoutSeconds int `json:"ProcessingTimeoutSeconds"`
 }
 
 func (c Config) Validate() error {

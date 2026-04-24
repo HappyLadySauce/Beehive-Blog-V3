@@ -532,6 +532,40 @@ func TestOutboxDispatcherRetriesPublishFailure(t *testing.T) {
 	}
 }
 
+func TestOutboxDispatcherReclaimsStaleProcessingEvent(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	event := createOutboxEvent(t, deps.Store, 103, contentservice.EventContentUpdated)
+	claimedAt := time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	claimed, err := deps.Store.Outbox.ClaimDue(context.Background(), claimedAt, 1, 30*time.Second)
+	if err != nil {
+		t.Fatalf("claim outbox event failed: %v", err)
+	}
+	if len(claimed) != 1 || claimed[0].ID != event.ID {
+		t.Fatalf("expected one claimed event, got %+v", claimed)
+	}
+
+	publisher := &fakePublisher{}
+	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
+		return claimedAt.Add(31 * time.Second)
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, MaxAttempts: 3, RetryDelay: time.Second, ProcessingTimeout: 30 * time.Second})
+
+	if processed, err := dispatcher.DispatchOnce(context.Background()); err != nil || processed != 1 {
+		t.Fatalf("dispatch stale processing event failed: processed=%d err=%v", processed, err)
+	}
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), "content_item", 103)
+	if err != nil {
+		t.Fatalf("list events failed: %v", err)
+	}
+	if events[0].Status != repo.OutboxStatusDone || events[0].PublishedAt == nil {
+		t.Fatalf("expected reclaimed event to be done, got %+v", events[0])
+	}
+	if len(publisher.messages) != 1 || publisher.messages[0].ID != event.EventID {
+		t.Fatalf("unexpected published messages: %+v", publisher.messages)
+	}
+}
+
 func TestOutboxDispatcherConcurrentClaimDoesNotDuplicate(t *testing.T) {
 	t.Parallel()
 

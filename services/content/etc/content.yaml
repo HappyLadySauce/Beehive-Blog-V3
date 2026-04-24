@@ -27,6 +27,7 @@ Outbox:
   BatchSize: 50
   MaxAttempts: 5
   RetryDelaySeconds: 10
+  ProcessingTimeoutSeconds: 60
 InternalAuthToken: change-me-in-local-env
 AllowedCallers:
 - gateway

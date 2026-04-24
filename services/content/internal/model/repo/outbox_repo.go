@@ -24,11 +24,21 @@ func (r *OutboxRepository) Create(ctx context.Context, event *entity.OutboxEvent
 	return r.db.WithContext(ctx).Create(event).Error
 }
 
-func (r *OutboxRepository) ClaimDue(ctx context.Context, now time.Time, batchSize int) ([]entity.OutboxEvent, error) {
+func (r *OutboxRepository) ClaimDue(ctx context.Context, now time.Time, batchSize int, processingTimeout time.Duration) ([]entity.OutboxEvent, error) {
 	var events []entity.OutboxEvent
+	if processingTimeout <= 0 {
+		processingTimeout = time.Minute
+	}
+	staleBefore := now.Add(-processingTimeout)
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
-			Where("status = ? AND next_retry_at <= ?", OutboxStatusPending, now).
+			Where(
+				"(status = ? AND next_retry_at <= ?) OR (status = ? AND updated_at <= ?)",
+				OutboxStatusPending,
+				now,
+				OutboxStatusProcessing,
+				staleBefore,
+			).
 			Order("next_retry_at ASC, id ASC").
 			Limit(batchSize).
 			Find(&events).Error; err != nil {
