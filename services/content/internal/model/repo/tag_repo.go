@@ -5,6 +5,7 @@ import (
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/model/entity"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type TagRepository struct {
@@ -26,6 +27,14 @@ func (r *TagRepository) Delete(ctx context.Context, id int64) error {
 func (r *TagRepository) GetByID(ctx context.Context, id int64) (*entity.Tag, error) {
 	var tag entity.Tag
 	if err := r.db.WithContext(ctx).First(&tag, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &tag, nil
+}
+
+func (r *TagRepository) LockByID(ctx context.Context, id int64) (*entity.Tag, error) {
+	var tag entity.Tag
+	if err := r.db.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).First(&tag, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return &tag, nil

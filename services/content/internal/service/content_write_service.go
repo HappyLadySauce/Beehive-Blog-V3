@@ -31,15 +31,19 @@ func (s *CreateContentService) Execute(ctx context.Context, actor Actor, req *pb
 	if err != nil {
 		return nil, err
 	}
-	visibility, err := visibilityName(req.Visibility, VisibilityPublic)
+	visibility, err := visibilityName(req.Visibility, VisibilityPrivate)
 	if err != nil {
 		return nil, err
 	}
-	aiAccess, err := aiAccessName(req.AiAccess, AIAccessAllowed)
+	aiAccess, err := aiAccessName(req.AiAccess, AIAccessDenied)
 	if err != nil {
 		return nil, err
 	}
 	sourceType, err := sourceName(req.SourceType, "manual")
+	if err != nil {
+		return nil, err
+	}
+	bodyJSON, err := bodyJSONPtr(req.BodyJson)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +80,7 @@ func (s *CreateContentService) Execute(ctx context.Context, actor Actor, req *pb
 			TitleSnapshot:   item.Title,
 			SummarySnapshot: item.Summary,
 			BodyMarkdown:    req.BodyMarkdown,
-			BodyJSON:        stringPtr(req.BodyJson),
+			BodyJSON:        bodyJSON,
 			EditorType:      EditorHuman,
 			EditorUserID:    &editorUserID,
 			ChangeSummary:   stringPtr(req.ChangeSummary),
@@ -119,6 +123,10 @@ func (s *UpdateContentService) Execute(ctx context.Context, actor Actor, req *pb
 		return nil, err
 	}
 	contentType, err := contentTypeName(req.Type)
+	if err != nil {
+		return nil, err
+	}
+	bodyJSON, err := bodyJSONPtr(req.BodyJson)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +180,7 @@ func (s *UpdateContentService) Execute(ctx context.Context, actor Actor, req *pb
 		item.IsFeatured = req.IsFeatured
 		item.SortOrder = req.SortOrder
 
-		changedBody := currentRevision.BodyMarkdown != req.BodyMarkdown || deref(currentRevision.BodyJSON) != strings.TrimSpace(req.BodyJson)
+		changedBody := currentRevision.BodyMarkdown != req.BodyMarkdown || deref(currentRevision.BodyJSON) != deref(bodyJSON)
 		changedSnapshot := currentRevision.TitleSnapshot != item.Title || deref(currentRevision.SummarySnapshot) != deref(item.Summary)
 		changedSummary := strings.TrimSpace(req.ChangeSummary) != ""
 		if changedBody || changedSnapshot || changedSummary {
@@ -187,7 +195,7 @@ func (s *UpdateContentService) Execute(ctx context.Context, actor Actor, req *pb
 				TitleSnapshot:   item.Title,
 				SummarySnapshot: item.Summary,
 				BodyMarkdown:    req.BodyMarkdown,
-				BodyJSON:        stringPtr(req.BodyJson),
+				BodyJSON:        bodyJSON,
 				EditorType:      EditorHuman,
 				EditorUserID:    &editorUserID,
 				ChangeSummary:   stringPtr(req.ChangeSummary),

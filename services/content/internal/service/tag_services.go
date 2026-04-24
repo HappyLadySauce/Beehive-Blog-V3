@@ -6,6 +6,7 @@ import (
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/model/entity"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/model/repo"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/pb"
 )
 
@@ -75,18 +76,24 @@ func (s *DeleteTagService) Execute(ctx context.Context, actor Actor, req *pb.Del
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.deps.Store.Tags.GetByID(ctx, tagID); err != nil {
-		return nil, mapRepoErr(err, errs.CodeContentTagNotFound, "tag not found")
-	}
-	total, err := s.deps.Store.ContentTags.CountByTag(ctx, tagID)
+	err = withTransaction(ctx, s.deps.Store, func(txStore *repo.Store) error {
+		if _, err := txStore.Tags.LockByID(ctx, tagID); err != nil {
+			return mapRepoErr(err, errs.CodeContentTagNotFound, "tag not found")
+		}
+		total, err := txStore.ContentTags.CountByTag(ctx, tagID)
+		if err != nil {
+			return internalErr(err)
+		}
+		if total > 0 {
+			return errs.New(errs.CodeContentTagInUse, "tag is in use")
+		}
+		if err := txStore.Tags.Delete(ctx, tagID); err != nil {
+			return mapRepoErr(err, errs.CodeContentTagNotFound, "tag not found")
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, internalErr(err)
-	}
-	if total > 0 {
-		return nil, errs.New(errs.CodeContentTagInUse, "tag is in use")
-	}
-	if err := s.deps.Store.Tags.Delete(ctx, tagID); err != nil {
-		return nil, mapRepoErr(err, errs.CodeContentTagNotFound, "tag not found")
+		return nil, err
 	}
 	return &pb.DeleteTagResponse{Ok: true}, nil
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -27,6 +28,8 @@ const (
 
 	AIAccessAllowed = "allowed"
 	AIAccessDenied  = "denied"
+
+	RoleAdmin = "admin"
 
 	EditorHuman = "human"
 )
@@ -84,7 +87,7 @@ func NewManager(deps Dependencies) *Manager {
 }
 
 func requireActor(actor Actor) error {
-	if actor.UserID <= 0 {
+	if actor.UserID <= 0 || normalizeRole(actor.Role) != RoleAdmin {
 		return errs.New(errs.CodeContentAccessForbidden, "content access forbidden")
 	}
 	return nil
@@ -120,6 +123,22 @@ func stringPtr(value string) *string {
 		return nil
 	}
 	return &trimmed
+}
+
+func bodyJSONPtr(value string) (*string, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil, nil
+	}
+	if !json.Valid([]byte(trimmed)) {
+		return nil, errs.New(errs.CodeContentInvalidArgument, "body_json must be valid JSON")
+	}
+	return &trimmed, nil
+}
+
+func normalizeRole(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	return strings.TrimPrefix(normalized, "role_")
 }
 
 func parseID(value string, code errs.Code, message string) (int64, error) {

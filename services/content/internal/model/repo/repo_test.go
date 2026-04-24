@@ -72,6 +72,9 @@ func TestContentRepositories(t *testing.T) {
 	if total != 1 {
 		t.Fatalf("expected one tag binding, got %d", total)
 	}
+	if err := store.Tags.Delete(ctx, tag.ID); err == nil {
+		t.Fatalf("expected bound tag delete to fail")
+	}
 
 	privateItem := *item
 	privateItem.ID = 0

@@ -17,7 +17,7 @@ CREATE UNIQUE INDEX ux_content_tags_slug ON content.tags (slug);
 CREATE TABLE content.content_tags (
   id BIGSERIAL PRIMARY KEY,
   content_id BIGINT NOT NULL REFERENCES content.items(id) ON DELETE CASCADE,
-  tag_id BIGINT NOT NULL REFERENCES content.tags(id) ON DELETE CASCADE,
+  tag_id BIGINT NOT NULL REFERENCES content.tags(id) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

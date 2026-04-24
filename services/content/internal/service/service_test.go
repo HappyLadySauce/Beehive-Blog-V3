@@ -106,6 +106,179 @@ func TestStudioWriteRequiresActor(t *testing.T) {
 	}
 }
 
+func TestStudioServicesRequireAdmin(t *testing.T) {
+	t.Parallel()
+
+	manager := contentservice.NewManager(testkit.NewServiceDependencies(t))
+	admin := contentservice.Actor{UserID: 1, SessionID: 10, Role: "admin"}
+	member := contentservice.Actor{UserID: 2, SessionID: 20, Role: "member"}
+
+	tag, err := manager.CreateTag.Execute(context.Background(), admin, &pb.CreateTagRequest{Name: "Admin", Slug: "admin"})
+	if err != nil {
+		t.Fatalf("create tag failed: %v", err)
+	}
+	created, err := manager.CreateContent.Execute(context.Background(), admin, &pb.CreateContentRequest{
+		Type:  pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title: "Admin only",
+		Slug:  "admin-only",
+	})
+	if err != nil {
+		t.Fatalf("create content failed: %v", err)
+	}
+
+	cases := []struct {
+		name string
+		run  func() error
+	}{
+		{
+			name: "create content",
+			run: func() error {
+				_, err := manager.CreateContent.Execute(context.Background(), member, &pb.CreateContentRequest{Type: pb.ContentType_CONTENT_TYPE_ARTICLE, Title: "Nope", Slug: "nope"})
+				return err
+			},
+		},
+		{
+			name: "update content",
+			run: func() error {
+				_, err := manager.UpdateContent.Execute(context.Background(), member, &pb.UpdateContentRequest{ContentId: created.Content.ContentId, Type: pb.ContentType_CONTENT_TYPE_ARTICLE, Title: "Nope", Slug: "admin-only"})
+				return err
+			},
+		},
+		{
+			name: "get content",
+			run: func() error {
+				_, err := manager.GetContent.Execute(context.Background(), member, &pb.GetContentRequest{ContentId: created.Content.ContentId})
+				return err
+			},
+		},
+		{
+			name: "list content",
+			run: func() error {
+				_, err := manager.ListStudioContents.Execute(context.Background(), member, &pb.ListStudioContentsRequest{})
+				return err
+			},
+		},
+		{
+			name: "archive content",
+			run: func() error {
+				_, err := manager.ArchiveContent.Execute(context.Background(), member, &pb.ArchiveContentRequest{ContentId: created.Content.ContentId})
+				return err
+			},
+		},
+		{
+			name: "list revisions",
+			run: func() error {
+				_, err := manager.ListContentRevisions.Execute(context.Background(), member, &pb.ListContentRevisionsRequest{ContentId: created.Content.ContentId})
+				return err
+			},
+		},
+		{
+			name: "get revision",
+			run: func() error {
+				_, err := manager.GetContentRevision.Execute(context.Background(), member, &pb.GetContentRevisionRequest{ContentId: created.Content.ContentId, RevisionId: created.Content.CurrentRevisionId})
+				return err
+			},
+		},
+		{
+			name: "create tag",
+			run: func() error {
+				_, err := manager.CreateTag.Execute(context.Background(), member, &pb.CreateTagRequest{Name: "Nope", Slug: "nope"})
+				return err
+			},
+		},
+		{
+			name: "update tag",
+			run: func() error {
+				_, err := manager.UpdateTag.Execute(context.Background(), member, &pb.UpdateTagRequest{TagId: tag.Tag.TagId, Name: "Nope", Slug: "nope"})
+				return err
+			},
+		},
+		{
+			name: "delete tag",
+			run: func() error {
+				_, err := manager.DeleteTag.Execute(context.Background(), member, &pb.DeleteTagRequest{TagId: tag.Tag.TagId})
+				return err
+			},
+		},
+		{
+			name: "list tags",
+			run: func() error {
+				_, err := manager.ListTags.Execute(context.Background(), member, &pb.ListTagsRequest{})
+				return err
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.run(); !errors.Is(err, errs.E(errs.CodeContentAccessForbidden)) {
+				t.Fatalf("expected access forbidden, got %v", err)
+			}
+		})
+	}
+}
+
+func TestCreateContentDefaultsToPrivateAndAIDenied(t *testing.T) {
+	t.Parallel()
+
+	manager := contentservice.NewManager(testkit.NewServiceDependencies(t))
+	actor := contentservice.Actor{UserID: 1, SessionID: 10, Role: "ROLE_ADMIN"}
+	created, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:  pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title: "Default private",
+		Slug:  "default-private",
+	})
+	if err != nil {
+		t.Fatalf("create content failed: %v", err)
+	}
+	if created.Content.Visibility != pb.ContentVisibility_CONTENT_VISIBILITY_PRIVATE {
+		t.Fatalf("expected private visibility, got %s", created.Content.Visibility)
+	}
+	if created.Content.AiAccess != pb.AIAccess_AI_ACCESS_DENIED {
+		t.Fatalf("expected denied ai access, got %s", created.Content.AiAccess)
+	}
+}
+
+func TestBodyJSONValidation(t *testing.T) {
+	t.Parallel()
+
+	manager := contentservice.NewManager(testkit.NewServiceDependencies(t))
+	actor := contentservice.Actor{UserID: 1, SessionID: 10, Role: "admin"}
+
+	_, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:     pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title:    "Bad JSON",
+		Slug:     "bad-json",
+		BodyJson: `{"type":`,
+	})
+	if !errors.Is(err, errs.E(errs.CodeContentInvalidArgument)) {
+		t.Fatalf("expected invalid argument for create body_json, got %v", err)
+	}
+
+	created, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:     pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title:    "Good JSON",
+		Slug:     "good-json",
+		BodyJson: ` {"type":"doc"} `,
+	})
+	if err != nil {
+		t.Fatalf("create valid json content failed: %v", err)
+	}
+	if created.Content.BodyJson != `{"type":"doc"}` {
+		t.Fatalf("expected trimmed body_json, got %q", created.Content.BodyJson)
+	}
+
+	_, err = manager.UpdateContent.Execute(context.Background(), actor, &pb.UpdateContentRequest{
+		ContentId: created.Content.ContentId,
+		Type:      pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title:     "Good JSON",
+		Slug:      "good-json",
+		BodyJson:  `{bad`,
+	})
+	if !errors.Is(err, errs.E(errs.CodeContentInvalidArgument)) {
+		t.Fatalf("expected invalid argument for update body_json, got %v", err)
+	}
+}
+
 func TestTagDeleteFailsWhenBound(t *testing.T) {
 	t.Parallel()
 
