@@ -25,3 +25,23 @@ func TestBuildResponse(t *testing.T) {
 		t.Fatalf("unexpected payload: %+v", payload)
 	}
 }
+
+func TestContentCodeToHTTP(t *testing.T) {
+	t.Parallel()
+
+	cases := map[errs.Code]int{
+		errs.CodeContentInternalCallerUnauthorized: 401,
+		errs.CodeContentAccessForbidden:            403,
+		errs.CodeContentNotFound:                   404,
+		errs.CodeContentTagNotFound:                404,
+		errs.CodeContentRevisionNotFound:           404,
+		errs.CodeContentSlugAlreadyExists:          409,
+		errs.CodeContentTagAlreadyExists:           409,
+		errs.CodeContentTagInUse:                   412,
+	}
+	for code, want := range cases {
+		if got := errhttpx.CodeToHTTP(code); got != want {
+			t.Fatalf("CodeToHTTP(%d) = %d, want %d", code, got, want)
+		}
+	}
+}

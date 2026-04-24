@@ -109,6 +109,12 @@ const (
 	// CodeContentInvalidAIAccess identifies invalid AI access values.
 	// CodeContentInvalidAIAccess 标识非法 AI 访问策略。
 	CodeContentInvalidAIAccess Code = 120105
+	// CodeContentInternalCallerUnauthorized identifies unauthorized internal callers.
+	// CodeContentInternalCallerUnauthorized 标识未通过认证的内部调用方。
+	CodeContentInternalCallerUnauthorized Code = 120201
+	// CodeContentAccessForbidden identifies forbidden content access.
+	// CodeContentAccessForbidden 标识内容访问被拒绝。
+	CodeContentAccessForbidden Code = 120301
 	// CodeContentInvalidTransition identifies invalid content state transitions.
 	// CodeContentInvalidTransition 标识非法内容状态流转。
 	CodeContentInvalidTransition Code = 120401
@@ -124,6 +130,12 @@ const (
 	// CodeContentTagAlreadyExists identifies tag name or slug conflicts.
 	// CodeContentTagAlreadyExists 标识标签名称或 slug 冲突。
 	CodeContentTagAlreadyExists Code = 120504
+	// CodeContentRevisionNotFound identifies missing content revisions.
+	// CodeContentRevisionNotFound 标识内容版本不存在。
+	CodeContentRevisionNotFound Code = 120505
+	// CodeContentTagInUse identifies tags that are still bound to content.
+	// CodeContentTagInUse 标识仍被内容绑定的标签。
+	CodeContentTagInUse Code = 120506
 	// CodeContentInternal identifies content internal failures.
 	// CodeContentInternal 标识 content 内部错误。
 	CodeContentInternal Code = 129901

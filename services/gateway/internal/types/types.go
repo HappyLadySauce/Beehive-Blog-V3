@@ -4,35 +4,35 @@
 package types
 
 type AuthLoginReq struct {
-	LoginIdentifier string `json:"login_identifier" validate:"required,min=1,max=320"`
-	Password        string `json:"password" validate:"required,min=1,max=128"`
-	ClientType      string `json:"client_type,optional" validate:"omitempty,max=32"`
-	DeviceId        string `json:"device_id,optional" validate:"omitempty,max=128"`
-	DeviceName      string `json:"device_name,optional" validate:"omitempty,max=128"`
-	UserAgent       string `json:"user_agent,optional" validate:"omitempty,max=512"`
+	LoginIdentifier string `json:"login_identifier,example=alice@example.com" validate:"required,min=1,max=320"`
+	Password        string `json:"password,example=Str0ngP@ssw0rd!" validate:"required,min=1,max=128"`
+	ClientType      string `json:"client_type,optional,options=web|ios|android,example=web" validate:"omitempty,max=32"`
+	DeviceId        string `json:"device_id,optional,example=device_web_chrome_001" validate:"omitempty,max=128"`
+	DeviceName      string `json:"device_name,optional,example=Chrome on macOS" validate:"omitempty,max=128"`
+	UserAgent       string `json:"user_agent,optional,example=Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36" validate:"omitempty,max=512"`
 }
 
 type AuthLoginResp struct {
-	AccessToken  string          `json:"access_token"`
-	RefreshToken string          `json:"refresh_token"`
-	ExpiresIn    int64           `json:"expires_in"`
-	TokenType    string          `json:"token_type"`
-	SessionId    string          `json:"session_id"`
+	AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.login_access"`
+	RefreshToken string          `json:"refresh_token,example=refresh_token_login_example"`
+	ExpiresIn    int64           `json:"expires_in,example=3600"`
+	TokenType    string          `json:"token_type,example=Bearer"`
+	SessionId    string          `json:"session_id,example=sess_01J8LOGINEXAMPLE"`
 	User         AuthUserProfile `json:"user"`
 	Session      AuthSessionView `json:"session"`
 }
 
 type AuthLogoutReq struct {
-	Authorization string `header:"Authorization" validate:"required"`
-	RefreshToken  string `json:"refresh_token,optional" validate:"omitempty,max=4096"`
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	RefreshToken  string `json:"refresh_token,optional,example=refresh_token_login_example" validate:"omitempty,max=4096"`
 }
 
 type AuthLogoutResp struct {
-	Ok bool `json:"ok"`
+	Ok bool `json:"ok,example=true"`
 }
 
 type AuthMeReq struct {
-	Authorization string `header:"Authorization" validate:"required"`
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 }
 
 type AuthMeResp struct {
@@ -40,99 +40,326 @@ type AuthMeResp struct {
 }
 
 type AuthRefreshReq struct {
-	RefreshToken string `json:"refresh_token" validate:"required,min=1,max=4096"`
-	UserAgent    string `json:"user_agent,optional" validate:"omitempty,max=512"`
+	RefreshToken string `json:"refresh_token,example=refresh_token_login_example" validate:"required,min=1,max=4096"`
+	UserAgent    string `json:"user_agent,optional,example=Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36" validate:"omitempty,max=512"`
 }
 
 type AuthRefreshResp struct {
-	AccessToken  string          `json:"access_token"`
-	RefreshToken string          `json:"refresh_token"`
-	ExpiresIn    int64           `json:"expires_in"`
-	TokenType    string          `json:"token_type"`
-	SessionId    string          `json:"session_id"`
+	AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh_access"`
+	RefreshToken string          `json:"refresh_token,example=refresh_token_refresh_example"`
+	ExpiresIn    int64           `json:"expires_in,example=3600"`
+	TokenType    string          `json:"token_type,example=Bearer"`
+	SessionId    string          `json:"session_id,example=sess_01J8REFRESHEXAMPLE"`
 	Session      AuthSessionView `json:"session"`
 }
 
 type AuthRegisterReq struct {
-	Username string `json:"username" validate:"required,min=3,max=64"`
-	Email    string `json:"email" validate:"required,email,max=320"`
-	Password string `json:"password" validate:"required,min=8,max=128"`
-	Nickname string `json:"nickname,optional" validate:"omitempty,max=128"`
+	Username string `json:"username,example=beehive_user_01" validate:"required,min=3,max=64"`
+	Email    string `json:"email,example=alice@example.com" validate:"required,email,max=320"`
+	Password string `json:"password,example=Str0ngP@ssw0rd!" validate:"required,min=8,max=128"`
+	Nickname string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
 }
 
 type AuthRegisterResp struct {
-	AccessToken  string          `json:"access_token"`
-	RefreshToken string          `json:"refresh_token"`
-	ExpiresIn    int64           `json:"expires_in"`
-	TokenType    string          `json:"token_type"`
-	SessionId    string          `json:"session_id"`
+	AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.register_access"`
+	RefreshToken string          `json:"refresh_token,example=refresh_token_register_example"`
+	ExpiresIn    int64           `json:"expires_in,example=3600"`
+	TokenType    string          `json:"token_type,example=Bearer"`
+	SessionId    string          `json:"session_id,example=sess_01J8REGISTEREXAMPLE"`
 	User         AuthUserProfile `json:"user"`
 	Session      AuthSessionView `json:"session"`
 }
 
 type AuthSessionView struct {
-	SessionId  string `json:"session_id"`
-	UserId     string `json:"user_id"`
-	AuthSource string `json:"auth_source"`
-	ClientType string `json:"client_type,optional"`
-	DeviceId   string `json:"device_id,optional"`
-	DeviceName string `json:"device_name,optional"`
-	Status     string `json:"status"`
-	LastSeenAt int64  `json:"last_seen_at,optional"`
-	ExpiresAt  int64  `json:"expires_at,optional"`
+	SessionId  string `json:"session_id,example=sess_01J8SESSIONEXAMPLE"`
+	UserId     string `json:"user_id,example=user_01J8PROFILEEXAMPLE"`
+	AuthSource string `json:"auth_source,example=password"`
+	ClientType string `json:"client_type,optional,options=web|ios|android,example=web"`
+	DeviceId   string `json:"device_id,optional,example=device_web_chrome_001"`
+	DeviceName string `json:"device_name,optional,example=Chrome on macOS"`
+	Status     string `json:"status,example=active"`
+	LastSeenAt int64  `json:"last_seen_at,optional,example=1713772800"`
+	ExpiresAt  int64  `json:"expires_at,optional,example=1713776400"`
 }
 
 type AuthSsoCallbackReq struct {
-	Provider    string `json:"provider" validate:"required,min=1,max=64"`
-	Code        string `json:"code" validate:"required,min=1,max=4096"`
-	State       string `json:"state" validate:"required,min=1,max=512"`
-	RedirectUri string `json:"redirect_uri" validate:"required,url,max=2048"`
-	ClientType  string `json:"client_type,optional" validate:"omitempty,max=32"`
-	DeviceId    string `json:"device_id,optional" validate:"omitempty,max=128"`
-	DeviceName  string `json:"device_name,optional" validate:"omitempty,max=128"`
-	UserAgent   string `json:"user_agent,optional" validate:"omitempty,max=512"`
+	Provider    string `json:"provider,options=github|qq|wechat,example=github" validate:"required,min=1,max=64"`
+	Code        string `json:"code,example=gho_example_callback_code" validate:"required,min=1,max=4096"`
+	State       string `json:"state,example=state_01J8SSOSTARTEXAMPLE" validate:"required,min=1,max=512"`
+	RedirectUri string `json:"redirect_uri,example=https://app.example.com/auth/callback/github" validate:"required,url,max=2048"`
+	ClientType  string `json:"client_type,optional,options=web|ios|android,example=web" validate:"omitempty,max=32"`
+	DeviceId    string `json:"device_id,optional,example=device_web_chrome_001" validate:"omitempty,max=128"`
+	DeviceName  string `json:"device_name,optional,example=Chrome on macOS" validate:"omitempty,max=128"`
+	UserAgent   string `json:"user_agent,optional,example=Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36" validate:"omitempty,max=512"`
 }
 
 type AuthSsoCallbackResp struct {
-	AccessToken  string          `json:"access_token"`
-	RefreshToken string          `json:"refresh_token"`
-	ExpiresIn    int64           `json:"expires_in"`
-	TokenType    string          `json:"token_type"`
-	SessionId    string          `json:"session_id"`
+	AccessToken  string          `json:"access_token,example=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sso_access"`
+	RefreshToken string          `json:"refresh_token,example=refresh_token_sso_example"`
+	ExpiresIn    int64           `json:"expires_in,example=3600"`
+	TokenType    string          `json:"token_type,example=Bearer"`
+	SessionId    string          `json:"session_id,example=sess_01J8SSOEXAMPLE"`
 	User         AuthUserProfile `json:"user"`
 	Session      AuthSessionView `json:"session"`
 }
 
 type AuthSsoStartReq struct {
-	Provider    string `json:"provider" validate:"required,min=1,max=64"`
-	RedirectUri string `json:"redirect_uri" validate:"required,url,max=2048"`
-	State       string `json:"state,optional" validate:"omitempty,max=512"`
+	Provider    string `json:"provider,options=github|qq|wechat,example=github" validate:"required,min=1,max=64"`
+	RedirectUri string `json:"redirect_uri,example=https://app.example.com/auth/callback/github" validate:"required,url,max=2048"`
+	State       string `json:"state,optional,example=state_01J8SSOSTARTEXAMPLE" validate:"omitempty,max=512"`
 }
 
 type AuthSsoStartResp struct {
-	Provider string `json:"provider"`
-	AuthUrl  string `json:"auth_url"`
-	State    string `json:"state"`
+	Provider string `json:"provider,example=github"`
+	AuthUrl  string `json:"auth_url,example=https://github.com/login/oauth/authorize?client_id=xxx&redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fcallback%2Fgithub&state=state_01J8SSOSTARTEXAMPLE"`
+	State    string `json:"state,example=state_01J8SSOSTARTEXAMPLE"`
 }
 
 type AuthUserProfile struct {
-	UserId    string `json:"user_id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Nickname  string `json:"nickname,optional"`
-	AvatarUrl string `json:"avatar_url,optional"`
-	Role      string `json:"role"`
-	Status    string `json:"status"`
+	UserId    string `json:"user_id,example=user_01J8PROFILEEXAMPLE"`
+	Username  string `json:"username,example=beehive_user_01"`
+	Email     string `json:"email,example=alice@example.com"`
+	Nickname  string `json:"nickname,optional,example=Alice"`
+	AvatarUrl string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png"`
+	Role      string `json:"role,example=user"`
+	Status    string `json:"status,example=active"`
+}
+
+type ContentArchiveResp struct {
+	Ok bool `json:"ok,example=true"`
+}
+
+type ContentCreateReq struct {
+	Authorization  string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Type           string   `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article" validate:"required"`
+	Title          string   `json:"title,example=Building Beehive Blog v3" validate:"required,min=1,max=255"`
+	Slug           string   `json:"slug,example=building-beehive-blog-v3" validate:"required,min=1,max=255"`
+	Summary        string   `json:"summary,optional,example=Design notes for the v3 content platform." validate:"omitempty,max=4096"`
+	BodyMarkdown   string   `json:"body_markdown,example=# Building Beehive Blog v3" validate:"max=1048576"`
+	BodyJson       string   `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}" validate:"omitempty,max=1048576"`
+	CoverImageUrl  string   `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png" validate:"omitempty,url,max=2048"`
+	Visibility     string   `json:"visibility,options=public|member|private,default=private,example=private" validate:"omitempty"`
+	AiAccess       string   `json:"ai_access,options=allowed|denied,default=denied,example=denied" validate:"omitempty"`
+	SourceType     string   `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,default=manual,example=manual" validate:"omitempty"`
+	CommentEnabled bool     `json:"comment_enabled,default=true,example=true"`
+	IsFeatured     bool     `json:"is_featured,default=false,example=false"`
+	SortOrder      int      `json:"sort_order,default=0,example=0"`
+	TagIds         []string `json:"tag_ids,optional,example=[\"tag_1001\"]"`
+	ChangeSummary  string   `json:"change_summary,optional,example=Initial draft" validate:"omitempty,max=1024"`
+}
+
+type ContentDetailResp struct {
+	Content ContentDetailView `json:"content"`
+}
+
+type ContentDetailView struct {
+	ContentId         string           `json:"content_id,example=1001"`
+	Type              string           `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+	Title             string           `json:"title,example=Building Beehive Blog v3"`
+	Slug              string           `json:"slug,example=building-beehive-blog-v3"`
+	Summary           string           `json:"summary,optional,example=Design notes for the v3 content platform."`
+	BodyMarkdown      string           `json:"body_markdown,example=# Building Beehive Blog v3"`
+	BodyJson          string           `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}"`
+	CoverImageUrl     string           `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png"`
+	Status            string           `json:"status,options=draft|review|published|archived,example=published"`
+	Visibility        string           `json:"visibility,options=public|member|private,example=public"`
+	AiAccess          string           `json:"ai_access,options=allowed|denied,example=allowed"`
+	OwnerUserId       string           `json:"owner_user_id,example=1"`
+	AuthorUserId      string           `json:"author_user_id,example=1"`
+	SourceType        string           `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,example=manual"`
+	CurrentRevisionId string           `json:"current_revision_id,optional,example=2001"`
+	CommentEnabled    bool             `json:"comment_enabled,example=true"`
+	IsFeatured        bool             `json:"is_featured,example=false"`
+	SortOrder         int              `json:"sort_order,example=0"`
+	PublishedAt       int64            `json:"published_at,optional,example=1713772800"`
+	ArchivedAt        int64            `json:"archived_at,optional,example=0"`
+	CreatedAt         int64            `json:"created_at,example=1713772000"`
+	UpdatedAt         int64            `json:"updated_at,example=1713776400"`
+	Tags              []ContentTagView `json:"tags"`
+}
+
+type ContentIdReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	ContentId     string `path:"content_id,example=1001" validate:"required"`
+}
+
+type ContentListReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+	Type          string `form:"type,optional,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+	Status        string `form:"status,optional,options=draft|review|published|archived,example=published"`
+	Visibility    string `form:"visibility,optional,options=public|member|private,example=public"`
+	Keyword       string `form:"keyword,optional,example=beehive" validate:"omitempty,max=128"`
+}
+
+type ContentListResp struct {
+	Items    []ContentSummaryView `json:"items"`
+	Total    int64                `json:"total,example=1"`
+	Page     int                  `json:"page,example=1"`
+	PageSize int                  `json:"page_size,example=20"`
+}
+
+type ContentRevisionDetailResp struct {
+	Revision ContentRevisionDetailView `json:"revision"`
+}
+
+type ContentRevisionDetailView struct {
+	RevisionId          string `json:"revision_id,example=2001"`
+	ContentId           string `json:"content_id,example=1001"`
+	RevisionNo          int    `json:"revision_no,example=1"`
+	TitleSnapshot       string `json:"title_snapshot,example=Building Beehive Blog v3"`
+	SummarySnapshot     string `json:"summary_snapshot,optional,example=Design notes for the v3 content platform."`
+	BodyMarkdown        string `json:"body_markdown,example=# Building Beehive Blog v3"`
+	BodyJson            string `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}"`
+	EditorType          string `json:"editor_type,options=human|agent|system,example=human"`
+	EditorUserId        string `json:"editor_user_id,optional,example=1"`
+	EditorAgentClientId string `json:"editor_agent_client_id,optional,example=agent_1001"`
+	ChangeSummary       string `json:"change_summary,optional,example=Initial draft"`
+	SourceType          string `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,example=manual"`
+	CreatedAt           int64  `json:"created_at,example=1713772800"`
+}
+
+type ContentRevisionIdReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	ContentId     string `path:"content_id,example=1001" validate:"required"`
+	RevisionId    string `path:"revision_id,example=2001" validate:"required"`
+}
+
+type ContentRevisionListReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	ContentId     string `path:"content_id,example=1001" validate:"required"`
+	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+}
+
+type ContentRevisionListResp struct {
+	Items    []ContentRevisionSummaryView `json:"items"`
+	Total    int64                        `json:"total,example=1"`
+	Page     int                          `json:"page,example=1"`
+	PageSize int                          `json:"page_size,example=20"`
+}
+
+type ContentRevisionSummaryView struct {
+	RevisionId    string `json:"revision_id,example=2001"`
+	ContentId     string `json:"content_id,example=1001"`
+	RevisionNo    int    `json:"revision_no,example=1"`
+	EditorType    string `json:"editor_type,options=human|agent|system,example=human"`
+	ChangeSummary string `json:"change_summary,optional,example=Initial draft"`
+	SourceType    string `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,example=manual"`
+	CreatedAt     int64  `json:"created_at,example=1713772800"`
+}
+
+type ContentSummaryView struct {
+	ContentId     string           `json:"content_id,example=1001"`
+	Type          string           `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+	Title         string           `json:"title,example=Building Beehive Blog v3"`
+	Slug          string           `json:"slug,example=building-beehive-blog-v3"`
+	Summary       string           `json:"summary,optional,example=Design notes for the v3 content platform."`
+	CoverImageUrl string           `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png"`
+	Status        string           `json:"status,options=draft|review|published|archived,example=published"`
+	Visibility    string           `json:"visibility,options=public|member|private,example=public"`
+	AiAccess      string           `json:"ai_access,options=allowed|denied,example=allowed"`
+	PublishedAt   int64            `json:"published_at,optional,example=1713772800"`
+	ArchivedAt    int64            `json:"archived_at,optional,example=0"`
+	CreatedAt     int64            `json:"created_at,example=1713772000"`
+	UpdatedAt     int64            `json:"updated_at,example=1713776400"`
+	Tags          []ContentTagView `json:"tags"`
+}
+
+type ContentTagCreateReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Name          string `json:"name,example=Go" validate:"required,min=1,max=64"`
+	Slug          string `json:"slug,example=go" validate:"required,min=1,max=128"`
+	Description   string `json:"description,optional,example=Go language notes" validate:"omitempty,max=1024"`
+	Color         string `json:"color,optional,example=#00ADD8" validate:"omitempty,max=32"`
+}
+
+type ContentTagDeleteResp struct {
+	Ok bool `json:"ok,example=true"`
+}
+
+type ContentTagIdReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	TagId         string `path:"tag_id,example=tag_1001" validate:"required"`
+}
+
+type ContentTagListReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+	Keyword       string `form:"keyword,optional,example=go" validate:"omitempty,max=128"`
+}
+
+type ContentTagListResp struct {
+	Items    []ContentTagView `json:"items"`
+	Total    int64            `json:"total,example=1"`
+	Page     int              `json:"page,example=1"`
+	PageSize int              `json:"page_size,example=20"`
+}
+
+type ContentTagResp struct {
+	Tag ContentTagView `json:"tag"`
+}
+
+type ContentTagUpdateReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	TagId         string `path:"tag_id,example=tag_1001" validate:"required"`
+	Name          string `json:"name,example=Go" validate:"required,min=1,max=64"`
+	Slug          string `json:"slug,example=go" validate:"required,min=1,max=128"`
+	Description   string `json:"description,optional,example=Go language notes" validate:"omitempty,max=1024"`
+	Color         string `json:"color,optional,example=#00ADD8" validate:"omitempty,max=32"`
+}
+
+type ContentTagView struct {
+	TagId       string `json:"tag_id,example=tag_1001"`
+	Name        string `json:"name,example=Go"`
+	Slug        string `json:"slug,example=go"`
+	Description string `json:"description,optional,example=Go language notes"`
+	Color       string `json:"color,optional,example=#00ADD8"`
+	CreatedAt   int64  `json:"created_at,example=1713772800"`
+	UpdatedAt   int64  `json:"updated_at,example=1713776400"`
+}
+
+type ContentUpdateReq struct {
+	Authorization  string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	ContentId      string   `path:"content_id,example=1001" validate:"required"`
+	Type           string   `json:"type,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article" validate:"required"`
+	Title          string   `json:"title,example=Building Beehive Blog v3" validate:"required,min=1,max=255"`
+	Slug           string   `json:"slug,example=building-beehive-blog-v3" validate:"required,min=1,max=255"`
+	Summary        string   `json:"summary,optional,example=Design notes for the v3 content platform." validate:"omitempty,max=4096"`
+	BodyMarkdown   string   `json:"body_markdown,example=# Building Beehive Blog v3" validate:"max=1048576"`
+	BodyJson       string   `json:"body_json,optional,example={\"type\":\"doc\",\"content\":[]}" validate:"omitempty,max=1048576"`
+	CoverImageUrl  string   `json:"cover_image_url,optional,example=https://cdn.example.com/covers/beehive-v3.png" validate:"omitempty,url,max=2048"`
+	Status         string   `json:"status,options=draft|review|published|archived,example=draft" validate:"required"`
+	Visibility     string   `json:"visibility,options=public|member|private,example=private" validate:"required"`
+	AiAccess       string   `json:"ai_access,options=allowed|denied,example=denied" validate:"required"`
+	CommentEnabled bool     `json:"comment_enabled,example=true"`
+	IsFeatured     bool     `json:"is_featured,example=false"`
+	SortOrder      int      `json:"sort_order,example=0"`
+	TagIds         []string `json:"tag_ids,optional,example=[\"tag_1001\"]"`
+	ChangeSummary  string   `json:"change_summary,optional,example=Update body" validate:"omitempty,max=1024"`
 }
 
 type HealthzResp struct {
-	Status string `json:"status"`
+	Status string `json:"status,example=ok"`
+}
+
+type PublicContentListReq struct {
+	Page     int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+	Type     string `form:"type,optional,options=article|note|project|experience|timeline_event|insight|portfolio|page,example=article"`
+	Keyword  string `form:"keyword,optional,example=beehive" validate:"omitempty,max=128"`
+}
+
+type PublicContentSlugReq struct {
+	Slug string `path:"slug,example=building-beehive-blog-v3" validate:"required"`
 }
 
 type ReadyzResp struct {
-	Status string `json:"status"`
+	Status string `json:"status,example=ready"`
 }
 
 type WsStubResp struct {
-	Ok bool `json:"ok"`
+	Ok bool `json:"ok,example=true"`
 }

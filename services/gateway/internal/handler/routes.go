@@ -7,7 +7,9 @@ import (
 	"net/http"
 
 	auth "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/auth"
+	content "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/content"
 	ops "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/ops"
+	publiccontent "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/publiccontent"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
@@ -17,18 +19,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	authPublicRoutes := []rest.Route{
 		{
 			Method:  http.MethodPost,
-			Path:    "/register",
-			Handler: auth.AuthRegisterHandler(serverCtx),
-		},
-		{
-			Method:  http.MethodPost,
 			Path:    "/login",
 			Handler: auth.AuthLoginHandler(serverCtx),
 		},
 		{
 			Method:  http.MethodPost,
-			Path:    "/sso/start",
-			Handler: auth.AuthSsoStartHandler(serverCtx),
+			Path:    "/refresh",
+			Handler: auth.AuthRefreshHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/register",
+			Handler: auth.AuthRegisterHandler(serverCtx),
 		},
 		{
 			Method:  http.MethodPost,
@@ -37,21 +39,90 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 		{
 			Method:  http.MethodPost,
-			Path:    "/refresh",
-			Handler: auth.AuthRefreshHandler(serverCtx),
+			Path:    "/sso/start",
+			Handler: auth.AuthSsoStartHandler(serverCtx),
 		},
 	}
 
 	authProtectedRoutes := []rest.Route{
 		{
+			Method:  http.MethodPost,
+			Path:    "/logout",
+			Handler: auth.AuthLogoutHandler(serverCtx),
+		},
+		{
 			Method:  http.MethodGet,
 			Path:    "/me",
 			Handler: auth.AuthMeHandler(serverCtx),
 		},
+	}
+
+	studioContentRoutes := []rest.Route{
 		{
+			// List studio content items
+			Method:  http.MethodGet,
+			Path:    "/items",
+			Handler: content.ContentListHandler(serverCtx),
+		},
+		{
+			// Create content item
 			Method:  http.MethodPost,
-			Path:    "/logout",
-			Handler: auth.AuthLogoutHandler(serverCtx),
+			Path:    "/items",
+			Handler: content.ContentCreateHandler(serverCtx),
+		},
+		{
+			// Get studio content item
+			Method:  http.MethodGet,
+			Path:    "/items/:content_id",
+			Handler: content.ContentGetHandler(serverCtx),
+		},
+		{
+			// Update content item
+			Method:  http.MethodPut,
+			Path:    "/items/:content_id",
+			Handler: content.ContentUpdateHandler(serverCtx),
+		},
+		{
+			// Archive content item
+			Method:  http.MethodDelete,
+			Path:    "/items/:content_id",
+			Handler: content.ContentArchiveHandler(serverCtx),
+		},
+		{
+			// List content revisions
+			Method:  http.MethodGet,
+			Path:    "/items/:content_id/revisions",
+			Handler: content.ContentRevisionListHandler(serverCtx),
+		},
+		{
+			// Get content revision
+			Method:  http.MethodGet,
+			Path:    "/items/:content_id/revisions/:revision_id",
+			Handler: content.ContentRevisionGetHandler(serverCtx),
+		},
+		{
+			// List content tags
+			Method:  http.MethodGet,
+			Path:    "/tags",
+			Handler: content.ContentTagListHandler(serverCtx),
+		},
+		{
+			// Create content tag
+			Method:  http.MethodPost,
+			Path:    "/tags",
+			Handler: content.ContentTagCreateHandler(serverCtx),
+		},
+		{
+			// Update content tag
+			Method:  http.MethodPut,
+			Path:    "/tags/:tag_id",
+			Handler: content.ContentTagUpdateHandler(serverCtx),
+		},
+		{
+			// Delete content tag
+			Method:  http.MethodDelete,
+			Path:    "/tags/:tag_id",
+			Handler: content.ContentTagDeleteHandler(serverCtx),
 		},
 	}
 
@@ -73,6 +144,21 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	}
 
+	publicContentRoutes := []rest.Route{
+		{
+			// List public content items
+			Method:  http.MethodGet,
+			Path:    "/items",
+			Handler: publiccontent.PublicContentListHandler(serverCtx),
+		},
+		{
+			// Get public content item by slug
+			Method:  http.MethodGet,
+			Path:    "/items/:slug",
+			Handler: publiccontent.PublicContentGetHandler(serverCtx),
+		},
+	}
+
 	server.AddRoutes(
 		rest.WithMiddleware(serverCtx.RequestMetaMiddleware, authPublicRoutes...),
 		rest.WithPrefix("/api/v3/auth"),
@@ -87,7 +173,20 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	)
 
 	server.AddRoutes(
+		rest.WithMiddlewares([]rest.Middleware{
+			serverCtx.RequestMetaMiddleware,
+			serverCtx.AuthMiddleware,
+		}, studioContentRoutes...),
+		rest.WithPrefix("/api/v3/studio/content"),
+	)
+
+	server.AddRoutes(
 		rest.WithMiddleware(serverCtx.RequestMetaMiddleware, opsRoutes...),
 		rest.WithPrefix("/"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddleware(serverCtx.RequestMetaMiddleware, publicContentRoutes...),
+		rest.WithPrefix("/api/v3/public/content"),
 	)
 }

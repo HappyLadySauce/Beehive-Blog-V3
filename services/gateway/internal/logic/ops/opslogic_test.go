@@ -53,6 +53,7 @@ func TestReadyzReadyWhenProbeSucceeds(t *testing.T) {
 
 	logic := NewReadyzLogic(context.Background(), &svc.ServiceContext{
 		IdentityProbe: &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
+		ContentProbe:  &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
 	})
 	resp, err := logic.Readyz()
 	if err != nil {
@@ -72,7 +73,28 @@ func TestReadyzNotReadyWhenProbeFails(t *testing.T) {
 		},
 	}
 
-	logic := NewReadyzLogic(context.Background(), &svc.ServiceContext{IdentityProbe: probe})
+	logic := NewReadyzLogic(context.Background(), &svc.ServiceContext{
+		IdentityProbe: probe,
+		ContentProbe:  &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
+	})
+	resp, err := logic.Readyz()
+	if resp.Status != "not_ready" {
+		t.Fatalf("expected not_ready, got %s", resp.Status)
+	}
+	if !errors.Is(err, errs.E(errs.CodeGatewayNotReady)) {
+		t.Fatalf("expected gateway not ready error, got %v", err)
+	}
+}
+
+func TestReadyzNotReadyWhenContentProbeFails(t *testing.T) {
+	t.Parallel()
+
+	logic := NewReadyzLogic(context.Background(), &svc.ServiceContext{
+		IdentityProbe: &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
+		ContentProbe: &fakeProbe{checkFn: func(_ context.Context) error {
+			return errors.New("content unavailable")
+		}},
+	})
 	resp, err := logic.Readyz()
 	if resp.Status != "not_ready" {
 		t.Fatalf("expected not_ready, got %s", resp.Status)

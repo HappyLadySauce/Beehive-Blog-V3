@@ -15,6 +15,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
+			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 			Security: GatewaySecurityConf{
 				TrustedProxyHeaders: []string{"X-Forwarded-For", "X-Real-IP"},
 				TrustedProxyCIDRs:   []string{"127.0.0.0/8", "10.0.0.0/8"},
@@ -30,6 +34,10 @@ func TestConfigValidate(t *testing.T) {
 
 		conf := Config{
 			IdentityRPC: IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			ContentRPC: ContentRPCConf{
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
@@ -51,6 +59,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
+			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 			Security: GatewaySecurityConf{
 				TrustedProxyHeaders: []string{"X-Forwarded-For"},
 				TrustedProxyCIDRs:   []string{"bad-cidr"},
@@ -66,6 +78,10 @@ func TestConfigValidate(t *testing.T) {
 
 		conf := Config{
 			IdentityRPC: IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			ContentRPC: ContentRPCConf{
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
@@ -87,6 +103,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
+			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 			Security: GatewaySecurityConf{
 				TrustedProxyHeaders: []string{"X-Forwarded-For"},
 				TrustedProxyCIDRs:   []string{},
@@ -102,6 +122,10 @@ func TestConfigValidate(t *testing.T) {
 
 		conf := Config{
 			IdentityRPC: IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			ContentRPC: ContentRPCConf{
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
@@ -122,6 +146,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
+			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 			Security: GatewaySecurityConf{
 				TrustedProxyHeaders: []string{},
 				TrustedProxyCIDRs:   []string{},
@@ -139,6 +167,10 @@ func TestConfigValidate(t *testing.T) {
 			IdentityRPC: IdentityRPCConf{
 				InternalCallerName: "gateway",
 			},
+			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 		}
 		if err := conf.Validate(); err == nil {
 			t.Fatalf("expected config validation to fail when internal auth token is missing")
@@ -152,9 +184,47 @@ func TestConfigValidate(t *testing.T) {
 			IdentityRPC: IdentityRPCConf{
 				InternalAuthToken: "secret",
 			},
+			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 		}
 		if err := conf.Validate(); err == nil {
 			t.Fatalf("expected config validation to fail when internal caller name is missing")
+		}
+	})
+
+	t.Run("missing content internal auth token should fail", func(t *testing.T) {
+		t.Parallel()
+
+		conf := Config{
+			IdentityRPC: IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			ContentRPC: ContentRPCConf{
+				InternalCallerName: "gateway",
+			},
+		}
+		if err := conf.Validate(); err == nil {
+			t.Fatalf("expected config validation to fail when content internal auth token is missing")
+		}
+	})
+
+	t.Run("missing content internal caller name should fail", func(t *testing.T) {
+		t.Parallel()
+
+		conf := Config{
+			IdentityRPC: IdentityRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			ContentRPC: ContentRPCConf{
+				InternalAuthToken: "secret",
+			},
+		}
+		if err := conf.Validate(); err == nil {
+			t.Fatalf("expected config validation to fail when content internal caller name is missing")
 		}
 	})
 }

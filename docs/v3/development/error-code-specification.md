@@ -91,11 +91,15 @@
 - `120103`：invalid content status
 - `120104`：invalid visibility
 - `120105`：invalid ai access
+- `120201`：internal caller unauthorized
+- `120301`：content access forbidden
 - `120401`：invalid content transition
 - `120501`：content not found
 - `120502`：slug already exists
 - `120503`：tag not found
 - `120504`：tag already exists
+- `120505`：content revision not found
+- `120506`：tag is in use
 - `129901`：content internal error
 
 ## message 规范

@@ -10,6 +10,14 @@ IdentityRPC:
   InternalAuthToken: "replace-me-with-a-shared-internal-secret"
   InternalCallerName: "gateway"
 
+ContentRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: content.rpc
+  InternalAuthToken: "replace-me-with-a-shared-internal-secret"
+  InternalCallerName: "gateway"
+
 Security:
   TokenPrefix: Bearer
   TrustedProxyCIDRs: []

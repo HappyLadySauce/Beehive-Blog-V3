@@ -33,6 +33,15 @@ const (
 	// MetadataKeyUserAgent is the metadata key for the client user agent.
 	// MetadataKeyUserAgent 是客户端 User-Agent 的 metadata key。
 	MetadataKeyUserAgent = headerUserAgent
+	// MetadataKeyUserID is the metadata key for trusted authenticated user id.
+	// MetadataKeyUserID 是可信已认证用户 ID 的 metadata key。
+	MetadataKeyUserID = "x-beehive-user-id"
+	// MetadataKeySessionID is the metadata key for trusted authenticated session id.
+	// MetadataKeySessionID 是可信已认证会话 ID 的 metadata key。
+	MetadataKeySessionID = "x-beehive-session-id"
+	// MetadataKeyUserRole is the metadata key for trusted authenticated user role.
+	// MetadataKeyUserRole 是可信已认证用户角色的 metadata key。
+	MetadataKeyUserRole = "x-beehive-user-role"
 )
 
 type trustedCallerContextKey struct{}
@@ -59,6 +68,14 @@ type TrustedProxyConfig struct {
 type InternalRPCAuth struct {
 	Token  string
 	Caller string
+}
+
+// AuthClaims carries trusted authenticated user claims.
+// AuthClaims 承载可信已认证用户声明。
+type AuthClaims struct {
+	UserID    string
+	SessionID string
+	Role      string
 }
 
 // GetClientIPFromIncomingContext extracts a trusted client IP from gRPC metadata.
@@ -112,6 +129,30 @@ func GetRequestIDFromIncomingContext(ctx context.Context) string {
 	}
 
 	return strings.TrimSpace(values[0])
+}
+
+// TrustedAuthClaimsFromIncomingContext extracts trusted user claims from gRPC metadata.
+// TrustedAuthClaimsFromIncomingContext 从 gRPC metadata 中提取可信用户声明。
+func TrustedAuthClaimsFromIncomingContext(ctx context.Context) (AuthClaims, bool) {
+	if _, ok := TrustedInternalCallerFrom(ctx); !ok {
+		return AuthClaims{}, false
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return AuthClaims{}, false
+	}
+
+	claims := AuthClaims{
+		UserID:    strings.TrimSpace(firstMetadataValue(md, MetadataKeyUserID)),
+		SessionID: strings.TrimSpace(firstMetadataValue(md, MetadataKeySessionID)),
+		Role:      strings.TrimSpace(firstMetadataValue(md, MetadataKeyUserRole)),
+	}
+	if claims.UserID == "" {
+		return AuthClaims{}, false
+	}
+
+	return claims, true
 }
 
 // ParseTrustedProxyCIDRs parses trusted proxy CIDR strings once during setup.
@@ -240,6 +281,12 @@ func ExtractTrustedClientIP(r *http.Request, proxyConf TrustedProxyConfig) strin
 // BuildIdentityOutgoingContext injects authenticated metadata into gateway -> identity gRPC context.
 // BuildIdentityOutgoingContext 将已认证 metadata 注入 gateway -> identity gRPC 上下文。
 func BuildIdentityOutgoingContext(ctx context.Context, meta RequestMeta, auth InternalRPCAuth) context.Context {
+	return BuildInternalOutgoingContext(ctx, meta, auth, AuthClaims{})
+}
+
+// BuildInternalOutgoingContext injects internal auth, request metadata, and optional trusted auth claims.
+// BuildInternalOutgoingContext 注入内部认证、请求元数据和可选可信用户声明。
+func BuildInternalOutgoingContext(ctx context.Context, meta RequestMeta, auth InternalRPCAuth, claims AuthClaims) context.Context {
 	pairs := []string{}
 	appendIfNotEmpty := func(key, value string) {
 		if value == "" {
@@ -253,12 +300,24 @@ func BuildIdentityOutgoingContext(ctx context.Context, meta RequestMeta, auth In
 	appendIfNotEmpty(MetadataKeyTrustedClientIP, meta.ClientIP)
 	appendIfNotEmpty(MetadataKeyUserAgent, meta.UserAgent)
 	appendIfNotEmpty(MetadataKeyRequestID, meta.RequestID)
+	appendIfNotEmpty(MetadataKeyUserID, claims.UserID)
+	appendIfNotEmpty(MetadataKeySessionID, claims.SessionID)
+	appendIfNotEmpty(MetadataKeyUserRole, claims.Role)
 
 	if len(pairs) == 0 {
 		return ctx
 	}
 
 	return metadata.AppendToOutgoingContext(ctx, pairs...)
+}
+
+func firstMetadataValue(md metadata.MD, key string) string {
+	values := md.Get(key)
+	if len(values) == 0 {
+		return ""
+	}
+
+	return values[0]
 }
 
 func firstIPFromForwardedFor(raw string) string {

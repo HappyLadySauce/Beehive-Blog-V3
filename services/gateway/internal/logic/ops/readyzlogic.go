@@ -28,11 +28,11 @@ func NewReadyzLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ReadyzLogi
 }
 
 func (l *ReadyzLogic) Readyz() (resp *types.ReadyzResp, err error) {
-	if l.svcCtx == nil || l.svcCtx.IdentityProbe == nil {
+	if l.svcCtx == nil || l.svcCtx.IdentityProbe == nil || l.svcCtx.ContentProbe == nil {
 		l.logger.Error(
 			"readyz_check",
 			errs.New(errs.CodeGatewayNotReady, "service is not ready"),
-			logs.String("dependency", "identity"),
+			logs.String("dependency", "gateway"),
 			logs.String("reason", "probe_not_initialized"),
 		)
 		return &types.ReadyzResp{Status: "not_ready"}, errs.New(errs.CodeGatewayNotReady, "service is not ready")
@@ -46,6 +46,14 @@ func (l *ReadyzLogic) Readyz() (resp *types.ReadyzResp, err error) {
 			"readyz_check",
 			err,
 			logs.String("dependency", "identity"),
+		)
+		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
+	}
+	if err := l.svcCtx.ContentProbe.Check(probeCtx); err != nil {
+		l.logger.Error(
+			"readyz_check",
+			err,
+			logs.String("dependency", "content"),
 		)
 		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
 	}

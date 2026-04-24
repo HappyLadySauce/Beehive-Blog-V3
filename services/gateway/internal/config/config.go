@@ -20,17 +20,26 @@ type GatewaySecurityConf struct {
 	TrustedProxyCIDRs   []string `json:"TrustedProxyCIDRs"`
 }
 
-// IdentityRPCConf defines gateway access to the identity RPC service.
-// IdentityRPCConf 定义 gateway 访问 identity RPC 服务的配置。
-type IdentityRPCConf struct {
+// InternalRPCConf defines gateway access to an internal RPC service.
+// InternalRPCConf 定义 gateway 访问内部 RPC 服务的配置。
+type InternalRPCConf struct {
 	zrpc.RpcClientConf
 	InternalAuthToken  string `json:"InternalAuthToken"`
 	InternalCallerName string `json:"InternalCallerName"`
 }
 
+// IdentityRPCConf defines gateway access to the identity RPC service.
+// IdentityRPCConf 定义 gateway 访问 identity RPC 服务的配置。
+type IdentityRPCConf = InternalRPCConf
+
+// ContentRPCConf defines gateway access to the content RPC service.
+// ContentRPCConf 定义 gateway 访问 content RPC 服务的配置。
+type ContentRPCConf = InternalRPCConf
+
 type Config struct {
 	rest.RestConf
 	IdentityRPC IdentityRPCConf
+	ContentRPC  ContentRPCConf
 	Security    GatewaySecurityConf
 }
 
@@ -69,6 +78,12 @@ func (c Config) Validate() error {
 	}
 	if strings.TrimSpace(c.IdentityRPC.InternalCallerName) == "" {
 		return fmt.Errorf("IdentityRPC.InternalCallerName is required")
+	}
+	if strings.TrimSpace(c.ContentRPC.InternalAuthToken) == "" {
+		return fmt.Errorf("ContentRPC.InternalAuthToken is required")
+	}
+	if strings.TrimSpace(c.ContentRPC.InternalCallerName) == "" {
+		return fmt.Errorf("ContentRPC.InternalCallerName is required")
 	}
 
 	return nil

@@ -76,6 +76,28 @@ func TestBuildIdentityOutgoingContext(t *testing.T) {
 	}
 }
 
+func TestTrustedAuthClaimsRequireTrustedCaller(t *testing.T) {
+	t.Parallel()
+
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		MetadataKeyUserID, "1001",
+		MetadataKeySessionID, "2001",
+		MetadataKeyUserRole, "admin",
+	))
+	if _, ok := TrustedAuthClaimsFromIncomingContext(ctx); ok {
+		t.Fatalf("expected auth claims to be unavailable before caller is trusted")
+	}
+
+	ctx = WithTrustedInternalCaller(ctx, "gateway")
+	claims, ok := TrustedAuthClaimsFromIncomingContext(ctx)
+	if !ok {
+		t.Fatalf("expected trusted auth claims")
+	}
+	if claims.UserID != "1001" || claims.SessionID != "2001" || claims.Role != "admin" {
+		t.Fatalf("unexpected claims: %+v", claims)
+	}
+}
+
 // TestBuildRequestMetaFromHTTP verifies trusted proxy extraction still builds client ip correctly.
 // TestBuildRequestMetaFromHTTP 验证受信代理提取仍能正确构建客户端 IP。
 func TestBuildRequestMetaFromHTTP(t *testing.T) {

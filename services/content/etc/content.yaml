@@ -1,0 +1,22 @@
+Name: content.rpc
+ListenOn: 0.0.0.0:8080
+Etcd:
+  Hosts:
+  - 127.0.0.1:2379
+  Key: content.rpc
+Postgres:
+  Host: 127.0.0.1
+  Port: 5432
+  User: postgres
+  Password: postgres
+  DBName: beehive_blog_v3
+  SSLMode: disable
+  TimeZone: Asia/Shanghai
+  ConnectTimeoutSeconds: 5
+  MaxOpenConns: 20
+  MaxIdleConns: 10
+  ConnMaxLifetimeSeconds: 1800
+  ConnMaxIdleTimeSeconds: 600
+InternalAuthToken: change-me-in-local-env
+AllowedCallers:
+- gateway

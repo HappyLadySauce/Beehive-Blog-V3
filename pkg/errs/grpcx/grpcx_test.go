@@ -40,3 +40,23 @@ func TestToStatusAndParseStatus(t *testing.T) {
 		t.Fatalf("expected errors.Is to match business code")
 	}
 }
+
+func TestContentCodeToGRPC(t *testing.T) {
+	t.Parallel()
+
+	cases := map[errs.Code]codes.Code{
+		errs.CodeContentInternalCallerUnauthorized: codes.Unauthenticated,
+		errs.CodeContentAccessForbidden:            codes.PermissionDenied,
+		errs.CodeContentNotFound:                   codes.NotFound,
+		errs.CodeContentTagNotFound:                codes.NotFound,
+		errs.CodeContentRevisionNotFound:           codes.NotFound,
+		errs.CodeContentSlugAlreadyExists:          codes.AlreadyExists,
+		errs.CodeContentTagAlreadyExists:           codes.AlreadyExists,
+		errs.CodeContentTagInUse:                   codes.FailedPrecondition,
+	}
+	for code, want := range cases {
+		if got := errgrpcx.CodeToGRPC(code); got != want {
+			t.Fatalf("CodeToGRPC(%d) = %s, want %s", code, got, want)
+		}
+	}
+}
