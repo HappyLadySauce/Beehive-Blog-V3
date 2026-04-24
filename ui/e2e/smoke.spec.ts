@@ -23,6 +23,8 @@ test.describe('responsive shell', () => {
 
   test('renders studio dashboard without horizontal overflow', async ({ page }) => {
     await page.goto('/studio');
+    await expect(page.getByRole('heading', { name: '登录 Studio' })).toBeVisible();
+    await page.getByRole('button', { name: /登录/ }).click();
     await expect(page.getByRole('heading', { name: '仪表盘' })).toBeVisible();
     await expect(page.getByText('联调状态')).toBeVisible();
     await expectNoHorizontalOverflow(page);

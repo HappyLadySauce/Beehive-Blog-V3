@@ -47,15 +47,37 @@
 
 ## 4. 基础组件
 
-首批自研组件：
+首批自研组件按用途分组：
 
-- `BaseButton`：按钮状态、尺寸、loading。
-- `BaseInput`：表单输入、错误文案。
-- `BaseCard`：通用面板容器。
-- `BaseBadge`：类型、状态、标签。
-- `BaseTabs`：轻量切换器。
-- `EmptyState`：空状态。
-- `PublicLayout`：公开站布局。
-- `StudioLayout`：Studio 工作台布局。
+- 操作：
+  - `BaseButton`：文本按钮、提交按钮、loading。
+  - `IconButton`：仅图标操作，必须提供 `label` 作为可访问名称。
+- 表单：
+  - `BaseInput`：单行输入。
+  - `BaseTextarea`：多行输入。
+  - `BaseSelect`：小型选项集。
+  - `BaseCheckbox`：多选或确认项。
+  - `BaseSwitch`：二元开关。
+- 信息结构：
+  - `BaseCard`：通用面板容器。
+  - `BaseBadge`：类型、状态、标签。
+  - `BaseTabs`：轻量切换器。
+  - `PageHeader`：页面标题与主操作区。
+  - `SectionHeader`：模块标题与局部操作区。
+  - `DataTable`：Studio 轻量数据表。
+- 反馈：
+  - `StatusAlert`：信息、成功、警告、危险提示。
+  - `EmptyState`：空状态。
+  - `LoadingSkeleton`：加载占位。
+- 布局：
+  - `PublicLayout`：公开站布局。
+  - `StudioLayout`：Studio 工作台布局。
+
+使用边界：
+
+- 页面优先组合 `PageHeader`、`SectionHeader`、`BaseCard` 和业务组件，不直接堆大量裸样式。
+- Studio 列表优先使用 `DataTable`；卡片网格仅用于概览、看板或 Public Web 内容预览。
+- 表单控件必须通过 `v-model` 暴露值变化，不在组件内部保存业务状态。
+- 反馈组件只展示状态，不负责发起请求、重试或导航。
 
 图标优先使用 `lucide-vue-next`，避免手写 SVG 图标。

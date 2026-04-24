@@ -68,6 +68,27 @@ services:
     networks:
       - beehive-network-v3
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: beehive-rabbitmq-v3
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: Beehive-Blog-V3
+      RABBITMQ_DEFAULT_PASS: Beehive-Blog-V3
+      TZ: Asia/Shanghai
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ../../data/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - beehive-network-v3
+
 networks:
   beehive-network-v3:
     driver: bridge
