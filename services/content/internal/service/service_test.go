@@ -279,6 +279,25 @@ func TestBodyJSONValidation(t *testing.T) {
 	}
 }
 
+func TestBlankBodyJSONIsStoredAsEmptyResponse(t *testing.T) {
+	t.Parallel()
+
+	manager := contentservice.NewManager(testkit.NewServiceDependencies(t))
+	actor := contentservice.Actor{UserID: 1, SessionID: 10, Role: "admin"}
+	created, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:     pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title:    "Blank JSON",
+		Slug:     "blank-json",
+		BodyJson: "   ",
+	})
+	if err != nil {
+		t.Fatalf("create blank body_json content failed: %v", err)
+	}
+	if created.Content.BodyJson != "" {
+		t.Fatalf("expected empty body_json response, got %q", created.Content.BodyJson)
+	}
+}
+
 func TestTagDeleteFailsWhenBound(t *testing.T) {
 	t.Parallel()
 
