@@ -74,7 +74,7 @@ func (r *OutboxRepository) MarkDone(ctx context.Context, id int64, now time.Time
 
 func (r *OutboxRepository) MarkPublishFailed(ctx context.Context, id int64, attempts int, maxAttempts int, nextRetryAt time.Time, lastError string, now time.Time) error {
 	status := OutboxStatusPending
-	if attempts >= maxAttempts {
+	if maxAttempts > 0 && attempts >= maxAttempts {
 		status = OutboxStatusFailed
 	}
 	return r.db.WithContext(ctx).Model(&entity.OutboxEvent{}).

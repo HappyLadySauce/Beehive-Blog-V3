@@ -14,6 +14,8 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/model/repo"
 )
 
+var errPermanentOutboxPublish = errors.New("permanent outbox publish error")
+
 type OutboxDispatcherConfig struct {
 	DispatchInterval  time.Duration
 	BatchSize         int
@@ -98,7 +100,11 @@ func (d *OutboxDispatcher) DispatchOnce(ctx context.Context) (int, error) {
 		if err := d.publishEvent(ctx, event); err != nil {
 			nextAttempts := event.Attempts + 1
 			nextRetryAt := d.clock().Add(d.config.RetryDelay)
-			if markErr := d.store.Outbox.MarkPublishFailed(ctx, event.ID, nextAttempts, d.config.MaxAttempts, nextRetryAt, truncateError(err.Error()), d.clock()); markErr != nil {
+			maxAttempts := 0
+			if errors.Is(err, errPermanentOutboxPublish) {
+				maxAttempts = d.config.MaxAttempts
+			}
+			if markErr := d.store.Outbox.MarkPublishFailed(ctx, event.ID, nextAttempts, maxAttempts, nextRetryAt, truncateError(err.Error()), d.clock()); markErr != nil {
 				markErrors = append(markErrors, markErr)
 				logs.Ctx(ctx).Error(
 					"content_outbox_event_mark_failed_publish_failed",
@@ -135,7 +141,7 @@ func (d *OutboxDispatcher) DispatchOnce(ctx context.Context) (int, error) {
 
 func (d *OutboxDispatcher) publishEvent(ctx context.Context, event entity.OutboxEvent) error {
 	if event.EventType == "" {
-		return fmt.Errorf("outbox event type is empty")
+		return fmt.Errorf("%w: event type is empty", errPermanentOutboxPublish)
 	}
 	return d.publisher.Publish(ctx, mq.Message{
 		ID:          event.EventID,

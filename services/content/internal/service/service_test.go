@@ -532,6 +532,53 @@ func TestOutboxDispatcherRetriesPublishFailure(t *testing.T) {
 	}
 }
 
+func TestOutboxDispatcherKeepsTransientPublishFailureRetryableAfterMaxAttempts(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	createOutboxEvent(t, deps.Store, 104, contentservice.EventContentUpdated)
+	publisher := &fakePublisher{err: errors.New("broker down")}
+	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
+		return time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, MaxAttempts: 1, RetryDelay: time.Second})
+
+	if processed, err := dispatcher.DispatchOnce(context.Background()); err != nil || processed != 1 {
+		t.Fatalf("dispatch once failed: processed=%d err=%v", processed, err)
+	}
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), "content_item", 104)
+	if err != nil {
+		t.Fatalf("list events failed: %v", err)
+	}
+	if events[0].Status != repo.OutboxStatusPending || events[0].Attempts != 1 {
+		t.Fatalf("expected transient publish failure to stay pending, got %+v", events[0])
+	}
+}
+
+func TestOutboxDispatcherMarksPermanentPublishFailureFailedAtMaxAttempts(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	createOutboxEvent(t, deps.Store, 105, "")
+	publisher := &fakePublisher{}
+	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
+		return time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, MaxAttempts: 1, RetryDelay: time.Second})
+
+	if processed, err := dispatcher.DispatchOnce(context.Background()); err != nil || processed != 1 {
+		t.Fatalf("dispatch once failed: processed=%d err=%v", processed, err)
+	}
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), "content_item", 105)
+	if err != nil {
+		t.Fatalf("list events failed: %v", err)
+	}
+	if events[0].Status != repo.OutboxStatusFailed || events[0].Attempts != 1 {
+		t.Fatalf("expected permanent publish failure to become failed, got %+v", events[0])
+	}
+	if len(publisher.messages) != 0 {
+		t.Fatalf("expected no published messages for invalid event, got %+v", publisher.messages)
+	}
+}
+
 func TestOutboxDispatcherReclaimsStaleProcessingEvent(t *testing.T) {
 	t.Parallel()
 

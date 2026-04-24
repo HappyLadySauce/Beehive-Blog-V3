@@ -16,6 +16,7 @@ type RabbitMQPublisher struct {
 	conn    *amqp.Connection
 	channel *amqp.Channel
 	mu      sync.Mutex
+	closed  bool
 }
 
 // NewRabbitMQPublisher connects to RabbitMQ and declares the target exchange.
@@ -25,14 +26,22 @@ func NewRabbitMQPublisher(ctx context.Context, cfg RabbitMQConfig) (*RabbitMQPub
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	conn, err := dialRabbitMQ(ctx, cfg)
+	conn, ch, err := openRabbitMQResources(ctx, cfg)
 	if err != nil {
 		return nil, err
+	}
+	return &RabbitMQPublisher{cfg: cfg, conn: conn, channel: ch}, nil
+}
+
+func openRabbitMQResources(ctx context.Context, cfg RabbitMQConfig) (*amqp.Connection, *amqp.Channel, error) {
+	conn, err := dialRabbitMQ(ctx, cfg)
+	if err != nil {
+		return nil, nil, err
 	}
 	ch, err := conn.Channel()
 	if err != nil {
 		_ = conn.Close()
-		return nil, fmt.Errorf("open RabbitMQ channel failed: %w", err)
+		return nil, nil, fmt.Errorf("open RabbitMQ channel failed: %w", err)
 	}
 	if err := ch.ExchangeDeclare(
 		cfg.Exchange,
@@ -45,9 +54,9 @@ func NewRabbitMQPublisher(ctx context.Context, cfg RabbitMQConfig) (*RabbitMQPub
 	); err != nil {
 		_ = ch.Close()
 		_ = conn.Close()
-		return nil, fmt.Errorf("declare RabbitMQ exchange failed: %w", err)
+		return nil, nil, fmt.Errorf("declare RabbitMQ exchange failed: %w", err)
 	}
-	return &RabbitMQPublisher{cfg: cfg, conn: conn, channel: ch}, nil
+	return conn, ch, nil
 }
 
 func dialRabbitMQ(ctx context.Context, cfg RabbitMQConfig) (*amqp.Connection, error) {
@@ -115,8 +124,8 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, message Message) error 
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.conn == nil || p.conn.IsClosed() || p.channel == nil || p.channel.IsClosed() {
-		return fmt.Errorf("RabbitMQ publisher is closed")
+	if err := p.ensureOpenLocked(ctx); err != nil {
+		return err
 	}
 	if err := p.channel.PublishWithContext(ctx, p.cfg.Exchange, message.RoutingKey, p.cfg.Mandatory, false, amqp.Publishing{
 		MessageId:    message.ID,
@@ -126,6 +135,7 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, message Message) error 
 		Headers:      headers,
 		Body:         message.Body,
 	}); err != nil {
+		p.closeResourcesLocked()
 		return fmt.Errorf("publish RabbitMQ message failed: %w", err)
 	}
 	return nil
@@ -144,10 +154,7 @@ func (p *RabbitMQPublisher) Health(ctx context.Context) error {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.conn == nil || p.conn.IsClosed() || p.channel == nil || p.channel.IsClosed() {
-		return fmt.Errorf("RabbitMQ publisher is closed")
-	}
-	return nil
+	return p.ensureOpenLocked(ctx)
 }
 
 // Close closes the channel and connection.
@@ -158,6 +165,28 @@ func (p *RabbitMQPublisher) Close() error {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.closed = true
+	return p.closeResourcesLocked()
+}
+
+func (p *RabbitMQPublisher) ensureOpenLocked(ctx context.Context) error {
+	if p.closed {
+		return fmt.Errorf("RabbitMQ publisher is closed")
+	}
+	if p.conn != nil && !p.conn.IsClosed() && p.channel != nil && !p.channel.IsClosed() {
+		return nil
+	}
+	p.closeResourcesLocked()
+	conn, ch, err := openRabbitMQResources(ctx, p.cfg)
+	if err != nil {
+		return fmt.Errorf("reconnect RabbitMQ publisher failed: %w", err)
+	}
+	p.conn = conn
+	p.channel = ch
+	return nil
+}
+
+func (p *RabbitMQPublisher) closeResourcesLocked() error {
 	var err error
 	if p.channel != nil && !p.channel.IsClosed() {
 		if closeErr := p.channel.Close(); closeErr != nil {
@@ -169,5 +198,7 @@ func (p *RabbitMQPublisher) Close() error {
 			err = closeErr
 		}
 	}
+	p.channel = nil
+	p.conn = nil
 	return err
 }
