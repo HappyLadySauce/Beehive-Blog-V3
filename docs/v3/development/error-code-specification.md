@@ -60,6 +60,7 @@
 - `100401`：gateway not ready
 - `100601`：auth service unavailable
 - `100602`：upstream timeout
+- `100603`：content service unavailable
 - `109901`：internal error
 
 ### Identity

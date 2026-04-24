@@ -141,7 +141,7 @@ type ContentCreateReq struct {
 	Visibility     string   `json:"visibility,options=public|member|private,default=private,example=private" validate:"omitempty"`
 	AiAccess       string   `json:"ai_access,options=allowed|denied,default=denied,example=denied" validate:"omitempty"`
 	SourceType     string   `json:"source_type,options=manual|import_v1|import_markdown|agent_generated|agent_assisted,default=manual,example=manual" validate:"omitempty"`
-	CommentEnabled bool     `json:"comment_enabled,default=true,example=true"`
+	CommentEnabled *bool    `json:"comment_enabled,optional,default=true,example=true"`
 	IsFeatured     bool     `json:"is_featured,default=false,example=false"`
 	SortOrder      int      `json:"sort_order,default=0,example=0"`
 	TagIds         []string `json:"tag_ids,optional,example=[\"tag_1001\"]"`

@@ -5,6 +5,7 @@
 - [Gateway 设计](./gateway/gateway-design.md)
 - [服务契约设计](./contracts/service-contracts.md)
 - [第一阶段权限模型](./permission-model.md)
+- [Content 文档索引](./content/README.md)
 - [Edge 与 Gateway 路由设计](./gateway/edge-and-gateway-routing-design.md)
 - [基础设施约定](./infrastructure/infrastructure-conventions.md)
 - [编码与配置规范索引](./development/README.md)
@@ -24,6 +25,7 @@
 - 新的架构决策、接口设计、部署方案统一写入 `v3`
 - `edge/gateway/routing` 相关决策以 `v3` 文档为唯一准绳
 - `docs/v3/identity` 是 `identity` 服务设计基线
+- `docs/v3/content` 是 `content` 服务设计基线
 - `docs/v3/infrastructure/infrastructure-conventions.md` 是基础设施选型基线
 - `docs/v3/development` 是编码与配置规范基线
 - `v3/proto/identity.proto` 与 `v3/api/gateway.api` 后续按 `docs/v3/identity` 文档落地

@@ -15,7 +15,7 @@ const errorDomain = "beehive.blog.v3"
 // CodeToGRPC 将业务错误码映射为 gRPC 状态码。
 func CodeToGRPC(code errs.Code) codes.Code {
 	switch code {
-	case errs.CodeGatewayNotReady, errs.CodeGatewayAuthServiceUnavailable, errs.CodeIdentityDependencyUnavailable:
+	case errs.CodeGatewayNotReady, errs.CodeGatewayAuthServiceUnavailable, errs.CodeGatewayContentServiceUnavailable, errs.CodeIdentityDependencyUnavailable:
 		return codes.Unavailable
 	case errs.CodeGatewayUpstreamTimeout:
 		return codes.DeadlineExceeded

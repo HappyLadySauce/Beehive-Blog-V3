@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -34,7 +35,7 @@ func TestCreateUpdateArchiveAndPublicRead(t *testing.T) {
 		Visibility:     pb.ContentVisibility_CONTENT_VISIBILITY_PUBLIC,
 		AiAccess:       pb.AIAccess_AI_ACCESS_ALLOWED,
 		SourceType:     pb.SourceType_SOURCE_TYPE_MANUAL,
-		CommentEnabled: true,
+		CommentEnabled: boolPtr(true),
 		TagIds:         []string{tag.Tag.TagId},
 	})
 	if err != nil {
@@ -92,6 +93,25 @@ func TestCreateUpdateArchiveAndPublicRead(t *testing.T) {
 	}
 }
 
+func TestCreateContentCanDisableComments(t *testing.T) {
+	t.Parallel()
+
+	manager := contentservice.NewManager(testkit.NewServiceDependencies(t))
+	actor := contentservice.Actor{UserID: 1, SessionID: 10, Role: "admin"}
+	created, err := manager.CreateContent.Execute(context.Background(), actor, &pb.CreateContentRequest{
+		Type:           pb.ContentType_CONTENT_TYPE_ARTICLE,
+		Title:          "Comments off",
+		Slug:           "comments-off",
+		CommentEnabled: boolPtr(false),
+	})
+	if err != nil {
+		t.Fatalf("create content with comments disabled failed: %v", err)
+	}
+	if created.Content.CommentEnabled {
+		t.Fatalf("expected comments to be disabled")
+	}
+}
+
 func TestStudioWriteRequiresActor(t *testing.T) {
 	t.Parallel()
 
@@ -104,6 +124,10 @@ func TestStudioWriteRequiresActor(t *testing.T) {
 	if !errors.Is(err, errs.E(errs.CodeContentAccessForbidden)) {
 		t.Fatalf("expected access forbidden, got %v", err)
 	}
+}
+
+func boolPtr(value bool) *bool {
+	return &value
 }
 
 func TestStudioServicesRequireAdmin(t *testing.T) {
@@ -236,6 +260,9 @@ func TestCreateContentDefaultsToPrivateAndAIDenied(t *testing.T) {
 	if created.Content.AiAccess != pb.AIAccess_AI_ACCESS_DENIED {
 		t.Fatalf("expected denied ai access, got %s", created.Content.AiAccess)
 	}
+	if !created.Content.CommentEnabled {
+		t.Fatalf("expected comments to be enabled by default")
+	}
 }
 
 func TestBodyJSONValidation(t *testing.T) {
@@ -263,8 +290,12 @@ func TestBodyJSONValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create valid json content failed: %v", err)
 	}
-	if created.Content.BodyJson != `{"type":"doc"}` {
-		t.Fatalf("expected trimmed body_json, got %q", created.Content.BodyJson)
+	var body map[string]string
+	if err := json.Unmarshal([]byte(created.Content.BodyJson), &body); err != nil {
+		t.Fatalf("expected valid body_json response, got %q: %v", created.Content.BodyJson, err)
+	}
+	if body["type"] != "doc" {
+		t.Fatalf("expected body_json type doc, got %q from %q", body["type"], created.Content.BodyJson)
 	}
 
 	_, err = manager.UpdateContent.Execute(context.Background(), actor, &pb.UpdateContentRequest{

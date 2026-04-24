@@ -21,7 +21,7 @@ type ErrorResponse struct {
 // CodeToHTTP 将业务错误码映射为 HTTP 状态码。
 func CodeToHTTP(code errs.Code) int {
 	switch code {
-	case errs.CodeGatewayNotReady, errs.CodeGatewayAuthServiceUnavailable:
+	case errs.CodeGatewayNotReady, errs.CodeGatewayAuthServiceUnavailable, errs.CodeGatewayContentServiceUnavailable:
 		return http.StatusServiceUnavailable
 	case errs.CodeGatewayUpstreamTimeout:
 		return http.StatusGatewayTimeout

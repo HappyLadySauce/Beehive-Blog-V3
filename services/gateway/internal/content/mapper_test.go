@@ -12,7 +12,9 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/middleware"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 func TestEnumMapping(t *testing.T) {
@@ -108,11 +110,66 @@ func TestMapUpstreamErrorPreservesContentDomainCode(t *testing.T) {
 	}
 }
 
+func TestMapUpstreamErrorMasksContentInternalCallerUnauthorized(t *testing.T) {
+	t.Parallel()
+
+	err := errgrpcx.ToStatus(errs.New(errs.CodeContentInternalCallerUnauthorized, "internal caller authentication failed"), "fallback")
+	mapped := MapUpstreamError(context.Background(), "content_create", "/route", err)
+	if !errors.Is(mapped, errs.E(errs.CodeGatewayNotReady)) {
+		t.Fatalf("expected gateway not ready error, got %v", mapped)
+	}
+	if errors.Is(mapped, errs.E(errs.CodeContentInternalCallerUnauthorized)) {
+		t.Fatalf("expected internal auth code to be masked, got %v", mapped)
+	}
+}
+
+func TestMapUpstreamErrorMapsContentUnavailable(t *testing.T) {
+	t.Parallel()
+
+	mapped := MapUpstreamError(context.Background(), "content_list", "/route", status.Error(codes.Unavailable, "unavailable"))
+	if !errors.Is(mapped, errs.E(errs.CodeGatewayContentServiceUnavailable)) {
+		t.Fatalf("expected content service unavailable, got %v", mapped)
+	}
+	if errors.Is(mapped, errs.E(errs.CodeGatewayAuthServiceUnavailable)) {
+		t.Fatalf("expected content unavailable not auth unavailable, got %v", mapped)
+	}
+}
+
 func TestBuildCreateRequestRejectsInvalidEnum(t *testing.T) {
 	t.Parallel()
 
 	_, err := BuildCreateRequest(&types.ContentCreateReq{Type: "bad"})
 	if !errors.Is(err, errs.E(errs.CodeContentInvalidType)) {
 		t.Fatalf("expected invalid type error, got %v", err)
+	}
+}
+
+func TestBuildCreateRequestPreservesOptionalCommentEnabled(t *testing.T) {
+	t.Parallel()
+
+	unspecified, err := BuildCreateRequest(&types.ContentCreateReq{
+		Type:  "article",
+		Title: "Title",
+		Slug:  "title",
+	})
+	if err != nil {
+		t.Fatalf("build unspecified comment request failed: %v", err)
+	}
+	if unspecified.CommentEnabled != nil {
+		t.Fatalf("expected nil comment_enabled when omitted, got %v", *unspecified.CommentEnabled)
+	}
+
+	disabled := false
+	explicit, err := BuildCreateRequest(&types.ContentCreateReq{
+		Type:           "article",
+		Title:          "Title",
+		Slug:           "title",
+		CommentEnabled: &disabled,
+	})
+	if err != nil {
+		t.Fatalf("build explicit comment request failed: %v", err)
+	}
+	if explicit.CommentEnabled == nil || *explicit.CommentEnabled {
+		t.Fatalf("expected explicit false comment_enabled, got %v", explicit.CommentEnabled)
 	}
 }

@@ -66,7 +66,7 @@ func (s *CreateContentService) Execute(ctx context.Context, actor Actor, req *pb
 			OwnerUserID:    actor.UserID,
 			AuthorUserID:   actor.UserID,
 			SourceType:     sourceType,
-			CommentEnabled: req.CommentEnabled,
+			CommentEnabled: createCommentEnabled(req.CommentEnabled),
 			IsFeatured:     req.IsFeatured,
 			SortOrder:      req.SortOrder,
 		}
@@ -103,6 +103,13 @@ func (s *CreateContentService) Execute(ctx context.Context, actor Actor, req *pb
 		return nil, err
 	}
 	return &pb.CreateContentResponse{Content: detail}, nil
+}
+
+func createCommentEnabled(value *bool) bool {
+	if value == nil {
+		return true
+	}
+	return *value
 }
 
 func (s *UpdateContentService) Execute(ctx context.Context, actor Actor, req *pb.UpdateContentRequest) (*pb.UpdateContentResponse, error) {

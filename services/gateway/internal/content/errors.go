@@ -2,6 +2,7 @@ package content
 
 import (
 	"context"
+	"errors"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
@@ -24,6 +25,9 @@ func MapUpstreamError(ctx context.Context, action string, route string, err erro
 		)
 		if parsed := errgrpcx.FromStatus(err, 0, ""); parsed != nil {
 			if domainErr := errs.Parse(parsed); domainErr != nil {
+				if errors.Is(domainErr, errs.E(errs.CodeContentInternalCallerUnauthorized)) {
+					return errs.New(errs.CodeGatewayNotReady, "content service is not ready")
+				}
 				return domainErr
 			}
 		}
@@ -41,7 +45,7 @@ func MapUpstreamError(ctx context.Context, action string, route string, err erro
 		case codes.FailedPrecondition:
 			return errs.New(errs.CodeContentInvalidTransition, "request precondition failed")
 		case codes.Unavailable:
-			return errs.New(errs.CodeGatewayAuthServiceUnavailable, "content service is unavailable")
+			return errs.New(errs.CodeGatewayContentServiceUnavailable, "content service is unavailable")
 		case codes.DeadlineExceeded:
 			return errs.New(errs.CodeGatewayUpstreamTimeout, "upstream service timed out")
 		default:

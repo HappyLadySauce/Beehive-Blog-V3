@@ -32,6 +32,9 @@ const (
 	// CodeGatewayUpstreamTimeout identifies upstream timeout failures.
 	// CodeGatewayUpstreamTimeout 标识上游超时。
 	CodeGatewayUpstreamTimeout Code = 100602
+	// CodeGatewayContentServiceUnavailable identifies content dependency failures.
+	// CodeGatewayContentServiceUnavailable 标识 content 依赖不可用。
+	CodeGatewayContentServiceUnavailable Code = 100603
 	// CodeGatewayInternal identifies gateway internal failures.
 	// CodeGatewayInternal 标识 gateway 内部错误。
 	CodeGatewayInternal Code = 109901
