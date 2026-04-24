@@ -24,7 +24,14 @@ func (r *RelationRepository) GetByIDForContent(ctx context.Context, contentID, r
 }
 
 func (r *RelationRepository) Delete(ctx context.Context, relation *entity.Relation) error {
-	return r.db.WithContext(ctx).Delete(relation).Error
+	result := r.db.WithContext(ctx).Delete(relation)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 type RelationFilter struct {

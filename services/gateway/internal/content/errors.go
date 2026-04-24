@@ -3,6 +3,7 @@ package content
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
@@ -41,7 +42,7 @@ func MapUpstreamError(ctx context.Context, action string, route string, err erro
 		case codes.NotFound:
 			return errs.New(errs.CodeContentNotFound, "content not found")
 		case codes.AlreadyExists:
-			return errs.New(errs.CodeContentSlugAlreadyExists, "resource already exists")
+			return alreadyExistsFallback(action, route)
 		case codes.FailedPrecondition:
 			return errs.New(errs.CodeContentInvalidTransition, "request precondition failed")
 		case codes.Unavailable:
@@ -55,4 +56,16 @@ func MapUpstreamError(ctx context.Context, action string, route string, err erro
 
 	logs.Ctx(ctx).Error(action, err, logs.String("route", route))
 	return errs.New(errs.CodeContentInternal, "content internal error")
+}
+
+func alreadyExistsFallback(action string, route string) error {
+	value := strings.ToLower(action + " " + route)
+	switch {
+	case strings.Contains(value, "relation"):
+		return errs.New(errs.CodeContentRelationAlreadyExists, "content relation already exists")
+	case strings.Contains(value, "tag"):
+		return errs.New(errs.CodeContentTagAlreadyExists, "content tag already exists")
+	default:
+		return errs.New(errs.CodeContentSlugAlreadyExists, "content slug already exists")
+	}
 }

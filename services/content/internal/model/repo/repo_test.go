@@ -114,6 +114,17 @@ func TestContentRepositories(t *testing.T) {
 	if total != 1 || len(relations) != 1 || relations[0].ID != relation.ID {
 		t.Fatalf("unexpected relation list: total=%d relations=%+v", total, relations)
 	}
+	staleRelation := *relation
+	if err := store.Relations.Delete(ctx, relation); err != nil {
+		t.Fatalf("delete relation failed: %v", err)
+	}
+	if err := store.Relations.Delete(ctx, &staleRelation); !repo.IsNotFound(err) {
+		t.Fatalf("expected stale relation delete to report not found, got %v", err)
+	}
+	relation.ID = 0
+	if err := store.Relations.Create(ctx, relation); err != nil {
+		t.Fatalf("recreate relation failed: %v", err)
+	}
 	if err := store.DB().WithContext(ctx).Delete(&entity.Item{}, "id = ?", relatedItem.ID).Error; err != nil {
 		t.Fatalf("delete related item failed: %v", err)
 	}

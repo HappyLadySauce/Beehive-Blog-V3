@@ -169,6 +169,48 @@ func TestMapUpstreamErrorPreservesRelationConflict(t *testing.T) {
 	}
 }
 
+func TestMapUpstreamErrorMapsAlreadyExistsFallbackByRoute(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		action string
+		route  string
+		code   errs.Code
+	}{
+		{
+			name:   "relation conflict",
+			action: "content_relation_create",
+			route:  "/api/v3/studio/content/items/:content_id/relations",
+			code:   errs.CodeContentRelationAlreadyExists,
+		},
+		{
+			name:   "tag conflict",
+			action: "content_tag_create",
+			route:  "/api/v3/studio/content/tags",
+			code:   errs.CodeContentTagAlreadyExists,
+		},
+		{
+			name:   "slug conflict",
+			action: "content_create",
+			route:  "/api/v3/studio/content/items",
+			code:   errs.CodeContentSlugAlreadyExists,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			mapped := MapUpstreamError(context.Background(), tc.action, tc.route, status.Error(codes.AlreadyExists, "already exists"))
+			if !errors.Is(mapped, errs.E(tc.code)) {
+				t.Fatalf("expected %d, got %v", tc.code, mapped)
+			}
+		})
+	}
+}
+
 func TestBuildCreateRequestRejectsInvalidEnum(t *testing.T) {
 	t.Parallel()
 
