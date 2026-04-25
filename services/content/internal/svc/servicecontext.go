@@ -199,7 +199,7 @@ func withOutboxDefaults(c config.OutboxConf) config.OutboxConf {
 		c.BatchSize = 50
 	}
 	if c.MaxAttempts <= 0 {
-		c.MaxAttempts = 5
+		c.MaxAttempts = 360
 	}
 	if c.RetryDelaySeconds <= 0 {
 		c.RetryDelaySeconds = 10

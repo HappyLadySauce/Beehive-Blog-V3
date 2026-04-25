@@ -46,7 +46,7 @@ func NewOutboxDispatcher(store *repo.Store, publisher mq.Publisher, clock func()
 		config.BatchSize = 50
 	}
 	if config.MaxAttempts <= 0 {
-		config.MaxAttempts = 5
+		config.MaxAttempts = 360
 	}
 	if config.RetryDelay <= 0 {
 		config.RetryDelay = 10 * time.Second
@@ -100,11 +100,7 @@ func (d *OutboxDispatcher) DispatchOnce(ctx context.Context) (int, error) {
 		if err := d.publishEvent(ctx, event); err != nil {
 			nextAttempts := event.Attempts + 1
 			nextRetryAt := d.clock().Add(d.config.RetryDelay)
-			maxAttempts := 0
-			if errors.Is(err, errPermanentOutboxPublish) {
-				maxAttempts = d.config.MaxAttempts
-			}
-			if markErr := d.store.Outbox.MarkPublishFailed(ctx, event.ID, nextAttempts, maxAttempts, nextRetryAt, truncateError(err.Error()), d.clock()); markErr != nil {
+			if markErr := d.store.Outbox.MarkPublishFailed(ctx, event.ID, nextAttempts, d.config.MaxAttempts, nextRetryAt, truncateError(err.Error()), d.clock()); markErr != nil {
 				markErrors = append(markErrors, markErr)
 				logs.Ctx(ctx).Error(
 					"content_outbox_event_mark_failed_publish_failed",

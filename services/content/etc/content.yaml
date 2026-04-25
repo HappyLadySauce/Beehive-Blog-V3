@@ -25,7 +25,7 @@ RabbitMQ:
 Outbox:
   DispatchIntervalSeconds: 2
   BatchSize: 50
-  MaxAttempts: 5
+  MaxAttempts: 360
   RetryDelaySeconds: 10
   ProcessingTimeoutSeconds: 60
 InternalAuthToken: change-me-in-local-env

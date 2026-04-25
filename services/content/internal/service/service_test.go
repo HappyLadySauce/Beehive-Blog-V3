@@ -532,7 +532,7 @@ func TestOutboxDispatcherRetriesPublishFailure(t *testing.T) {
 	}
 }
 
-func TestOutboxDispatcherKeepsTransientPublishFailureRetryableAfterMaxAttempts(t *testing.T) {
+func TestOutboxDispatcherMarksTransientPublishFailureFailedAtMaxAttempts(t *testing.T) {
 	t.Parallel()
 
 	deps := testkit.NewServiceDependencies(t)
@@ -549,8 +549,36 @@ func TestOutboxDispatcherKeepsTransientPublishFailureRetryableAfterMaxAttempts(t
 	if err != nil {
 		t.Fatalf("list events failed: %v", err)
 	}
-	if events[0].Status != repo.OutboxStatusPending || events[0].Attempts != 1 {
-		t.Fatalf("expected transient publish failure to stay pending, got %+v", events[0])
+	if events[0].Status != repo.OutboxStatusFailed || events[0].Attempts != 1 {
+		t.Fatalf("expected transient publish failure to become failed at max attempts, got %+v", events[0])
+	}
+}
+
+func TestOutboxDispatcherKeepsTransientPublishFailurePendingBeforeDefaultMaxAttempts(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	event := createOutboxEvent(t, deps.Store, 106, contentservice.EventContentUpdated)
+	if err := deps.Store.DB().WithContext(context.Background()).
+		Model(&entity.OutboxEvent{}).
+		Where("id = ?", event.ID).
+		Update("attempts", 358).Error; err != nil {
+		t.Fatalf("seed outbox attempts failed: %v", err)
+	}
+	publisher := &fakePublisher{err: errors.New("broker down")}
+	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
+		return time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, RetryDelay: time.Second})
+
+	if processed, err := dispatcher.DispatchOnce(context.Background()); err != nil || processed != 1 {
+		t.Fatalf("dispatch once failed: processed=%d err=%v", processed, err)
+	}
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), "content_item", 106)
+	if err != nil {
+		t.Fatalf("list events failed: %v", err)
+	}
+	if events[0].Status != repo.OutboxStatusPending || events[0].Attempts != 359 {
+		t.Fatalf("expected transient publish failure to stay pending before default max attempts, got %+v", events[0])
 	}
 }
 

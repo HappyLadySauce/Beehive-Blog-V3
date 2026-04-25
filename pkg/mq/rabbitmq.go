@@ -2,7 +2,10 @@ package mq
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"net"
 	"sync"
 	"time"
 
@@ -12,11 +15,60 @@ import (
 // RabbitMQPublisher publishes messages to a declared RabbitMQ exchange.
 // RabbitMQPublisher 将消息发布到已声明的 RabbitMQ exchange。
 type RabbitMQPublisher struct {
-	cfg     RabbitMQConfig
-	conn    *amqp.Connection
+	cfg         RabbitMQConfig
+	conn        rabbitConnection
+	channel     rabbitChannel
+	open        rabbitConnector
+	mu          sync.Mutex
+	reconnectMu sync.Mutex
+	closed      bool
+}
+
+type rabbitConnector func(ctx context.Context, cfg RabbitMQConfig) (rabbitConnection, rabbitChannel, error)
+
+type rabbitConnection interface {
+	IsClosed() bool
+	Close() error
+}
+
+type rabbitChannel interface {
+	IsClosed() bool
+	Close() error
+	PublishWithContext(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error
+}
+
+type amqpConnection struct {
+	conn *amqp.Connection
+}
+
+func (c *amqpConnection) IsClosed() bool {
+	return c == nil || c.conn == nil || c.conn.IsClosed()
+}
+
+func (c *amqpConnection) Close() error {
+	if c == nil || c.conn == nil {
+		return nil
+	}
+	return c.conn.Close()
+}
+
+type amqpChannel struct {
 	channel *amqp.Channel
-	mu      sync.Mutex
-	closed  bool
+}
+
+func (c *amqpChannel) IsClosed() bool {
+	return c == nil || c.channel == nil || c.channel.IsClosed()
+}
+
+func (c *amqpChannel) Close() error {
+	if c == nil || c.channel == nil {
+		return nil
+	}
+	return c.channel.Close()
+}
+
+func (c *amqpChannel) PublishWithContext(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error {
+	return c.channel.PublishWithContext(ctx, exchange, key, mandatory, immediate, msg)
 }
 
 // NewRabbitMQPublisher connects to RabbitMQ and declares the target exchange.
@@ -30,10 +82,10 @@ func NewRabbitMQPublisher(ctx context.Context, cfg RabbitMQConfig) (*RabbitMQPub
 	if err != nil {
 		return nil, err
 	}
-	return &RabbitMQPublisher{cfg: cfg, conn: conn, channel: ch}, nil
+	return &RabbitMQPublisher{cfg: cfg, conn: conn, channel: ch, open: openRabbitMQResources}, nil
 }
 
-func openRabbitMQResources(ctx context.Context, cfg RabbitMQConfig) (*amqp.Connection, *amqp.Channel, error) {
+func openRabbitMQResources(ctx context.Context, cfg RabbitMQConfig) (rabbitConnection, rabbitChannel, error) {
 	conn, err := dialRabbitMQ(ctx, cfg)
 	if err != nil {
 		return nil, nil, err
@@ -56,7 +108,7 @@ func openRabbitMQResources(ctx context.Context, cfg RabbitMQConfig) (*amqp.Conne
 		_ = conn.Close()
 		return nil, nil, fmt.Errorf("declare RabbitMQ exchange failed: %w", err)
 	}
-	return conn, ch, nil
+	return &amqpConnection{conn: conn}, &amqpChannel{channel: ch}, nil
 }
 
 func dialRabbitMQ(ctx context.Context, cfg RabbitMQConfig) (*amqp.Connection, error) {
@@ -123,8 +175,8 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, message Message) error 
 	}
 
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	if err := p.ensureOpenLocked(ctx); err != nil {
+		p.mu.Unlock()
 		return err
 	}
 	if err := p.channel.PublishWithContext(ctx, p.cfg.Exchange, message.RoutingKey, p.cfg.Mandatory, false, amqp.Publishing{
@@ -135,9 +187,13 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, message Message) error 
 		Headers:      headers,
 		Body:         message.Body,
 	}); err != nil {
-		p.closeResourcesLocked()
+		if shouldCloseAfterPublishError(ctx, err) {
+			p.closeResourcesLocked()
+		}
+		p.mu.Unlock()
 		return fmt.Errorf("publish RabbitMQ message failed: %w", err)
 	}
+	p.mu.Unlock()
 	return nil
 }
 
@@ -154,7 +210,13 @@ func (p *RabbitMQPublisher) Health(ctx context.Context) error {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.ensureOpenLocked(ctx)
+	if p.closed {
+		return fmt.Errorf("RabbitMQ publisher is closed")
+	}
+	if !p.isOpenLocked() {
+		return fmt.Errorf("RabbitMQ publisher is not connected")
+	}
+	return nil
 }
 
 // Close closes the channel and connection.
@@ -173,32 +235,80 @@ func (p *RabbitMQPublisher) ensureOpenLocked(ctx context.Context) error {
 	if p.closed {
 		return fmt.Errorf("RabbitMQ publisher is closed")
 	}
-	if p.conn != nil && !p.conn.IsClosed() && p.channel != nil && !p.channel.IsClosed() {
+	if p.isOpenLocked() {
 		return nil
 	}
 	p.closeResourcesLocked()
-	conn, ch, err := openRabbitMQResources(ctx, p.cfg)
+	p.mu.Unlock()
+
+	p.reconnectMu.Lock()
+	defer p.reconnectMu.Unlock()
+
+	p.mu.Lock()
+	if p.closed {
+		return fmt.Errorf("RabbitMQ publisher is closed")
+	}
+	if p.isOpenLocked() {
+		return nil
+	}
+	p.mu.Unlock()
+
+	conn, ch, err := p.connector()(ctx, p.cfg)
 	if err != nil {
+		p.mu.Lock()
 		return fmt.Errorf("reconnect RabbitMQ publisher failed: %w", err)
 	}
+
+	p.mu.Lock()
+	if p.closed {
+		_ = closeRabbitMQResources(conn, ch)
+		return fmt.Errorf("RabbitMQ publisher is closed")
+	}
+	p.closeResourcesLocked()
 	p.conn = conn
 	p.channel = ch
 	return nil
 }
 
+func (p *RabbitMQPublisher) connector() rabbitConnector {
+	if p.open != nil {
+		return p.open
+	}
+	return openRabbitMQResources
+}
+
+func (p *RabbitMQPublisher) isOpenLocked() bool {
+	return p.conn != nil && !p.conn.IsClosed() && p.channel != nil && !p.channel.IsClosed()
+}
+
 func (p *RabbitMQPublisher) closeResourcesLocked() error {
-	var err error
-	if p.channel != nil && !p.channel.IsClosed() {
-		if closeErr := p.channel.Close(); closeErr != nil {
-			err = closeErr
-		}
-	}
-	if p.conn != nil && !p.conn.IsClosed() {
-		if closeErr := p.conn.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}
+	err := closeRabbitMQResources(p.conn, p.channel)
 	p.channel = nil
 	p.conn = nil
 	return err
+}
+
+func closeRabbitMQResources(conn rabbitConnection, channel rabbitChannel) error {
+	var err error
+	if channel != nil && !channel.IsClosed() {
+		if closeErr := channel.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}
+	if conn != nil && !conn.IsClosed() {
+		if closeErr := conn.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}
+	return err
+}
+
+func shouldCloseAfterPublishError(ctx context.Context, err error) bool {
+	if ctx.Err() != nil {
+		return false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	return errors.Is(err, amqp.ErrClosed) || errors.Is(err, io.ErrClosedPipe) || errors.Is(err, net.ErrClosed)
 }
