@@ -392,31 +392,31 @@ type (
 )
 service gateway {
 	@doc (
-		bizCodeEnumDescription: "110101-invalid argument<br>110502-username already exists<br>110503-email already exists<br>119901-internal error"
+		description: "110101-invalid argument<br>110502-username already exists<br>110503-email already exists<br>119901-internal error"
 	)
 	@handler AuthRegister
 	post /register (AuthRegisterReq) returns (AuthRegisterResp)
 
 	@doc (
-		bizCodeEnumDescription: "110101-invalid argument<br>110201-invalid credentials<br>110205-account pending<br>110206-account disabled<br>110207-account locked<br>119901-internal error"
+		description: "110101-invalid argument<br>110201-invalid credentials<br>110205-account pending<br>110206-account disabled<br>110207-account locked<br>119901-internal error"
 	)
 	@handler AuthLogin
 	post /login (AuthLoginReq) returns (AuthLoginResp)
 
 	@doc (
-		bizCodeEnumDescription: "110101-invalid argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>119901-internal error"
+		description: "110101-invalid argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>119901-internal error"
 	)
 	@handler AuthSsoStart
 	post /sso/start (AuthSsoStartReq) returns (AuthSsoStartResp)
 
 	@doc (
-		bizCodeEnumDescription: "110101-invalid argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>110403-sso state invalid<br>119901-internal error"
+		description: "110101-invalid argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>110403-sso state invalid<br>119901-internal error"
 	)
 	@handler AuthSsoCallback
 	post /sso/callback (AuthSsoCallbackReq) returns (AuthSsoCallbackResp)
 
 	@doc (
-		bizCodeEnumDescription: "110101-invalid argument<br>110202-invalid refresh token<br>110203-refresh token expired<br>110204-session revoked<br>119901-internal error"
+		description: "110101-invalid argument<br>110202-invalid refresh token<br>110203-refresh token expired<br>110204-session revoked<br>119901-internal error"
 	)
 	@handler AuthRefresh
 	post /refresh (AuthRefreshReq) returns (AuthRefreshResp)
@@ -430,13 +430,13 @@ service gateway {
 )
 service gateway {
 	@doc (
-		bizCodeEnumDescription: "100201-authorization required<br>100202-invalid authorization scheme<br>100203-access token invalid<br>100204-access token inactive<br>109901-internal error"
+		description: "100201-authorization required<br>100202-invalid authorization scheme<br>100203-access token invalid<br>100204-access token inactive<br>109901-internal error"
 	)
 	@handler AuthLogout
 	post /logout (AuthLogoutReq) returns (AuthLogoutResp)
 
 	@doc (
-		bizCodeEnumDescription: "100201-authorization required<br>100202-invalid authorization scheme<br>100203-access token invalid<br>100204-access token inactive<br>109901-internal error"
+		description: "100201-authorization required<br>100202-invalid authorization scheme<br>100203-access token invalid<br>100204-access token inactive<br>109901-internal error"
 	)
 	@handler AuthMe
 	get /me (AuthMeReq) returns (AuthMeResp)
@@ -451,98 +451,98 @@ service gateway {
 service gateway {
 	@doc (
 		summary:                "List studio content items"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentList
 	get /items (ContentListReq) returns (ContentListResp)
 
 	@doc (
 		summary:                "Create content item"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120102-invalid content type<br>120104-invalid visibility<br>120105-invalid ai access<br>120502-slug already exists<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120102-invalid content type<br>120104-invalid visibility<br>120105-invalid ai access<br>120502-slug already exists<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentCreate
 	post /items (ContentCreateReq) returns (ContentDetailResp)
 
 	@doc (
 		summary:                "Get studio content item"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentGet
 	get /items/:content_id (ContentIdReq) returns (ContentDetailResp)
 
 	@doc (
 		summary:                "Update content item"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120102-invalid content type<br>120103-invalid content status<br>120104-invalid visibility<br>120105-invalid ai access<br>120401-invalid content transition<br>120501-content not found<br>120502-slug already exists<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120102-invalid content type<br>120103-invalid content status<br>120104-invalid visibility<br>120105-invalid ai access<br>120401-invalid content transition<br>120501-content not found<br>120502-slug already exists<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentUpdate
 	put /items/:content_id (ContentUpdateReq) returns (ContentDetailResp)
 
 	@doc (
 		summary:                "Archive content item"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120401-invalid content transition<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120401-invalid content transition<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentArchive
 	delete /items/:content_id (ContentIdReq) returns (ContentArchiveResp)
 
 	@doc (
 		summary:                "List content revisions"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentRevisionList
 	get /items/:content_id/revisions (ContentRevisionListReq) returns (ContentRevisionListResp)
 
 	@doc (
 		summary:                "Get content revision"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentRevisionGet
 	get /items/:content_id/revisions/:revision_id (ContentRevisionIdReq) returns (ContentRevisionDetailResp)
 
 	@doc (
 		summary:                "List content relations"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentRelationList
 	get /items/:content_id/relations (ContentRelationListReq) returns (ContentRelationListResp)
 
 	@doc (
 		summary:                "Create content relation"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>120508-content relation already exists<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120501-content not found<br>120508-content relation already exists<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentRelationCreate
 	post /items/:content_id/relations (ContentRelationCreateReq) returns (ContentRelationResp)
 
 	@doc (
 		summary:                "Delete content relation"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120507-content relation not found<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120507-content relation not found<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentRelationDelete
 	delete /items/:content_id/relations/:relation_id (ContentRelationIdReq) returns (ContentRelationDeleteResp)
 
 	@doc (
 		summary:                "List content tags"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentTagList
 	get /tags (ContentTagListReq) returns (ContentTagListResp)
 
 	@doc (
 		summary:                "Create content tag"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120504-tag already exists<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120504-tag already exists<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentTagCreate
 	post /tags (ContentTagCreateReq) returns (ContentTagResp)
 
 	@doc (
 		summary:                "Update content tag"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120503-tag not found<br>120504-tag already exists<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120503-tag not found<br>120504-tag already exists<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentTagUpdate
 	put /tags/:tag_id (ContentTagUpdateReq) returns (ContentTagResp)
 
 	@doc (
 		summary:                "Delete content tag"
-		bizCodeEnumDescription: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120503-tag not found<br>120506-tag is in use<br>100603-content service unavailable<br>129901-content internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>120101-invalid argument<br>120503-tag not found<br>120506-tag is in use<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler ContentTagDelete
 	delete /tags/:tag_id (ContentTagIdReq) returns (ContentTagDeleteResp)
@@ -556,14 +556,14 @@ service gateway {
 service gateway {
 	@doc (
 		summary:                "List public content items"
-		bizCodeEnumDescription: "120101-invalid argument<br>100603-content service unavailable<br>129901-content internal error"
+		description: "120101-invalid argument<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler PublicContentList
 	get /items (PublicContentListReq) returns (ContentListResp)
 
 	@doc (
 		summary:                "Get public content item by slug"
-		bizCodeEnumDescription: "120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
+		description: "120101-invalid argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content internal error"
 	)
 	@handler PublicContentGet
 	get /items/:slug (PublicContentSlugReq) returns (ContentDetailResp)
@@ -576,19 +576,19 @@ service gateway {
 )
 service gateway {
 	@doc (
-		bizCodeEnumDescription: "109901-internal error"
+		description: "109901-internal error"
 	)
 	@handler Healthz
 	get /healthz returns (HealthzResp)
 
 	@doc (
-		bizCodeEnumDescription: "100401-gateway not ready<br>100601-auth service unavailable<br>100603-content service unavailable<br>100602-upstream timeout<br>109901-internal error"
+		description: "100401-gateway not ready<br>100601-auth service unavailable<br>100603-content service unavailable<br>100602-upstream timeout<br>109901-internal error"
 	)
 	@handler Readyz
 	get /readyz returns (ReadyzResp)
 
 	@doc (
-		bizCodeEnumDescription: "109901-internal error"
+		description: "109901-internal error"
 	)
 	@handler Ws
 	get /ws returns (WsStubResp)

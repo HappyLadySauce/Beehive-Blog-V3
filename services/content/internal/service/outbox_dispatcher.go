@@ -100,7 +100,11 @@ func (d *OutboxDispatcher) DispatchOnce(ctx context.Context) (int, error) {
 		if err := d.publishEvent(ctx, event); err != nil {
 			nextAttempts := event.Attempts + 1
 			nextRetryAt := d.clock().Add(d.config.RetryDelay)
-			if markErr := d.store.Outbox.MarkPublishFailed(ctx, event.ID, nextAttempts, d.config.MaxAttempts, nextRetryAt, truncateError(err.Error()), d.clock()); markErr != nil {
+			maxAttempts := d.config.MaxAttempts
+			if errors.Is(err, errPermanentOutboxPublish) {
+				maxAttempts = nextAttempts
+			}
+			if markErr := d.store.Outbox.MarkPublishFailed(ctx, event.ID, nextAttempts, maxAttempts, nextRetryAt, truncateError(err.Error()), d.clock()); markErr != nil {
 				markErrors = append(markErrors, markErr)
 				logs.Ctx(ctx).Error(
 					"content_outbox_event_mark_failed_publish_failed",

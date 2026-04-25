@@ -5,6 +5,8 @@ import type {
   AuthLogoutRequest,
   AuthLogoutResponse,
   AuthMeResponse,
+  AuthRefreshRequest,
+  AuthRefreshResponse,
   AuthRegisterRequest,
   AuthRegisterResponse,
   AuthSessionView,
@@ -20,6 +22,7 @@ export interface AuthRequestOptions {
 export interface AuthApi {
   register(payload: AuthRegisterRequest): Promise<AuthRegisterResponse>;
   login(payload: AuthLoginRequest): Promise<AuthLoginResponse>;
+  refresh(payload: AuthRefreshRequest): Promise<AuthRefreshResponse>;
   me(options?: AuthRequestOptions): Promise<AuthMeResponse>;
   logout(payload?: AuthLogoutRequest, options?: AuthRequestOptions): Promise<AuthLogoutResponse>;
 }
@@ -80,6 +83,12 @@ function createMockAuthApi(): AuthApi {
       currentUser = buildMockUser(payload.login_identifier);
       return buildAuthResponse(currentUser);
     },
+    async refresh(payload) {
+      if (!payload.refresh_token.startsWith('mock_refresh_')) {
+        throw new Error('Invalid refresh token');
+      }
+      return buildAuthResponse(currentUser);
+    },
     async me() {
       return { user: currentUser };
     },
@@ -99,6 +108,12 @@ function createLiveAuthApi(): AuthApi {
     },
     login(payload) {
       return requestJson<AuthLoginResponse>('/api/v3/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    refresh(payload) {
+      return requestJson<AuthRefreshResponse>('/api/v3/auth/refresh', {
         method: 'POST',
         body: JSON.stringify(payload),
       });

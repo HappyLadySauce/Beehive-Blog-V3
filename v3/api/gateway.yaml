@@ -20,6 +20,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: 110101-invalid argument<br>110201-invalid credentials<br>110205-account
+        pending<br>110206-account disabled<br>110207-account locked<br>119901-internal
+        error
       operationId: authAuthLogin
       parameters:
       - in: body
@@ -155,6 +158,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: 100201-authorization required<br>100202-invalid authorization scheme<br>100203-access
+        token invalid<br>100204-access token inactive<br>109901-internal error
       operationId: authAuthLogout
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -190,6 +195,8 @@ paths:
       - Authentication
   /api/v3/auth/me:
     get:
+      description: 100201-authorization required<br>100202-invalid authorization scheme<br>100203-access
+        token invalid<br>100204-access token inactive<br>109901-internal error
       operationId: authAuthMe
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -245,6 +252,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: 110101-invalid argument<br>110202-invalid refresh token<br>110203-refresh
+        token expired<br>110204-session revoked<br>119901-internal error
       operationId: authAuthRefresh
       parameters:
       - in: body
@@ -333,6 +342,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: 110101-invalid argument<br>110502-username already exists<br>110503-email
+        already exists<br>119901-internal error
       operationId: authAuthRegister
       parameters:
       - in: body
@@ -458,6 +469,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: 110101-invalid argument<br>110401-sso provider disabled<br>110402-sso
+        provider not ready<br>110403-sso state invalid<br>119901-internal error
       operationId: authAuthSsoCallback
       parameters:
       - in: body
@@ -605,6 +618,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: 110101-invalid argument<br>110401-sso provider disabled<br>110402-sso
+        provider not ready<br>119901-internal error
       operationId: authAuthSsoStart
       parameters:
       - in: body
@@ -653,6 +668,8 @@ paths:
       - Authentication
   /api/v3/public/content/items:
     get:
+      description: 120101-invalid argument<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: publiccontentPublicContentList
       parameters:
       - allowEmptyValue: true
@@ -818,6 +835,8 @@ paths:
       - Public Content
   /api/v3/public/content/items/{slug}:
     get:
+      description: 120101-invalid argument<br>120501-content not found<br>100603-content
+        service unavailable<br>129901-content internal error
       operationId: publiccontentPublicContentGet
       parameters:
       - example: building-beehive-blog-v3
@@ -986,6 +1005,9 @@ paths:
       - Public Content
   /api/v3/studio/content/items:
     get:
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>100603-content service unavailable<br>129901-content internal
+        error
       operationId: contentContentList
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -1177,6 +1199,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120102-invalid content type<br>120104-invalid visibility<br>120105-invalid
+        ai access<br>120502-slug already exists<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentCreate
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -1434,6 +1460,9 @@ paths:
     delete:
       consumes:
       - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120401-invalid content transition<br>120501-content not found<br>100603-content
+        service unavailable<br>129901-content internal error
       operationId: contentContentArchive
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -1464,6 +1493,9 @@ paths:
       tags:
       - Studio Content
     get:
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentGet
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -1639,6 +1671,11 @@ paths:
     put:
       consumes:
       - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120102-invalid content type<br>120103-invalid content status<br>120104-invalid
+        visibility<br>120105-invalid ai access<br>120401-invalid content transition<br>120501-content
+        not found<br>120502-slug already exists<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentUpdate
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -1898,6 +1935,9 @@ paths:
       - Studio Content
   /api/v3/studio/content/items/{content_id}/relations:
     get:
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentRelationList
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2012,6 +2052,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120501-content not found<br>120508-content relation already exists<br>100603-content
+        service unavailable<br>129901-content internal error
       operationId: contentContentRelationCreate
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2127,6 +2170,9 @@ paths:
     delete:
       consumes:
       - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120507-content relation not found<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentRelationDelete
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2163,6 +2209,9 @@ paths:
       - Studio Content
   /api/v3/studio/content/items/{content_id}/revisions:
     get:
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentRevisionList
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2255,6 +2304,9 @@ paths:
       - Studio Content
   /api/v3/studio/content/items/{content_id}/revisions/{revision_id}:
     get:
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120501-content not found<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentRevisionGet
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2349,6 +2401,9 @@ paths:
       - Studio Content
   /api/v3/studio/content/tags:
     get:
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>100603-content service unavailable<br>129901-content internal
+        error
       operationId: contentContentTagList
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2431,6 +2486,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120504-tag already exists<br>100603-content service unavailable<br>129901-content
+        internal error
       operationId: contentContentTagCreate
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2507,6 +2565,9 @@ paths:
     delete:
       consumes:
       - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120503-tag not found<br>120506-tag is in use<br>100603-content
+        service unavailable<br>129901-content internal error
       operationId: contentContentTagDelete
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2539,6 +2600,9 @@ paths:
     put:
       consumes:
       - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
+        argument<br>120503-tag not found<br>120504-tag already exists<br>100603-content
+        service unavailable<br>129901-content internal error
       operationId: contentContentTagUpdate
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -2618,6 +2682,7 @@ paths:
       - Studio Content
   /healthz:
     get:
+      description: 109901-internal error
       operationId: opsHealthz
       produces:
       - application/json
@@ -2637,6 +2702,8 @@ paths:
       - Operations
   /readyz:
     get:
+      description: 100401-gateway not ready<br>100601-auth service unavailable<br>100603-content
+        service unavailable<br>100602-upstream timeout<br>109901-internal error
       operationId: opsReadyz
       produces:
       - application/json
@@ -2656,6 +2723,7 @@ paths:
       - Operations
   /ws:
     get:
+      description: 109901-internal error
       operationId: opsWs
       produces:
       - application/json
@@ -2684,7 +2752,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-24 22:43:57"
+x-date: "2026-04-25 12:13:38"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

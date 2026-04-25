@@ -45,13 +45,16 @@ export const router = createRouter({
   },
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (!to.matched.some((route) => route.meta.requiresAuth === true)) {
     return true;
   }
 
   const authStore = useAuthStore();
   if (authStore.isAuthenticated) {
+    return true;
+  }
+  if (await authStore.restoreSession()) {
     return true;
   }
 

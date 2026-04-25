@@ -187,7 +187,7 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, message Message) error 
 		Headers:      headers,
 		Body:         message.Body,
 	}); err != nil {
-		if shouldCloseAfterPublishError(ctx, err) {
+		if shouldCloseAfterPublishError(ctx, err, p.conn, p.channel) {
 			p.closeResourcesLocked()
 		}
 		p.mu.Unlock()
@@ -303,12 +303,15 @@ func closeRabbitMQResources(conn rabbitConnection, channel rabbitChannel) error 
 	return err
 }
 
-func shouldCloseAfterPublishError(ctx context.Context, err error) bool {
+func shouldCloseAfterPublishError(ctx context.Context, err error, conn rabbitConnection, channel rabbitChannel) bool {
 	if ctx.Err() != nil {
 		return false
 	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return false
 	}
-	return errors.Is(err, amqp.ErrClosed) || errors.Is(err, io.ErrClosedPipe) || errors.Is(err, net.ErrClosed)
+	if errors.Is(err, amqp.ErrClosed) || errors.Is(err, io.ErrClosedPipe) || errors.Is(err, net.ErrClosed) {
+		return true
+	}
+	return conn == nil || conn.IsClosed() || channel == nil || channel.IsClosed()
 }

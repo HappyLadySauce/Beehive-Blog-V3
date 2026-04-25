@@ -55,6 +55,12 @@ export interface AuthLoginRequest {
 
 export type AuthLoginResponse = AuthRegisterResponse;
 
+export interface AuthRefreshRequest {
+  refresh_token: string;
+}
+
+export type AuthRefreshResponse = AuthRegisterResponse;
+
 export interface AuthMeResponse {
   user: AuthUserProfile;
 }

@@ -153,6 +153,25 @@ func TestRabbitMQPublisherPublishNonConnectionErrorKeepsHealthyResources(t *test
 	}
 }
 
+func TestRabbitMQPublisherPublishErrorClosesResourcesWhenChannelBecameClosed(t *testing.T) {
+	t.Parallel()
+
+	conn := &fakeRabbitConnection{}
+	channel := &fakeRabbitChannel{publishErr: errors.New("write failed"), closeOnPublish: true}
+	publisher := &RabbitMQPublisher{
+		cfg:     RabbitMQConfig{Exchange: "beehive.test.events"},
+		conn:    conn,
+		channel: channel,
+	}
+
+	if err := publisher.Publish(context.Background(), Message{ID: "evt-write-failed", RoutingKey: "content.created"}); err == nil {
+		t.Fatalf("expected publish error")
+	}
+	if got := conn.closeCount(); got != 1 {
+		t.Fatalf("expected connection to close after channel becomes closed, got %d closes", got)
+	}
+}
+
 func TestRabbitMQPublisherPublishClosedErrorClosesResources(t *testing.T) {
 	t.Parallel()
 
@@ -237,11 +256,12 @@ func (c *fakeRabbitConnection) closeCount() int {
 }
 
 type fakeRabbitChannel struct {
-	mu         sync.Mutex
-	closed     bool
-	closeN     int
-	publishErr error
-	publishN   int
+	mu             sync.Mutex
+	closed         bool
+	closeN         int
+	publishErr     error
+	publishN       int
+	closeOnPublish bool
 }
 
 func (c *fakeRabbitChannel) IsClosed() bool {
@@ -262,6 +282,9 @@ func (c *fakeRabbitChannel) PublishWithContext(context.Context, string, string, 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.publishN++
+	if c.closeOnPublish {
+		c.closed = true
+	}
 	return c.publishErr
 }
 

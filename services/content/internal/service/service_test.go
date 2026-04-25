@@ -590,7 +590,7 @@ func TestOutboxDispatcherMarksPermanentPublishFailureFailedAtMaxAttempts(t *test
 	publisher := &fakePublisher{}
 	dispatcher := contentservice.NewOutboxDispatcher(deps.Store, publisher, func() time.Time {
 		return time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
-	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, MaxAttempts: 1, RetryDelay: time.Second})
+	}, contentservice.OutboxDispatcherConfig{BatchSize: 10, MaxAttempts: 360, RetryDelay: time.Second})
 
 	if processed, err := dispatcher.DispatchOnce(context.Background()); err != nil || processed != 1 {
 		t.Fatalf("dispatch once failed: processed=%d err=%v", processed, err)
