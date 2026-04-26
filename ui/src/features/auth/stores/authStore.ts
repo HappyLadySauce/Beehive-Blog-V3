@@ -83,7 +83,8 @@ export const useAuthStore = defineStore('auth', {
       }
       try {
         const response = await authApi.refresh({ refresh_token: refreshToken });
-        this.applySession(response.access_token, response.refresh_token, response.user);
+        const profile = await authApi.me({ accessToken: response.access_token });
+        this.applySession(response.access_token, response.refresh_token, profile.user);
         return true;
       } catch {
         this.clearSession();

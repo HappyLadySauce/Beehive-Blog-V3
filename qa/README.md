@@ -163,12 +163,13 @@ uv run --project qa locust -f qa/perf/locustfile.py --list
 
 推荐按下面顺序使用这套 QA 工程：
 
-1. 启动基础设施
+1. 启动基础设施（含 Postgres、Redis、RabbitMQ、Etcd 等）
 2. 启动 `identity`
-3. 启动 `gateway`
-4. 运行 `check_env`
-5. 运行 pytest 回归
-6. 需要时再运行 Locust
+3. 启动 `content`（`/readyz` 会探活 identity 与 content，仅起 gateway 会 503）
+4. 启动 `gateway`
+5. 运行 `check_env`
+6. 运行 pytest 回归
+7. 需要时再运行 Locust
 
 ## 当前测试范围
 
@@ -198,7 +199,7 @@ uv run --project qa locust -f qa/perf/locustfile.py --list
 
 SSO 测试当前默认关闭，只有在显式开启相关环境变量时才会参与执行。
 
-Content studio 用例默认不执行，需在环境变量开启后由 admin 账号协作运行。  
+Content studio 用例默认不执行，需在环境变量开启后由 admin 账号协作运行。
 若未配置 admin 凭证，仅公开读取和鉴权边界测试会运行。
 
 ## 注意事项

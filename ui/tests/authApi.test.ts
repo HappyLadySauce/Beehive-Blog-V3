@@ -26,7 +26,7 @@ describe('authApi', () => {
 
     expect(response.access_token).toContain('mock_access');
     expect(response.refresh_token).toContain('mock_refresh');
-    expect(response.user.email).toBe('tester@beehive.local');
+    expect('user' in response).toBe(false);
   });
 
   it('uses live adapter when requested', async () => {
@@ -70,15 +70,6 @@ describe('authApi', () => {
           expires_in: 900,
           token_type: 'Bearer',
           session_id: 'session_live_001',
-          user: {
-            user_id: 'user_live_001',
-            username: 'live',
-            email: 'live@beehive.local',
-            nickname: 'Live',
-            avatar_url: '',
-            role: 'member',
-            status: 'active',
-          },
           session: {
             session_id: 'session_live_001',
             user_id: 'user_live_001',

@@ -39,8 +39,6 @@ from qa.clients.models import (
 )
 from qa.config import QASettings, load_settings
 
-ReadyzResponse = ReadyzResponse
-
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
@@ -132,7 +130,7 @@ class GatewayClient:
     def healthz(self) -> EndpointResult[HealthzResponse]:
         return self.send("GET", "/healthz", success_model=HealthzResponse)
 
-    def readyz(self):
+    def readyz(self) -> EndpointResult[ReadyzResponse]:
         return self.send("GET", "/readyz", success_model=ReadyzResponse)
 
     def register(self, payload: dict[str, Any]) -> EndpointResult[AuthRegisterResponse]:

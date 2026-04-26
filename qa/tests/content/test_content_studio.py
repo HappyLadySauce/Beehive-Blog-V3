@@ -23,6 +23,7 @@ def test_studio_content_happy_path(
     created_content_ids: list[str] = []
     created_tag_ids: list[str] = []
     created_relation_id: str | None = None
+    primary_id: str | None = None
 
     primary_content = build_unique_content(qa_settings)
     relation_content = build_unique_content(qa_settings)
@@ -130,8 +131,8 @@ def test_studio_content_happy_path(
         created_content_ids.remove(relation_content_id)
 
     finally:
-        if created_relation_id and created_content_ids:
-            content_flows.delete_relation(admin_token, created_content_ids[0], created_relation_id)
+        if created_relation_id and primary_id:
+            content_flows.delete_relation(admin_token, primary_id, created_relation_id)
 
         for content_id in created_content_ids:
             content_flows.archive_item(admin_token, content_id)

@@ -29,8 +29,6 @@ from .models import (
     ReadyzResponse,
 )
 
-ReadyzResponse = ReadyzResponse
-
 __all__ = [
     "EndpointResult",
     "GatewayClient",

@@ -59,7 +59,14 @@ export interface AuthRefreshRequest {
   refresh_token: string;
 }
 
-export type AuthRefreshResponse = AuthRegisterResponse;
+export interface AuthRefreshResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  token_type: string;
+  session_id: string;
+  session: AuthSessionView;
+}
 
 export interface AuthMeResponse {
   user: AuthUserProfile;

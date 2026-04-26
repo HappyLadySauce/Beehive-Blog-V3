@@ -34,6 +34,7 @@ describe('authStore', () => {
     expect(restored).toBe(true);
     expect(initialStore.isAuthenticated).toBe(true);
     expect(initialStore.accessToken).toContain('mock_access');
+    expect(initialStore.currentUser?.email).toBe('creator@beehive.local');
   });
 
   it('clears invalid refresh tokens when restore fails', async () => {

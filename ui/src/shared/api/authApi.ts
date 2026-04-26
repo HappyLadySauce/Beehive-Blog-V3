@@ -67,6 +67,17 @@ function buildAuthResponse(user: AuthUserProfile): AuthRegisterResponse {
   };
 }
 
+function buildRefreshResponse(user: AuthUserProfile): AuthRefreshResponse {
+  return {
+    access_token: `mock_access_${user.user_id}`,
+    refresh_token: `mock_refresh_${user.user_id}`,
+    expires_in: 900,
+    token_type: 'Bearer',
+    session_id: 'sess_mock_001',
+    session: buildMockSession(user),
+  };
+}
+
 function createMockAuthApi(): AuthApi {
   let currentUser = buildMockUser('demo@beehive.local');
 
@@ -87,7 +98,7 @@ function createMockAuthApi(): AuthApi {
       if (!payload.refresh_token.startsWith('mock_refresh_')) {
         throw new Error('Invalid refresh token');
       }
-      return buildAuthResponse(currentUser);
+      return buildRefreshResponse(currentUser);
     },
     async me() {
       return { user: currentUser };

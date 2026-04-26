@@ -95,11 +95,6 @@ class ReadyzResponse(StrictModel):
     status: str
 
 
-# Compatibility alias: keep the typo-safe symbol for any historical callers.
-# 兼容历史引用的拼写错误符号，避免历史代码受影响。
-ReadyzResponse = ReadyzResponse
-
-
 class ContentTagView(StrictModel):
     """
     Tag object exposed by content and public content APIs.
