@@ -11,7 +11,7 @@ from qa.clients import GatewayClient
 from qa.clients.exceptions import GatewayClientError
 from qa.config import QASettings, load_settings
 from qa.fixtures import AuthFixtureUser, build_unique_user
-from qa.flows import AuthFlows, SSOFlows
+from qa.flows import AuthFlowContext, AuthFlows, ContentFlows, SSOFlows
 
 
 @pytest.fixture(scope="session")
@@ -80,6 +80,58 @@ def sso_flows(gateway_client: GatewayClient) -> SSOFlows:
 
 
 @pytest.fixture
+def content_flows(gateway_client: GatewayClient) -> ContentFlows:
+    """
+    Provide content flow helpers.
+    提供内容链路辅助封装。
+    """
+
+    return ContentFlows(gateway_client)
+
+
+@pytest.fixture
+def admin_auth_context(qa_settings: QASettings, gateway_client: GatewayClient) -> AuthFlowContext:
+    """
+    Build an admin auth context or skip studio tests when unavailable.
+    构建 admin 鉴权上下文，不可用则跳过 studio 测试。
+    """
+
+    if not qa_settings.enable_content_studio_tests:
+        pytest.skip("content studio tests are disabled in this QA environment.")
+
+    if not qa_settings.admin_login_identifier or not qa_settings.admin_password:
+        pytest.skip(
+            "content studio tests require BEEHIVE_QA_ADMIN_LOGIN_IDENTIFIER and BEEHIVE_QA_ADMIN_PASSWORD."
+        )
+
+    login = gateway_client.login(
+        {
+            "login_identifier": qa_settings.admin_login_identifier,
+            "password": qa_settings.admin_password,
+            "client_type": "web",
+            "device_id": "qa-admin-device",
+            "device_name": "QA Admin Device",
+            "user_agent": "beehive-qa/1.0",
+        }
+    )
+
+    if not login.ok or login.data is None:
+        pytest.skip(f"admin login failed: status={login.response.status_code} payload={login.payload}")
+
+    admin_profile = gateway_client.me(login.data.access_token, login.data.token_type)
+    if not admin_profile.ok or admin_profile.data is None:
+        pytest.skip(f"admin /api/v3/auth/me failed: status={admin_profile.response.status_code} payload={admin_profile.payload}")
+
+    if admin_profile.data.user.role.lower() != "admin":
+        pytest.skip("admin test user is not role=admin in this environment.")
+
+    if qa_settings.admin_login_email_like and qa_settings.admin_login_email_like.lower() not in admin_profile.data.user.email.lower():
+        pytest.skip("admin login identity does not match BEEHIVE_QA_ADMIN_LOGIN_EMAIL_LIKE.")
+
+    return AuthFlowContext.from_auth_response(login.data)
+
+
+@pytest.fixture
 def unique_user(qa_settings: QASettings) -> AuthFixtureUser:
     """
     Build a unique user fixture for the current test.
@@ -87,4 +139,3 @@ def unique_user(qa_settings: QASettings) -> AuthFixtureUser:
     """
 
     return build_unique_user(qa_settings)
-

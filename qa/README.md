@@ -81,6 +81,14 @@ Copy-Item qa/.env.example qa/.env
   - 测试邮箱域名
 - `BEEHIVE_QA_ENABLE_SSO_TESTS`
   - 是否启用 SSO 回归测试
+- `BEEHIVE_QA_ENABLE_CONTENT_STUDIO_TESTS`
+  - 是否启用 content 的 studio 管理回归测试
+- `BEEHIVE_QA_ADMIN_LOGIN_IDENTIFIER`
+  - 用于 studio 回归的管理员登录标识（邮箱或用户名）
+- `BEEHIVE_QA_ADMIN_PASSWORD`
+  - 用于 studio 回归的管理员密码
+- `BEEHIVE_QA_ADMIN_LOGIN_EMAIL_LIKE`
+  - 可选管理员身份校验字段，若设置且 `admin` 用户邮箱不包含该关键字则跳过 studio 测试
 
 ## 运行环境探测
 
@@ -110,6 +118,18 @@ uv run --project qa pytest qa/tests
 
 ```powershell
 uv run --project qa pytest qa/tests/auth -q
+```
+
+只跑 content 回归：
+
+```powershell
+uv run --project qa pytest qa/tests/content -q
+```
+
+认证与 content 一起跑：
+
+```powershell
+uv run --project qa pytest qa/tests/auth qa/tests/content -q
 ```
 
 只做测试收集，不真正执行：
@@ -161,8 +181,25 @@ uv run --project qa locust -f qa/perf/locustfile.py --list
 - `POST /api/v3/auth/refresh`
 - `POST /api/v3/auth/logout`
 - `GET /api/v3/auth/me`
+- `GET /api/v3/public/content/items`
+- `GET /api/v3/public/content/items/:slug`
+- `GET /api/v3/studio/content/tags`
+- `POST /api/v3/studio/content/tags`
+- `GET /api/v3/studio/content/items`
+- `POST /api/v3/studio/content/items`
+- `GET /api/v3/studio/content/items/:content_id`
+- `PUT /api/v3/studio/content/items/:content_id`
+- `DELETE /api/v3/studio/content/items/:content_id`
+- `GET /api/v3/studio/content/items/:content_id/revisions`
+- `GET /api/v3/studio/content/items/:content_id/revisions/:revision_id`
+- `GET /api/v3/studio/content/items/:content_id/relations`
+- `POST /api/v3/studio/content/items/:content_id/relations`
+- `DELETE /api/v3/studio/content/items/:content_id/relations/:relation_id`
 
 SSO 测试当前默认关闭，只有在显式开启相关环境变量时才会参与执行。
+
+Content studio 用例默认不执行，需在环境变量开启后由 admin 账号协作运行。  
+若未配置 admin 凭证，仅公开读取和鉴权边界测试会运行。
 
 ## 注意事项
 

@@ -35,6 +35,10 @@ class QASettings(BaseModel):
     github_enabled: bool = Field(default=False)
     qq_enabled: bool = Field(default=False)
     wechat_enabled: bool = Field(default=False)
+    enable_content_studio_tests: bool = Field(default=False)
+    admin_login_identifier: str | None = Field(default=None)
+    admin_password: str | None = Field(default=None)
+    admin_login_email_like: str | None = Field(default=None)
 
     @property
     def normalized_base_url(self) -> str:
@@ -55,16 +59,21 @@ def load_settings() -> QASettings:
 
     load_dotenv(ENV_FILE, override=False)
 
+    bool_env = lambda value: str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
     return QASettings(
         base_url=os.getenv("BEEHIVE_QA_BASE_URL", "http://127.0.0.1:8888"),
         timeout_seconds=float(os.getenv("BEEHIVE_QA_TIMEOUT_SECONDS", "5")),
-        verify_ssl=os.getenv("BEEHIVE_QA_VERIFY_SSL", "false").strip().lower() in {"1", "true", "yes", "on"},
+        verify_ssl=bool_env(os.getenv("BEEHIVE_QA_VERIFY_SSL", "false")),
         default_password=os.getenv("BEEHIVE_QA_DEFAULT_PASSWORD", "Str0ngP@ssw0rd!"),
         test_username_prefix=os.getenv("BEEHIVE_QA_TEST_USERNAME_PREFIX", "qa_user"),
         test_email_domain=os.getenv("BEEHIVE_QA_TEST_EMAIL_DOMAIN", "example.test"),
-        enable_sso_tests=os.getenv("BEEHIVE_QA_ENABLE_SSO_TESTS", "false").strip().lower() in {"1", "true", "yes", "on"},
-        github_enabled=os.getenv("BEEHIVE_QA_GITHUB_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"},
-        qq_enabled=os.getenv("BEEHIVE_QA_QQ_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"},
-        wechat_enabled=os.getenv("BEEHIVE_QA_WECHAT_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"},
+        enable_sso_tests=bool_env(os.getenv("BEEHIVE_QA_ENABLE_SSO_TESTS", "false")),
+        github_enabled=bool_env(os.getenv("BEEHIVE_QA_GITHUB_ENABLED", "false")),
+        qq_enabled=bool_env(os.getenv("BEEHIVE_QA_QQ_ENABLED", "false")),
+        wechat_enabled=bool_env(os.getenv("BEEHIVE_QA_WECHAT_ENABLED", "false")),
+        enable_content_studio_tests=bool_env(os.getenv("BEEHIVE_QA_ENABLE_CONTENT_STUDIO_TESTS", "false")),
+        admin_login_identifier=(os.getenv("BEEHIVE_QA_ADMIN_LOGIN_IDENTIFIER") or None),
+        admin_password=(os.getenv("BEEHIVE_QA_ADMIN_PASSWORD") or None),
+        admin_login_email_like=(os.getenv("BEEHIVE_QA_ADMIN_LOGIN_EMAIL_LIKE") or None),
     )
-
