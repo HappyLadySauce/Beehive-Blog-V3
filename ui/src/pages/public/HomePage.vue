@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, BrainCircuit, Layers3, RefreshCw, Sparkles } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 import ContentPreviewCard from '@/features/content-preview/components/ContentPreviewCard.vue';
 import { contentPreviewApi } from '@/shared/api/contentPreviewApi';
@@ -15,11 +16,13 @@ import BaseCard from '@/shared/components/BaseCard.vue';
 import StatusAlert from '@/shared/components/StatusAlert.vue';
 
 const latestItems = ref<ContentSummaryView[]>([]);
+const route = useRoute();
 const isLoading = ref(false);
 const errorMessage = ref('');
 const modeLabel = computed(() => (appConfig.apiMode === 'live' ? 'live' : 'mock'));
 const featuredItem = computed(() => latestItems.value[0] ?? null);
 const previewItems = computed(() => latestItems.value.slice(1, 4));
+const studioForbidden = computed(() => route.query.studio === 'forbidden');
 
 function errorLabel(error: unknown): string {
   if (error instanceof GatewayHttpError && error.response) {
@@ -50,6 +53,9 @@ onMounted(() => {
 
 <template>
   <main>
+    <div v-if="studioForbidden" class="mx-auto max-w-1180px px-4 pt-4 sm:px-6 lg:px-8">
+      <StatusAlert tone="warning" title="无法进入 Studio" description="Studio 仅管理员可访问。普通账号可以继续浏览公开内容。" />
+    </div>
     <section class="bb-grid-bg border-b border-brand-line bg-brand-surface">
       <div class="mx-auto grid max-w-1180px gap-8 px-4 py-10 sm:px-6 md:grid-cols-[0.95fr_1.05fr] md:py-14 lg:px-8">
         <div class="grid content-center gap-6">

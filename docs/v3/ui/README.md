@@ -70,3 +70,5 @@ VITE_GATEWAY_BASE_URL=
 ```
 
 auth 联调只要求 `gateway` 和 `identity` 链路可用；完整 `/readyz` 和 live 内容列表需要启动 `content` RPC。开发环境默认留空 `VITE_GATEWAY_BASE_URL`，让 `/api` 请求走 Vite proxy；部署到已配置 CORS 或同源网关时再填写绝对地址。
+
+Studio 是 admin 专属区域。公开注册只创建 `member`，注册成功回到 Public Web；本地开发默认 admin 为 `admin@beehive.local / Admin@123456`，由 `sql/seeds/v3/identity/001_dev_admin.sql` 在删库重刷后显式写入。

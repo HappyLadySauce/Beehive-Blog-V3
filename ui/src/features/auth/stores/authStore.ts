@@ -18,6 +18,10 @@ function normalizeError(error: unknown): string {
   return 'Unexpected authentication error';
 }
 
+export function normalizeAuthRole(role: string | undefined): string {
+  return (role ?? '').toLowerCase().replace(/^role_/, '');
+}
+
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     accessToken: '',
@@ -27,6 +31,7 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isAuthenticated: (state) => state.accessToken.length > 0 && state.currentUser !== null,
+    isAdmin: (state) => normalizeAuthRole(state.currentUser?.role) === 'admin',
     refreshToken: () => tokenStorage.readRefreshToken(),
   },
   actions: {
@@ -77,6 +82,9 @@ export const useAuthStore = defineStore('auth', {
       if (this.isAuthenticated) {
         return true;
       }
+      return this.refreshSession();
+    },
+    async refreshSession(): Promise<boolean> {
       const refreshToken = tokenStorage.readRefreshToken();
       if (!refreshToken) {
         return false;

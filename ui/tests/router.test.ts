@@ -18,11 +18,11 @@ describe('router auth guard', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/studio/content');
   });
 
-  it('allows authenticated studio visits', async () => {
+  it('allows admin studio visits', async () => {
     const authStore = useAuthStore();
     await authStore.login({
-      login_identifier: 'creator@beehive.local',
-      password: 'Demo@123456',
+      login_identifier: 'admin@beehive.local',
+      password: 'Admin@123456',
     });
 
     await router.push('/studio/content');
@@ -30,11 +30,24 @@ describe('router auth guard', () => {
     expect(router.currentRoute.value.name).toBe('studio-content');
   });
 
+  it('redirects member studio visits back to public home', async () => {
+    const authStore = useAuthStore();
+    await authStore.login({
+      login_identifier: 'member@beehive.local',
+      password: 'Demo@123456',
+    });
+
+    await router.push('/studio/content');
+
+    expect(router.currentRoute.value.name).toBe('public-home');
+    expect(router.currentRoute.value.query.studio).toBe('forbidden');
+  });
+
   it('restores session before allowing studio visits after refresh', async () => {
     const authStore = useAuthStore();
     await authStore.login({
-      login_identifier: 'creator@beehive.local',
-      password: 'Demo@123456',
+      login_identifier: 'admin@beehive.local',
+      password: 'Admin@123456',
     });
     authStore.$reset();
 

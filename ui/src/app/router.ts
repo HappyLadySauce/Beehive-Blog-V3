@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import { useAuthStore } from '@/features/auth/stores/authStore';
+import { normalizeAuthRole, useAuthStore } from '@/features/auth/stores/authStore';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -28,7 +28,7 @@ export const router = createRouter({
     {
       path: '/studio',
       component: () => import('@/shared/layouts/StudioLayout.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiredRole: 'admin' },
       children: [
         { path: '', name: 'studio-dashboard', component: () => import('@/pages/studio/StudioDashboardPage.vue') },
         { path: 'content', name: 'studio-content', component: () => import('@/pages/studio/StudioContentPage.vue') },
@@ -51,10 +51,15 @@ router.beforeEach(async (to) => {
   }
 
   const authStore = useAuthStore();
-  if (authStore.isAuthenticated) {
-    return true;
-  }
-  if (await authStore.restoreSession()) {
+  const isReady = authStore.isAuthenticated || (await authStore.restoreSession());
+  if (isReady) {
+    const requiredRole = to.matched.find((route) => typeof route.meta.requiredRole === 'string')?.meta.requiredRole;
+    if (typeof requiredRole === 'string' && normalizeAuthRole(authStore.currentUser?.role) !== requiredRole) {
+      return {
+        name: 'public-home',
+        query: { studio: 'forbidden' },
+      };
+    }
     return true;
   }
 

@@ -27,7 +27,11 @@ export interface AuthApi {
   logout(payload?: AuthLogoutRequest, options?: AuthRequestOptions): Promise<AuthLogoutResponse>;
 }
 
-function buildMockUser(seed: string): AuthUserProfile {
+const mockAdminEmail = 'admin@beehive.local';
+const mockRefreshPrefix = 'mock_refresh_';
+const mockRefreshRoleSeparator = '__role_';
+
+function buildMockUser(seed: string, role = 'member'): AuthUserProfile {
   const username = seed.includes('@') ? seed.split('@')[0] ?? 'demo_user' : seed;
   return {
     user_id: 'user_mock_001',
@@ -35,7 +39,7 @@ function buildMockUser(seed: string): AuthUserProfile {
     email: seed.includes('@') ? seed : `${username}@beehive.local`,
     nickname: username,
     avatar_url: '',
-    role: 'member',
+    role,
     status: 'active',
   };
 }
@@ -58,7 +62,7 @@ function buildMockSession(user: AuthUserProfile): AuthSessionView {
 function buildAuthResponse(user: AuthUserProfile): AuthRegisterResponse {
   return {
     access_token: `mock_access_${user.user_id}`,
-    refresh_token: `mock_refresh_${user.user_id}`,
+    refresh_token: buildMockRefreshToken(user),
     expires_in: 900,
     token_type: 'Bearer',
     session_id: 'sess_mock_001',
@@ -70,7 +74,7 @@ function buildAuthResponse(user: AuthUserProfile): AuthRegisterResponse {
 function buildRefreshResponse(user: AuthUserProfile): AuthRefreshResponse {
   return {
     access_token: `mock_access_${user.user_id}`,
-    refresh_token: `mock_refresh_${user.user_id}`,
+    refresh_token: buildMockRefreshToken(user),
     expires_in: 900,
     token_type: 'Bearer',
     session_id: 'sess_mock_001',
@@ -78,8 +82,28 @@ function buildRefreshResponse(user: AuthUserProfile): AuthRefreshResponse {
   };
 }
 
+function buildMockRefreshToken(user: AuthUserProfile): string {
+  return `${mockRefreshPrefix}${encodeURIComponent(user.email)}${mockRefreshRoleSeparator}${encodeURIComponent(user.role)}`;
+}
+
+function parseMockRefreshToken(refreshToken: string): AuthUserProfile | null {
+  if (!refreshToken.startsWith(mockRefreshPrefix)) {
+    return null;
+  }
+
+  const payload = refreshToken.slice(mockRefreshPrefix.length);
+  const separatorIndex = payload.indexOf(mockRefreshRoleSeparator);
+  if (separatorIndex < 1) {
+    return null;
+  }
+
+  const email = decodeURIComponent(payload.slice(0, separatorIndex));
+  const role = decodeURIComponent(payload.slice(separatorIndex + mockRefreshRoleSeparator.length)) || 'member';
+  return buildMockUser(email, role);
+}
+
 function createMockAuthApi(): AuthApi {
-  let currentUser = buildMockUser('demo@beehive.local');
+  let currentUser = buildMockUser(mockAdminEmail, 'admin');
 
   return {
     async register(payload) {
@@ -91,13 +115,16 @@ function createMockAuthApi(): AuthApi {
       });
     },
     async login(payload) {
-      currentUser = buildMockUser(payload.login_identifier);
+      const role = payload.login_identifier.toLowerCase() === mockAdminEmail ? 'admin' : 'member';
+      currentUser = buildMockUser(payload.login_identifier, role);
       return buildAuthResponse(currentUser);
     },
     async refresh(payload) {
-      if (!payload.refresh_token.startsWith('mock_refresh_')) {
+      const restoredUser = parseMockRefreshToken(payload.refresh_token);
+      if (!restoredUser) {
         throw new Error('Invalid refresh token');
       }
+      currentUser = restoredUser;
       return buildRefreshResponse(currentUser);
     },
     async me() {

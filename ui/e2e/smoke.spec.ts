@@ -7,6 +7,15 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 test.describe('responsive shell', () => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.clearCookies();
+    await page.goto('/');
+    await page.evaluate(() => {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    });
+  });
+
   test('renders public home without horizontal overflow', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /用真实内容驱动公开表达与创作工作台/ })).toBeVisible();
@@ -44,10 +53,26 @@ test.describe('responsive shell', () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test('registers public members back to home and blocks studio', async ({ page }) => {
+    await page.goto('/register');
+    await page.getByRole('button', { name: /注册普通账号/ }).click();
+    await expect(page.getByRole('heading', { name: /用真实内容驱动公开表达与创作工作台/ })).toBeVisible();
+
+    await page.goto('/studio');
+    await expect(page.getByText('Studio 仅管理员可访问')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
   test('renders studio content without horizontal overflow', async ({ page }) => {
     await page.goto('/studio/content');
     await page.getByRole('button', { name: /登录/ }).click();
     await expect(page.getByRole('heading', { name: '内容中心' })).toBeVisible();
+    await page.getByRole('button', { name: /新建内容/ }).click();
+    await expect(page.getByRole('heading', { name: '新建内容草稿' })).toBeVisible();
+    await page.getByLabel('标题').fill('E2E 本地草稿');
+    await page.getByLabel('摘要').fill('验证新建内容按钮可以打开并写入本地列表。');
+    await page.getByRole('button', { name: /保存本地草稿/ }).click();
+    await expect(page.getByText('草稿已创建')).toBeVisible();
     await expect(page.getByRole('button', { name: /筛选/ })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });

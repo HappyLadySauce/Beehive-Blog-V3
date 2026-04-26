@@ -15,6 +15,29 @@ describe('authApi', () => {
     expect(response.user.email).toBe('tester@beehive.local');
   });
 
+  it('returns admin role for the default mock admin login', async () => {
+    const api = createAuthApi('mock');
+
+    const response = await api.login({
+      login_identifier: 'admin@beehive.local',
+      password: 'Admin@123456',
+    });
+
+    expect(response.user.role).toBe('admin');
+  });
+
+  it('keeps public registration as member in mock mode', async () => {
+    const api = createAuthApi('mock');
+
+    const response = await api.register({
+      username: 'member_001',
+      email: 'member001@beehive.local',
+      password: 'Demo@123456',
+    });
+
+    expect(response.user.role).toBe('member');
+  });
+
   it('refreshes mock sessions from a stored refresh token', async () => {
     const api = createAuthApi('mock');
     const login = await api.login({

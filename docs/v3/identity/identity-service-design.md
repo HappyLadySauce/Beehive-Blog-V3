@@ -171,6 +171,16 @@ Client -> Gateway -> Identity(Refresh) -> Gateway -> Client
 - `member` 为默认注册用户
 - `admin` 为平台管理角色
 
+### 4.1.1 本地默认管理员
+
+开发环境通过独立 SQL seed 写入默认管理员账号，不由 identity 服务启动时自动创建。
+
+- 默认本地账号：`admin@beehive.local`
+- 默认本地密码：`Admin@123456`
+- seed 文件：`sql/seeds/v3/identity/001_dev_admin.sql`
+- 删库重刷后执行：`.\sql\migrate.ps1`，再执行 `.\sql\seed.ps1`
+- seed 只属于本地开发数据流程，生产环境不执行 `sql/seeds`
+
 ### 4.2 账号状态模型
 
 第一阶段统一采用：
