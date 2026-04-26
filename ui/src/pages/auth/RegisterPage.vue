@@ -4,8 +4,11 @@ import { reactive } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { appConfig } from '@/shared/config/env';
+import BaseBadge from '@/shared/components/BaseBadge.vue';
 import BaseButton from '@/shared/components/BaseButton.vue';
 import BaseInput from '@/shared/components/BaseInput.vue';
+import StatusAlert from '@/shared/components/StatusAlert.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -17,8 +20,13 @@ const form = reactive({
 });
 
 async function submitRegister() {
-  await authStore.register(form);
-  await router.push('/studio');
+  try {
+    await authStore.register(form);
+    await router.push('/studio');
+  } catch {
+    // Store owns the user-facing error state.
+    // 用户可见错误状态由 store 统一维护。
+  }
 }
 </script>
 
@@ -32,14 +40,16 @@ async function submitRegister() {
       <div>
         <h1 class="m-0 text-28px font-900">创建账号</h1>
         <p class="m-0 mt-2 text-14px leading-6 text-brand-muted">首版默认 mock 注册，可通过环境变量切换 live gateway。</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <BaseBadge :tone="appConfig.apiMode === 'live' ? 'leaf' : 'honey'">{{ appConfig.apiMode }}</BaseBadge>
+          <BaseBadge tone="neutral">{{ appConfig.gatewayBaseUrl || 'mock adapter' }}</BaseBadge>
+        </div>
       </div>
       <BaseInput v-model="form.username" label="用户名" name="username" autocomplete="username" />
       <BaseInput v-model="form.email" label="邮箱" name="email" type="email" autocomplete="email" />
       <BaseInput v-model="form.nickname" label="昵称" name="nickname" autocomplete="nickname" />
       <BaseInput v-model="form.password" label="密码" name="password" type="password" autocomplete="new-password" />
-      <p v-if="authStore.errorMessage" class="m-0 rounded-md bg-red-500/10 px-3 py-2 text-13px text-red-600">
-        {{ authStore.errorMessage }}
-      </p>
+      <StatusAlert v-if="authStore.errorMessage" tone="danger" title="注册失败" :description="authStore.errorMessage" />
       <BaseButton type="submit" variant="primary" :busy="authStore.isLoading">
         注册并进入 Studio
         <ArrowRight class="h-4 w-4" aria-hidden="true" />

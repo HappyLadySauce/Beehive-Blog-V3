@@ -26,11 +26,15 @@ const icon = computed(() => {
   }
   return Info;
 });
+
+const ariaRole = computed(() => (props.tone === 'danger' || props.tone === 'warning' ? 'alert' : 'status'));
 </script>
 
 <template>
   <section
     class="grid grid-cols-[auto_1fr] gap-3 rounded-lg border p-4"
+    :role="ariaRole"
+    :aria-live="tone === 'danger' || tone === 'warning' ? 'assertive' : 'polite'"
     :class="{
       'border-brand-blue/25 bg-brand-blue/8 text-brand-blue': tone === 'info',
       'border-brand-leaf/25 bg-brand-leaf/8 text-brand-leaf': tone === 'success',

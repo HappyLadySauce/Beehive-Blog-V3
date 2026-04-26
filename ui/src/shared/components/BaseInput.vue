@@ -27,6 +27,7 @@ const emit = defineEmits<{
 }>();
 
 const inputId = computed(() => props.id || `bb-${props.name || props.label.replace(/\s+/g, '-').toLowerCase()}`);
+const errorId = computed(() => `${inputId.value}-error`);
 </script>
 
 <template>
@@ -39,9 +40,11 @@ const inputId = computed(() => props.id || `bb-${props.name || props.label.repla
       :value="modelValue"
       :placeholder="placeholder"
       :autocomplete="autocomplete"
+      :aria-invalid="error ? 'true' : 'false'"
+      :aria-describedby="error ? errorId : undefined"
       class="bb-focus h-10 w-full border border-brand-line rounded-md bg-brand-surface px-3 text-14px text-brand-ink outline-none transition-colors placeholder:text-brand-muted"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />
-    <span v-if="error" class="text-12px text-red-600">{{ error }}</span>
+    <span v-if="error" :id="errorId" class="text-12px text-red-600">{{ error }}</span>
   </label>
 </template>

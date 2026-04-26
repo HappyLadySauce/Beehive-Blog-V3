@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Menu, PanelLeftClose, Search, X } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
 
 import { studioNavItems } from '@/features/navigation/navItems';
@@ -9,6 +9,30 @@ import BaseButton from '@/shared/components/BaseButton.vue';
 
 const isMobileNavOpen = ref(false);
 const authStore = useAuthStore();
+
+function closeMobileNav() {
+  isMobileNavOpen.value = false;
+}
+
+function handleEscape(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    closeMobileNav();
+  }
+}
+
+watch(isMobileNavOpen, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+  if (isOpen) {
+    window.addEventListener('keydown', handleEscape);
+    return;
+  }
+  window.removeEventListener('keydown', handleEscape);
+});
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = '';
+  window.removeEventListener('keydown', handleEscape);
+});
 </script>
 
 <template>
@@ -67,11 +91,17 @@ const authStore = useAuthStore();
       <RouterView />
     </div>
 
-    <div v-if="isMobileNavOpen" class="fixed inset-0 z-40 bg-black/60 lg:hidden" @click="isMobileNavOpen = false">
-      <aside class="h-full w-min-78 max-w-82 border-r border-white/10 bg-#0b0c0d p-4" @click.stop>
+    <div v-if="isMobileNavOpen" class="fixed inset-0 z-40 bg-black/60 lg:hidden" @click="closeMobileNav">
+      <aside
+        class="h-full w-min-78 max-w-82 border-r border-white/10 bg-#0b0c0d p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label="移动端 Studio 导航"
+        @click.stop
+      >
         <div class="flex items-center justify-between">
           <span class="text-15px font-800">Beehive Studio</span>
-          <BaseButton variant="ghost" size="sm" aria-label="关闭导航" @click="isMobileNavOpen = false">
+          <BaseButton variant="ghost" size="sm" aria-label="关闭导航" @click="closeMobileNav">
             <X class="h-4 w-4" aria-hidden="true" />
           </BaseButton>
         </div>
@@ -82,7 +112,7 @@ const authStore = useAuthStore();
             :to="item.to"
             class="bb-focus flex h-10 items-center gap-3 rounded-md px-3 text-14px font-600 text-white/68"
             active-class="bg-white/8 text-white"
-            @click="isMobileNavOpen = false"
+            @click="closeMobileNav"
           >
             <component :is="item.icon" class="h-4 w-4" aria-hidden="true" />
             {{ item.label }}

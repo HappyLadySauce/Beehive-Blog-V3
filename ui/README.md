@@ -23,5 +23,5 @@ VITE_API_MODE=mock
 VITE_GATEWAY_BASE_URL=
 ```
 
-`VITE_API_MODE=live` 仅用于 auth gateway 联调；content 首版仍使用 mock。
+`VITE_API_MODE=live` 优先用于 auth gateway 联调；内容预览也具备 live adapter，但服务未就绪时页面会降级展示。
 开发环境默认留空 `VITE_GATEWAY_BASE_URL`，让 `/api` 请求走 Vite proxy；部署到已配置 CORS 或同源网关时再填写绝对地址。

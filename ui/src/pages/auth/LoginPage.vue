@@ -4,8 +4,11 @@ import { reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { appConfig } from '@/shared/config/env';
+import BaseBadge from '@/shared/components/BaseBadge.vue';
 import BaseButton from '@/shared/components/BaseButton.vue';
 import BaseInput from '@/shared/components/BaseInput.vue';
+import StatusAlert from '@/shared/components/StatusAlert.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -23,14 +26,19 @@ function safeRedirectTarget(value: unknown): string {
 }
 
 async function submitLogin() {
-  await authStore.login({
-    ...form,
-    client_type: 'web',
-    device_id: 'browser',
-    device_name: 'Beehive UI',
-    user_agent: navigator.userAgent,
-  });
-  await router.push(safeRedirectTarget(route.query.redirect));
+  try {
+    await authStore.login({
+      ...form,
+      client_type: 'web',
+      device_id: 'browser',
+      device_name: 'Beehive UI',
+      user_agent: navigator.userAgent,
+    });
+    await router.push(safeRedirectTarget(route.query.redirect));
+  } catch {
+    // Store owns the user-facing error state.
+    // 用户可见错误状态由 store 统一维护。
+  }
 }
 </script>
 
@@ -52,12 +60,14 @@ async function submitLogin() {
         <div>
           <h2 class="m-0 text-28px font-900">登录 Studio</h2>
           <p class="m-0 mt-2 text-14px leading-6 text-brand-muted">使用账号进入内容生产工作台。</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <BaseBadge :tone="appConfig.apiMode === 'live' ? 'leaf' : 'honey'">{{ appConfig.apiMode }}</BaseBadge>
+            <BaseBadge tone="neutral">{{ appConfig.gatewayBaseUrl || 'mock adapter' }}</BaseBadge>
+          </div>
         </div>
         <BaseInput v-model="form.login_identifier" label="登录标识" name="login_identifier" autocomplete="username" />
         <BaseInput v-model="form.password" label="密码" name="password" type="password" autocomplete="current-password" />
-        <p v-if="authStore.errorMessage" class="m-0 rounded-md bg-red-500/10 px-3 py-2 text-13px text-red-600">
-          {{ authStore.errorMessage }}
-        </p>
+        <StatusAlert v-if="authStore.errorMessage" tone="danger" title="登录失败" :description="authStore.errorMessage" />
         <BaseButton type="submit" variant="primary" :busy="authStore.isLoading">
           登录
           <ArrowRight class="h-4 w-4" aria-hidden="true" />

@@ -90,16 +90,38 @@ export interface ContentTagView {
   updated_at: number;
 }
 
+export type ContentType =
+  | 'article'
+  | 'note'
+  | 'project'
+  | 'experience'
+  | 'timeline_event'
+  | 'insight'
+  | 'portfolio'
+  | 'page'
+  | string;
+
+export type ContentStatus = 'draft' | 'review' | 'published' | 'archived' | string;
+export type ContentVisibility = 'public' | 'member' | 'private' | string;
+export type ContentAiAccess = 'allowed' | 'denied' | string;
+export type ContentSourceType =
+  | 'manual'
+  | 'import_v1'
+  | 'import_markdown'
+  | 'agent_generated'
+  | 'agent_assisted'
+  | string;
+
 export interface ContentSummaryView {
   content_id: string;
-  type: string;
+  type: ContentType;
   title: string;
   slug: string;
   summary: string;
   cover_image_url: string;
-  status: string;
-  visibility: string;
-  ai_access: string;
+  status: ContentStatus;
+  visibility: ContentVisibility;
+  ai_access: ContentAiAccess;
   published_at: number;
   archived_at: number;
   created_at: number;
@@ -112,7 +134,7 @@ export interface ContentDetailView extends ContentSummaryView {
   body_json: string;
   owner_user_id: string;
   author_user_id: string;
-  source_type: string;
+  source_type: ContentSourceType;
   current_revision_id: string;
   comment_enabled: boolean;
   is_featured: boolean;
@@ -126,9 +148,18 @@ export interface ContentListResponse {
   page_size: number;
 }
 
+export interface ContentPublicBySlugResponse {
+  content: ContentDetailView;
+}
+
 export interface PublicContentQuery {
   page?: number;
   page_size?: number;
-  type?: string;
+  type?: ContentType;
   keyword?: string;
+}
+
+export interface StudioContentListQuery extends PublicContentQuery {
+  status?: ContentStatus;
+  visibility?: ContentVisibility;
 }

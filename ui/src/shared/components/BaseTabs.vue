@@ -4,7 +4,7 @@ interface TabItem {
   label: string;
 }
 
-defineProps<{
+const props = defineProps<{
   tabs: TabItem[];
   modelValue: string;
 }>();
@@ -12,10 +12,19 @@ defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
+
+function selectByOffset(offset: number) {
+  const currentIndex = props.tabs.findIndex((tab) => tab.value === props.modelValue);
+  const nextIndex = (currentIndex + offset + props.tabs.length) % props.tabs.length;
+  const next = props.tabs[nextIndex];
+  if (next) {
+    emit('update:modelValue', next.value);
+  }
+}
 </script>
 
 <template>
-  <div class="inline-flex rounded-md border border-brand-line bg-brand-surface p-1" role="tablist">
+  <div class="inline-flex rounded-md border border-brand-line bg-brand-surface p-1" role="tablist" @keydown.left.prevent="selectByOffset(-1)" @keydown.right.prevent="selectByOffset(1)">
     <button
       v-for="tab in tabs"
       :key="tab.value"
@@ -24,6 +33,7 @@ const emit = defineEmits<{
       type="button"
       role="tab"
       :aria-selected="tab.value === modelValue"
+      :tabindex="tab.value === modelValue ? 0 : -1"
       @click="emit('update:modelValue', tab.value)"
     >
       {{ tab.label }}

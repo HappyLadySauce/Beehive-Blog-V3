@@ -20,6 +20,13 @@ const typeLabel = computed(() => {
   };
   return labels[props.item.type] ?? props.item.type;
 });
+const publishedLabel = computed(() => {
+  if (!props.item.published_at) {
+    return '未发布';
+  }
+  return new Intl.DateTimeFormat('zh-CN', { month: 'short', day: 'numeric' }).format(new Date(props.item.published_at * 1000));
+});
+const readingMinutes = computed(() => Math.max(1, Math.ceil((props.item.summary.length + props.item.title.length) / 120)));
 </script>
 
 <template>
@@ -32,6 +39,13 @@ const typeLabel = computed(() => {
       <div class="grid gap-2">
         <h3 class="m-0 text-20px font-800 leading-7 text-brand-ink">{{ item.title }}</h3>
         <p class="m-0 text-14px leading-6 text-brand-muted">{{ item.summary }}</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-12px text-brand-muted">
+        <span>{{ publishedLabel }}</span>
+        <span aria-hidden="true">/</span>
+        <span>{{ readingMinutes }} 分钟阅读</span>
+        <span aria-hidden="true">/</span>
+        <span>{{ item.visibility }}</span>
       </div>
       <div class="mt-auto flex flex-wrap gap-2">
         <BaseBadge v-for="tag in item.tags" :key="tag.tag_id" tone="neutral">{{ tag.name }}</BaseBadge>

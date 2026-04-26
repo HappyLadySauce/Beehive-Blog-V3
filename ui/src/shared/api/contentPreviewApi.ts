@@ -1,4 +1,16 @@
-import type { ContentListResponse, ContentSummaryView, PublicContentQuery } from '@/shared/api/types';
+import { requestJson } from '@/shared/api/httpClient';
+import { GatewayHttpError } from '@/shared/api/httpClient';
+import type { ApiMode } from '@/shared/config/env';
+import { appConfig } from '@/shared/config/env';
+import type {
+  ContentListResponse,
+  ContentPublicBySlugResponse,
+  ContentStatus,
+  ContentSummaryView,
+  ContentType,
+  PublicContentQuery,
+  StudioContentListQuery,
+} from '@/shared/api/types';
 
 const now = Math.floor(Date.now() / 1000);
 
@@ -83,26 +95,154 @@ const mockItems: ContentSummaryView[] = [
   },
 ];
 
-export const contentPreviewApi = {
-  async listPublicContent(query: PublicContentQuery = {}): Promise<ContentListResponse> {
-    const page = query.page ?? 1;
-    const pageSize = query.page_size ?? 20;
-    const keyword = query.keyword?.trim().toLowerCase();
-    const type = query.type;
-    const filtered = mockItems.filter((item) => {
-      const matchesType = type === undefined || item.type === type;
-      const matchesKeyword =
-        keyword === undefined ||
-        item.title.toLowerCase().includes(keyword) ||
-        item.summary.toLowerCase().includes(keyword);
-      return matchesType && matchesKeyword;
-    });
+interface ContentPreviewApi {
+  listPublicContent(query?: PublicContentQuery): Promise<ContentListResponse>;
+  getPublicContentBySlug(slug: string): Promise<ContentPublicBySlugResponse>;
+  listStudioContents(query?: StudioContentListQuery, accessToken?: string): Promise<ContentListResponse>;
+}
 
-    return {
-      items: filtered.slice((page - 1) * pageSize, page * pageSize),
-      total: filtered.length,
-      page,
-      page_size: pageSize,
-    };
-  },
-};
+function buildQueryString(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === '' || value === null) {
+      continue;
+    }
+    search.set(key, String(value));
+  }
+  return search.toString() === '' ? '' : `?${search.toString()}`;
+}
+
+function normalizeContentTypeFilter(value?: string): ContentType | undefined {
+  if (typeof value !== 'string' || value.length === 0) {
+    return undefined;
+  }
+  return value;
+}
+
+function mockQueryFilter<T extends { type?: string; status?: string; visibility?: string; keyword?: string }>(
+  items: ContentSummaryView[],
+  query: T,
+): ContentSummaryView[] {
+  const keyword = query.keyword?.trim().toLowerCase();
+  const type = normalizeContentTypeFilter(query.type);
+  const status = normalizeContentTypeFilter(query.status) as ContentStatus | undefined;
+  const visibility = normalizeContentTypeFilter(query.visibility) as string | undefined;
+
+  return items.filter((item) => {
+    const matchesType = type === undefined || item.type === type;
+    const matchesStatus = status === undefined || item.status === status;
+    const matchesVisibility = visibility === undefined || item.visibility === visibility;
+    const matchesKeyword =
+      keyword === undefined ||
+      item.title.toLowerCase().includes(keyword) ||
+      item.summary.toLowerCase().includes(keyword) ||
+      item.slug.toLowerCase().includes(keyword);
+    return matchesType && matchesStatus && matchesVisibility && matchesKeyword;
+  });
+}
+
+function paginateItems<T>(items: T[], page: number, pageSize: number): T[] {
+  const start = Math.max(1, page) - 1;
+  return items.slice(start * pageSize, start * pageSize + pageSize);
+}
+
+function buildMockContentList(query: PublicContentQuery = {}): { items: ContentSummaryView[]; total: number; page: number; page_size: number } {
+  const page = query.page ?? 1;
+  const pageSize = query.page_size ?? 20;
+  const filtered = mockQueryFilter(mockItems, query);
+  return {
+    items: paginateItems(filtered, page, pageSize),
+    total: filtered.length,
+    page,
+    page_size: pageSize,
+  };
+}
+
+function buildMockContentBySlug(slug: string): ContentPublicBySlugResponse {
+  const found = mockItems.find((item) => item.slug === slug);
+  if (!found) {
+    throw new GatewayHttpError(404, 'content not found', {
+      code: 120501,
+      message: 'content not found',
+      reference: 'mock',
+      request_id: 'mock-request',
+    });
+  }
+
+  return {
+    content: {
+      ...found,
+      body_markdown: `# ${found.title}\n\n${found.summary}`,
+      body_json: JSON.stringify({ type: 'doc', children: [{ type: 'paragraph', content: found.summary }] }),
+      owner_user_id: 'user_mock_001',
+      author_user_id: 'user_mock_001',
+      source_type: 'manual',
+      current_revision_id: 'rev_mock_001',
+      comment_enabled: true,
+      is_featured: false,
+      sort_order: 0,
+    },
+  };
+}
+
+function createMockContentPreviewApi(): ContentPreviewApi {
+  return {
+    async listPublicContent(query) {
+      return buildMockContentList(query);
+    },
+    async getPublicContentBySlug(slug) {
+      return buildMockContentBySlug(slug);
+    },
+    async listStudioContents(query) {
+      return buildMockContentList(query);
+    },
+  };
+}
+
+function createLiveContentPreviewApi(): ContentPreviewApi {
+  return {
+    listPublicContent(query = {}) {
+      return requestJson<ContentListResponse>(
+        `/api/v3/public/content/items${buildQueryString({
+          page: query.page ?? 1,
+          page_size: query.page_size ?? 20,
+          type: query.type,
+          keyword: query.keyword,
+        })}`,
+        {
+          method: 'GET',
+        },
+      );
+    },
+    getPublicContentBySlug(slug) {
+      return requestJson<ContentPublicBySlugResponse>(`/api/v3/public/content/items/${encodeURIComponent(slug)}`, {
+        method: 'GET',
+      });
+    },
+    listStudioContents(query = {}, accessToken) {
+      const requestOptions: { method: 'GET'; accessToken?: string } = {
+        method: 'GET',
+      };
+      if (accessToken) {
+        requestOptions.accessToken = accessToken;
+      }
+      return requestJson<ContentListResponse>(
+        `/api/v3/studio/content/items${buildQueryString({
+          page: query.page ?? 1,
+          page_size: query.page_size ?? 20,
+          type: query.type,
+          status: query.status,
+          visibility: query.visibility,
+          keyword: query.keyword,
+        })}`,
+        requestOptions,
+      );
+    },
+  };
+}
+
+export function createContentPreviewApi(mode: ApiMode = appConfig.apiMode): ContentPreviewApi {
+  return mode === 'live' ? createLiveContentPreviewApi() : createMockContentPreviewApi();
+}
+
+export const contentPreviewApi = createContentPreviewApi();

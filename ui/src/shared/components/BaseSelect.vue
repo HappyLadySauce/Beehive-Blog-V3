@@ -27,6 +27,7 @@ const emit = defineEmits<{
 }>();
 
 const selectId = computed(() => props.id || `bb-${props.name || props.label.replace(/\s+/g, '-').toLowerCase()}`);
+const errorId = computed(() => `${selectId.value}-error`);
 </script>
 
 <template>
@@ -36,6 +37,8 @@ const selectId = computed(() => props.id || `bb-${props.name || props.label.repl
       :id="selectId"
       :name="name"
       :value="modelValue"
+      :aria-invalid="error ? 'true' : 'false'"
+      :aria-describedby="error ? errorId : undefined"
       class="bb-focus h-10 w-full border border-brand-line rounded-md bg-brand-surface px-3 text-14px text-brand-ink outline-none transition-colors"
       @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
@@ -43,6 +46,6 @@ const selectId = computed(() => props.id || `bb-${props.name || props.label.repl
         {{ option.label }}
       </option>
     </select>
-    <span v-if="error" class="text-12px text-red-600">{{ error }}</span>
+    <span v-if="error" :id="errorId" class="text-12px text-red-600">{{ error }}</span>
   </label>
 </template>

@@ -7,7 +7,7 @@
 - `Public Web`：面向访客的公开内容、项目、经历与个人表达入口。
 - `Studio`：面向创作者的内容生产、管理、审阅与发布工作台。
 
-首版目标是先完成良好工程化骨架、页面壳、响应式布局和 auth API client。`content` 服务仍在开发中，前端只保留契约形态类型与 mock 数据，不进行真实 content 联调。
+首版目标是先完成良好工程化骨架、页面壳、响应式布局和 gateway-first API client。`content` 页面默认可用 mock 数据，live 模式下具备公共内容与 Studio 内容列表的 gateway adapter，但页面必须对空数据、403 和服务未就绪做降级展示。
 
 ## 2. 技术栈
 
@@ -47,7 +47,7 @@ ui/
 - `features/*` 承载业务域状态、组合组件和领域用例。
 - `shared/api` 是 gateway HTTP 契约的唯一前端访问入口。
 - `shared/components` 只放可复用基础 UI，不放业务逻辑。
-- `content-preview` 首版只读 mock 数据，不访问真实 content 服务。
+- `content-preview` 默认 mock，可在 live 模式访问 gateway 内容预览接口；页面层必须保留失败降级。
 
 ## 4. 运行方式
 
@@ -69,4 +69,4 @@ VITE_API_MODE=live
 VITE_GATEWAY_BASE_URL=
 ```
 
-live 模式只要求 `gateway` 和 `identity` auth 链路可用；不要求 content ready。开发环境默认留空 `VITE_GATEWAY_BASE_URL`，让 `/api` 请求走 Vite proxy；部署到已配置 CORS 或同源网关时再填写绝对地址。
+auth 联调只要求 `gateway` 和 `identity` 链路可用；完整 `/readyz` 和 live 内容列表需要启动 `content` RPC。开发环境默认留空 `VITE_GATEWAY_BASE_URL`，让 `/api` 请求走 Vite proxy；部署到已配置 CORS 或同源网关时再填写绝对地址。

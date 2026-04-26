@@ -23,14 +23,20 @@ VITE_GATEWAY_BASE_URL=
 默认 `mock`，页面不依赖后端即可运行。
 开发环境默认留空 `VITE_GATEWAY_BASE_URL`，让 `/api` 请求走 Vite proxy；部署到已配置 CORS 或同源网关时再填写绝对地址。
 
-`live` 只用于 auth 链路：
+`live` 会优先验证 auth 链路：
 
 - `POST /api/v3/auth/register`
 - `POST /api/v3/auth/login`
 - `GET /api/v3/auth/me`
 - `POST /api/v3/auth/logout`
 
-content 首版继续使用 mock，等待 content 服务稳定后再切换真实接口。
+内容预览接口已经保留 gateway adapter：
+
+- `GET /api/v3/public/content/items`
+- `GET /api/v3/public/content/items/:slug`
+- `GET /api/v3/studio/content/items`
+
+content 服务未就绪时，页面需要展示可理解的错误或空状态；本地开发仍可切回 `mock` 模式独立开发 UI。
 
 ## 3. 错误处理
 
