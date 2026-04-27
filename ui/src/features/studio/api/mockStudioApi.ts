@@ -82,8 +82,8 @@ let mockProfile: AuthUserProfile = {
 }
 
 function rejectWeakPassword(password: string): void {
-  if (password.length < 12 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-    throw new Error('New password must be at least 12 characters and include uppercase letters and numbers.')
+  if (password.length < 8) {
+    throw new Error('New password must be at least 8 characters.')
   }
 }
 

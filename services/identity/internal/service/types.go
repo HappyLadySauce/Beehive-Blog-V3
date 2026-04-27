@@ -129,8 +129,8 @@ type ListUsersInput struct {
 // UpdateOwnProfileInput 描述用户自助资料更新。
 type UpdateOwnProfileInput struct {
 	UserID    int64
-	Nickname  string
-	AvatarURL string
+	Nickname  *string
+	AvatarURL *string
 	ClientIP  string
 }
 

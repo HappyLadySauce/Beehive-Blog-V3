@@ -86,6 +86,15 @@ type ListFilter struct {
 	PageSize int
 }
 
+// ProfileUpdate describes mutable profile fields that are present in a patch request.
+// ProfileUpdate 描述资料 PATCH 请求中实际出现的可变字段。
+type ProfileUpdate struct {
+	NicknameSet  bool
+	Nickname     *string
+	AvatarURLSet bool
+	AvatarURL    *string
+}
+
 // List returns users matching the filter and the total count.
 // List 返回符合过滤条件的用户列表与总数。
 func (r *UserRepository) List(ctx context.Context, filter ListFilter) ([]entity.User, int64, error) {
@@ -120,13 +129,17 @@ func (r *UserRepository) List(ctx context.Context, filter ListFilter) ([]entity.
 	return users, total, nil
 }
 
-// UpdateProfile updates mutable self-service profile fields.
-// UpdateProfile 更新用户可自助修改的资料字段。
-func (r *UserRepository) UpdateProfile(ctx context.Context, id int64, nickname, avatarURL *string, at time.Time) (*entity.User, error) {
+// UpdateProfile updates only profile fields explicitly present in the patch.
+// UpdateProfile 只更新 PATCH 请求中明确出现的资料字段。
+func (r *UserRepository) UpdateProfile(ctx context.Context, id int64, patch ProfileUpdate, at time.Time) (*entity.User, error) {
 	updates := map[string]any{
-		"nickname":   nickname,
-		"avatar_url": avatarURL,
 		"updated_at": at,
+	}
+	if patch.NicknameSet {
+		updates["nickname"] = patch.Nickname
+	}
+	if patch.AvatarURLSet {
+		updates["avatar_url"] = patch.AvatarURL
 	}
 	if err := r.db.WithContext(ctx).
 		Model(&entity.User{}).

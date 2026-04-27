@@ -62,13 +62,25 @@ func (s *UserManagementService) ListUsers(ctx context.Context, in ListUsersInput
 // UpdateOwnProfile updates nickname and avatar URL for the current user.
 // UpdateOwnProfile 更新当前用户昵称与头像地址。
 func (s *UserManagementService) UpdateOwnProfile(ctx context.Context, in UpdateOwnProfileInput) (*CurrentUserResult, error) {
-	nickname, err := auth.NormalizeNickname(in.Nickname)
-	if err != nil {
-		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
+	var patch repo.ProfileUpdate
+	auditDetail := map[string]any{}
+	if in.Nickname != nil {
+		nickname, err := auth.NormalizeNickname(*in.Nickname)
+		if err != nil {
+			return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "nickname is invalid")
+		}
+		patch.NicknameSet = true
+		patch.Nickname = optionalString(nickname)
+		auditDetail["nickname"] = nickname
 	}
-	avatarURL, err := normalizeAvatarURL(in.AvatarURL)
-	if err != nil {
-		return nil, err
+	if in.AvatarURL != nil {
+		avatarURL, err := normalizeAvatarURL(*in.AvatarURL)
+		if err != nil {
+			return nil, err
+		}
+		patch.AvatarURLSet = true
+		patch.AvatarURL = optionalString(avatarURL)
+		auditDetail["avatar_url"] = avatarURL
 	}
 
 	now := s.deps.Clock()
@@ -85,7 +97,7 @@ func (s *UserManagementService) UpdateOwnProfile(ctx context.Context, in UpdateO
 			return err
 		}
 
-		updatedUser, updateErr := txStore.Users.UpdateProfile(ctx, in.UserID, optionalString(nickname), optionalString(avatarURL), now)
+		updatedUser, updateErr := txStore.Users.UpdateProfile(ctx, in.UserID, patch, now)
 		if updateErr != nil {
 			return errs.Wrap(updateErr, errs.CodeIdentityInternal, "update profile failed")
 		}
@@ -95,10 +107,7 @@ func (s *UserManagementService) UpdateOwnProfile(ctx context.Context, in UpdateO
 			EventType: auth.AuditEventUpdateOwnProfile,
 			Result:    auth.AuditResultSuccess,
 			ClientIP:  stringPtr(in.ClientIP),
-			Detail: auth.MarshalAuditDetail(map[string]any{
-				"nickname":   nickname,
-				"avatar_url": avatarURL,
-			}),
+			Detail:    auth.MarshalAuditDetail(auditDetail),
 		})
 		return nil
 	}); err != nil {
@@ -115,7 +124,7 @@ func (s *UserManagementService) ChangeOwnPassword(ctx context.Context, in Change
 		return errs.New(errs.CodeIdentityInvalidArgument, "old_password is required")
 	}
 	if err := auth.ValidatePassword(in.NewPassword); err != nil {
-		return errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
+		return errs.Wrap(err, errs.CodeIdentityInvalidArgument, "new_password is invalid")
 	}
 
 	now := s.deps.Clock()
@@ -185,7 +194,7 @@ func (s *UserManagementService) UpdateUserStatus(ctx context.Context, in UpdateU
 // ResetUserPassword 由活跃管理员替换目标用户本地密码。
 func (s *UserManagementService) ResetUserPassword(ctx context.Context, in ResetUserPasswordInput) error {
 	if err := auth.ValidatePassword(in.NewPassword); err != nil {
-		return errs.Wrap(err, errs.CodeIdentityInvalidArgument, err.Error())
+		return errs.Wrap(err, errs.CodeIdentityInvalidArgument, "new_password is invalid")
 	}
 
 	_, err := s.updateManagedUser(ctx, in.ActorUserID, in.TargetUserID, in.ClientIP, auth.AuditEventAdminResetUserPassword, func(txStore *repo.Store, target *entity.User) (*entity.User, error) {

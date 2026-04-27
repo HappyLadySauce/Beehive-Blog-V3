@@ -294,7 +294,7 @@ Add to `.vscode/settings.json`:
 }
 ```
 
-<!-- 
+<!--
 Source references:
 - https://github.com/antfu/eslint-config
 - https://raw.githubusercontent.com/antfu/eslint-config/refs/heads/main/README.md

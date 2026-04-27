@@ -40,9 +40,9 @@ type AuthMeResp struct {
 }
 
 type AuthUpdateProfileReq struct {
-	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-	Nickname      string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
-	AvatarUrl     string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
+	Authorization string  `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Nickname      *string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
+	AvatarUrl     *string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
 }
 
 type AuthChangePasswordReq struct {

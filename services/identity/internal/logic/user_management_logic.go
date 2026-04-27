@@ -108,8 +108,8 @@ func (l *UpdateOwnProfileLogic) UpdateOwnProfile(in *pb.UpdateOwnProfileRequest)
 	}
 	result, err := l.svcCtx.Services.Users.UpdateOwnProfile(l.ctx, identityservice.UpdateOwnProfileInput{
 		UserID:    userID,
-		Nickname:  in.GetNickname(),
-		AvatarURL: in.GetAvatarUrl(),
+		Nickname:  in.Nickname,
+		AvatarURL: in.AvatarUrl,
 		ClientIP:  ctxmeta.GetClientIPFromIncomingContext(l.ctx),
 	})
 	if err != nil {

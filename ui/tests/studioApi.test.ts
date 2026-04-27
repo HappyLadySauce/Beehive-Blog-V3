@@ -46,7 +46,7 @@ describe('studioApi', () => {
     const api = createStudioApi('live')
     await api.listUsers(undefined, { accessToken: 'access' })
     await api.listAudits(undefined, { accessToken: 'access' })
-    await api.updateProfile({ nickname: 'Admin', avatar_url: '' }, { accessToken: 'access' })
+    await api.updateProfile({ avatar_url: '' }, { accessToken: 'access' })
     await api.changePassword({ old_password: 'Admin@123456', new_password: 'Admin@123456789' }, { accessToken: 'access' })
 
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -72,6 +72,16 @@ describe('studioApi', () => {
 
     const headers = fetchMock.mock.calls[0]?.[1]?.headers as Headers
     expect(headers.get('Authorization')).toBe('Bearer access')
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toBe(JSON.stringify({ avatar_url: '' }))
+  })
+
+  it('accepts the same minimum password length as the live identity contract', async () => {
+    const api = createStudioApi('mock')
+
+    await expect(api.changePassword({
+      old_password: 'Admin@123456',
+      new_password: '12345678',
+    })).resolves.toEqual({ ok: true })
   })
 
   it('rejects weak mock password changes', async () => {

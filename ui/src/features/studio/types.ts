@@ -60,7 +60,7 @@ export interface StudioAuditListParams {
 }
 
 export interface UserProfileUpdateRequest {
-  nickname: string
+  nickname?: string
   avatar_url?: string
 }
 

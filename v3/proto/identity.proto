@@ -224,8 +224,8 @@ message ListUsersResponse {
 
 message UpdateOwnProfileRequest {
   string user_id = 1;
-  string nickname = 2;
-  string avatar_url = 3;
+  optional string nickname = 2;
+  optional string avatar_url = 3;
 }
 
 message UpdateOwnProfileResponse {

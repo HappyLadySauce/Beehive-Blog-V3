@@ -29,8 +29,8 @@ async function handleSubmit() {
   successMessage.value = ''
   errorMessage.value = ''
 
-  if (form.currentPassword.length === 0 || form.newPassword.length < 12) {
-    errorMessage.value = 'Enter the current password and a new password with at least 12 characters.'
+  if (form.currentPassword.length === 0 || form.newPassword.length < 8) {
+    errorMessage.value = 'Enter the current password and a new password with at least 8 characters.'
     return
   }
   if (form.newPassword !== form.confirmPassword) {

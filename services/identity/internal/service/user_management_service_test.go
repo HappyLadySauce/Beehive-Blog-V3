@@ -59,14 +59,27 @@ func TestUserManagementServiceProfileAndPassword(t *testing.T) {
 	svc := service.NewUserManagementService(deps)
 	profile, err := svc.UpdateOwnProfile(context.Background(), service.UpdateOwnProfileInput{
 		UserID:    user.ID,
-		Nickname:  "Alice",
-		AvatarURL: "https://cdn.example.com/avatar.png",
+		Nickname:  stringPtr("Alice"),
+		AvatarURL: stringPtr("https://cdn.example.com/avatar.png"),
 	})
 	if err != nil {
 		t.Fatalf("expected profile update to succeed, got %v", err)
 	}
 	if profile.User.Nickname == nil || *profile.User.Nickname != "Alice" {
 		t.Fatalf("expected nickname to update, got %#v", profile.User.Nickname)
+	}
+	profile, err = svc.UpdateOwnProfile(context.Background(), service.UpdateOwnProfileInput{
+		UserID:    user.ID,
+		AvatarURL: stringPtr(""),
+	})
+	if err != nil {
+		t.Fatalf("expected avatar-only profile update to succeed, got %v", err)
+	}
+	if profile.User.Nickname == nil || *profile.User.Nickname != "Alice" {
+		t.Fatalf("expected omitted nickname to be preserved, got %#v", profile.User.Nickname)
+	}
+	if profile.User.AvatarURL != nil {
+		t.Fatalf("expected explicit empty avatar URL to clear avatar, got %#v", profile.User.AvatarURL)
 	}
 
 	if err := svc.ChangeOwnPassword(context.Background(), service.ChangeOwnPasswordInput{
@@ -153,4 +166,8 @@ func createUserWithRole(t *testing.T, store *repo.Store, role, status string) *e
 		user.Role = role
 		user.Status = status
 	})
+}
+
+func stringPtr(value string) *string {
+	return &value
 }

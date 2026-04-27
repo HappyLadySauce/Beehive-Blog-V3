@@ -318,6 +318,9 @@ func TestAuthUpdateProfileUsesTrustedUser(t *testing.T) {
 			if in.GetUserId() != "1" || in.GetNickname() != "Alice" || in.GetAvatarUrl() != "https://cdn.example.com/a.png" {
 				t.Fatalf("unexpected update profile request: %+v", in)
 			}
+			if in.Nickname == nil || in.AvatarUrl == nil {
+				t.Fatalf("expected profile patch fields to preserve presence: %+v", in)
+			}
 			return &pb.UpdateOwnProfileResponse{CurrentUser: &pb.CurrentUser{
 				UserId: "1", Username: "alice", Nickname: "Alice", AvatarUrl: "https://cdn.example.com/a.png", Role: pb.Role_ROLE_MEMBER, Status: pb.AccountStatus_ACCOUNT_STATUS_ACTIVE,
 			}}, nil
@@ -329,7 +332,10 @@ func TestAuthUpdateProfileUsesTrustedUser(t *testing.T) {
 		IdentityClient: client,
 	})
 
-	resp, err := logic.AuthUpdateProfile(&types.AuthUpdateProfileReq{Nickname: "Alice", AvatarUrl: "https://cdn.example.com/a.png"})
+	resp, err := logic.AuthUpdateProfile(&types.AuthUpdateProfileReq{
+		Nickname:  stringPtr("Alice"),
+		AvatarUrl: stringPtr("https://cdn.example.com/a.png"),
+	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -362,4 +368,8 @@ func TestAuthChangePasswordUsesTrustedUser(t *testing.T) {
 	if !resp.Ok {
 		t.Fatalf("unexpected response: %+v", resp)
 	}
+}
+
+func stringPtr(value string) *string {
+	return &value
 }
