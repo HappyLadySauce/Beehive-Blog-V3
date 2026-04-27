@@ -38,6 +38,27 @@ func (f *fakeIdentityClient) LogoutSession(context.Context, *pb.LogoutSessionReq
 func (f *fakeIdentityClient) GetCurrentUser(context.Context, *pb.GetCurrentUserRequest, ...grpc.CallOption) (*pb.GetCurrentUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
+func (f *fakeIdentityClient) ListUsers(context.Context, *pb.ListUsersRequest, ...grpc.CallOption) (*pb.ListUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+func (f *fakeIdentityClient) UpdateOwnProfile(context.Context, *pb.UpdateOwnProfileRequest, ...grpc.CallOption) (*pb.UpdateOwnProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+func (f *fakeIdentityClient) ChangeOwnPassword(context.Context, *pb.ChangeOwnPasswordRequest, ...grpc.CallOption) (*pb.ChangeOwnPasswordResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+func (f *fakeIdentityClient) UpdateUserRole(context.Context, *pb.UpdateUserRoleRequest, ...grpc.CallOption) (*pb.UpdateUserRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+func (f *fakeIdentityClient) UpdateUserStatus(context.Context, *pb.UpdateUserStatusRequest, ...grpc.CallOption) (*pb.UpdateUserStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+func (f *fakeIdentityClient) ResetUserPassword(context.Context, *pb.ResetUserPasswordRequest, ...grpc.CallOption) (*pb.ResetUserPasswordResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+func (f *fakeIdentityClient) ListIdentityAudits(context.Context, *pb.ListIdentityAuditsRequest, ...grpc.CallOption) (*pb.ListIdentityAuditsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
 func (f *fakeIdentityClient) IntrospectAccessToken(context.Context, *pb.IntrospectAccessTokenRequest, ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

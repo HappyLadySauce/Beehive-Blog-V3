@@ -39,6 +39,114 @@ type AuthMeResp struct {
 	User AuthUserProfile `json:"user"`
 }
 
+type AuthUpdateProfileReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Nickname      string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
+	AvatarUrl     string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
+}
+
+type AuthChangePasswordReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	OldPassword   string `json:"old_password,example=OldStr0ngP@ssw0rd!" validate:"required,min=1,max=128"`
+	NewPassword   string `json:"new_password,example=NewStr0ngP@ssw0rd!" validate:"required,min=8,max=128"`
+}
+
+type AuthChangePasswordResp struct {
+	Ok bool `json:"ok,example=true"`
+}
+
+type AdminUserView struct {
+	UserId      string `json:"user_id,example=1"`
+	Username    string `json:"username,example=beehive_user_01"`
+	Email       string `json:"email,example=alice@example.com"`
+	Nickname    string `json:"nickname,optional,example=Alice"`
+	AvatarUrl   string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png"`
+	Role        string `json:"role,options=member|admin,example=member"`
+	Status      string `json:"status,options=pending|active|disabled|locked,example=active"`
+	LastLoginAt int64  `json:"last_login_at,optional,example=1713772800"`
+	CreatedAt   int64  `json:"created_at,example=1713772000"`
+	UpdatedAt   int64  `json:"updated_at,example=1713776400"`
+}
+
+type AdminUserListReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Keyword       string `form:"keyword,optional,example=alice" validate:"omitempty,max=128"`
+	Role          string `form:"role,optional,options=member|admin,example=member"`
+	Status        string `form:"status,optional,options=pending|active|disabled|locked,example=active"`
+	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+}
+
+type AdminUserListResp struct {
+	Items    []AdminUserView `json:"items"`
+	Total    int64           `json:"total,example=1"`
+	Page     int             `json:"page,example=1"`
+	PageSize int             `json:"page_size,example=20"`
+}
+
+type AdminUserIdReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	UserId        string `path:"user_id,example=1" validate:"required"`
+}
+
+type AdminUpdateUserRoleReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	UserId        string `path:"user_id,example=1" validate:"required"`
+	Role          string `json:"role,options=member|admin,example=admin" validate:"required"`
+}
+
+type AdminUpdateUserStatusReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	UserId        string `path:"user_id,example=1" validate:"required"`
+	Status        string `json:"status,options=active|disabled|locked,example=disabled" validate:"required"`
+}
+
+type AdminResetUserPasswordReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	UserId        string `path:"user_id,example=1" validate:"required"`
+	NewPassword   string `json:"new_password,example=NewStr0ngP@ssw0rd!" validate:"required,min=8,max=128"`
+}
+
+type AdminUserResp struct {
+	User AdminUserView `json:"user"`
+}
+
+type AdminResetUserPasswordResp struct {
+	Ok bool `json:"ok,example=true"`
+}
+
+type IdentityAuditView struct {
+	AuditId    string `json:"audit_id,example=9001"`
+	UserId     string `json:"user_id,optional,example=1"`
+	SessionId  string `json:"session_id,optional,example=2001"`
+	Provider   string `json:"provider,optional,options=github|qq|wechat,example=github"`
+	AuthSource string `json:"auth_source,optional,options=local|sso,example=local"`
+	EventType  string `json:"event_type,example=admin_update_user_status"`
+	Result     string `json:"result,options=success|failure,example=success"`
+	ClientIp   string `json:"client_ip,optional,example=127.0.0.1"`
+	UserAgent  string `json:"user_agent,optional,example=Mozilla/5.0"`
+	DetailJson string `json:"detail_json,optional,example={\"target_user_id\":\"2\"}"`
+	CreatedAt  int64  `json:"created_at,example=1713776400"`
+}
+
+type IdentityAuditListReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	EventType     string `form:"event_type,optional,example=admin_update_user_status" validate:"omitempty,max=64"`
+	Result        string `form:"result,optional,options=success|failure,example=success"`
+	UserId        string `form:"user_id,optional,example=1"`
+	StartedAt     int64  `form:"started_at,optional,example=1713772000"`
+	EndedAt       int64  `form:"ended_at,optional,example=1713776400"`
+	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+}
+
+type IdentityAuditListResp struct {
+	Items    []IdentityAuditView `json:"items"`
+	Total    int64               `json:"total,example=1"`
+	Page     int                 `json:"page,example=1"`
+	PageSize int                 `json:"page_size,example=20"`
+}
+
 type AuthRefreshReq struct {
 	RefreshToken string `json:"refresh_token,example=refresh_token_login_example" validate:"required,min=1,max=4096"`
 	UserAgent    string `json:"user_agent,optional,example=Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36" validate:"omitempty,max=512"`

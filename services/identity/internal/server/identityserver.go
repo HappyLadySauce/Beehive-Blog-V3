@@ -58,6 +58,41 @@ func (s *IdentityServer) GetCurrentUser(ctx context.Context, in *pb.GetCurrentUs
 	return l.GetCurrentUser(in)
 }
 
+func (s *IdentityServer) ListUsers(ctx context.Context, in *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
+	l := logic.NewListUsersLogic(ctx, s.svcCtx)
+	return l.ListUsers(in)
+}
+
+func (s *IdentityServer) UpdateOwnProfile(ctx context.Context, in *pb.UpdateOwnProfileRequest) (*pb.UpdateOwnProfileResponse, error) {
+	l := logic.NewUpdateOwnProfileLogic(ctx, s.svcCtx)
+	return l.UpdateOwnProfile(in)
+}
+
+func (s *IdentityServer) ChangeOwnPassword(ctx context.Context, in *pb.ChangeOwnPasswordRequest) (*pb.ChangeOwnPasswordResponse, error) {
+	l := logic.NewChangeOwnPasswordLogic(ctx, s.svcCtx)
+	return l.ChangeOwnPassword(in)
+}
+
+func (s *IdentityServer) UpdateUserRole(ctx context.Context, in *pb.UpdateUserRoleRequest) (*pb.UpdateUserRoleResponse, error) {
+	l := logic.NewUpdateUserRoleLogic(ctx, s.svcCtx)
+	return l.UpdateUserRole(in)
+}
+
+func (s *IdentityServer) UpdateUserStatus(ctx context.Context, in *pb.UpdateUserStatusRequest) (*pb.UpdateUserStatusResponse, error) {
+	l := logic.NewUpdateUserStatusLogic(ctx, s.svcCtx)
+	return l.UpdateUserStatus(in)
+}
+
+func (s *IdentityServer) ResetUserPassword(ctx context.Context, in *pb.ResetUserPasswordRequest) (*pb.ResetUserPasswordResponse, error) {
+	l := logic.NewResetUserPasswordLogic(ctx, s.svcCtx)
+	return l.ResetUserPassword(in)
+}
+
+func (s *IdentityServer) ListIdentityAudits(ctx context.Context, in *pb.ListIdentityAuditsRequest) (*pb.ListIdentityAuditsResponse, error) {
+	l := logic.NewListIdentityAuditsLogic(ctx, s.svcCtx)
+	return l.ListIdentityAudits(in)
+}
+
 func (s *IdentityServer) IntrospectAccessToken(ctx context.Context, in *pb.IntrospectAccessTokenRequest) (*pb.IntrospectAccessTokenResponse, error) {
 	l := logic.NewIntrospectAccessTokenLogic(ctx, s.svcCtx)
 	return l.IntrospectAccessToken(in)

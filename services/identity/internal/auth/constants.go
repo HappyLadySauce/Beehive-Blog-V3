@@ -85,4 +85,19 @@ const (
 	// AuditEventFinishSSO marks SSO callback completion.
 	// AuditEventFinishSSO 标记 SSO 回调完成事件。
 	AuditEventFinishSSO = "finish_sso_login"
+	// AuditEventAdminUpdateUserRole marks admin role changes.
+	// AuditEventAdminUpdateUserRole 标记管理员修改用户角色事件。
+	AuditEventAdminUpdateUserRole = "admin_update_user_role"
+	// AuditEventAdminUpdateUserStatus marks admin status changes.
+	// AuditEventAdminUpdateUserStatus 标记管理员修改用户状态事件。
+	AuditEventAdminUpdateUserStatus = "admin_update_user_status"
+	// AuditEventAdminResetUserPassword marks admin password resets.
+	// AuditEventAdminResetUserPassword 标记管理员重置用户密码事件。
+	AuditEventAdminResetUserPassword = "admin_reset_user_password"
+	// AuditEventUpdateOwnProfile marks self-service profile updates.
+	// AuditEventUpdateOwnProfile 标记用户更新自身资料事件。
+	AuditEventUpdateOwnProfile = "update_own_profile"
+	// AuditEventChangeOwnPassword marks self-service password changes.
+	// AuditEventChangeOwnPassword 标记用户修改自身密码事件。
+	AuditEventChangeOwnPassword = "change_own_password"
 )

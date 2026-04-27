@@ -26,6 +26,13 @@ const (
 	Identity_RefreshSessionToken_FullMethodName   = "/identity.Identity/RefreshSessionToken"
 	Identity_LogoutSession_FullMethodName         = "/identity.Identity/LogoutSession"
 	Identity_GetCurrentUser_FullMethodName        = "/identity.Identity/GetCurrentUser"
+	Identity_ListUsers_FullMethodName             = "/identity.Identity/ListUsers"
+	Identity_UpdateOwnProfile_FullMethodName      = "/identity.Identity/UpdateOwnProfile"
+	Identity_ChangeOwnPassword_FullMethodName     = "/identity.Identity/ChangeOwnPassword"
+	Identity_UpdateUserRole_FullMethodName        = "/identity.Identity/UpdateUserRole"
+	Identity_UpdateUserStatus_FullMethodName      = "/identity.Identity/UpdateUserStatus"
+	Identity_ResetUserPassword_FullMethodName     = "/identity.Identity/ResetUserPassword"
+	Identity_ListIdentityAudits_FullMethodName    = "/identity.Identity/ListIdentityAudits"
 	Identity_IntrospectAccessToken_FullMethodName = "/identity.Identity/IntrospectAccessToken"
 	Identity_Ping_FullMethodName                  = "/identity.Identity/Ping"
 )
@@ -41,6 +48,13 @@ type IdentityClient interface {
 	RefreshSessionToken(ctx context.Context, in *RefreshSessionTokenRequest, opts ...grpc.CallOption) (*RefreshSessionTokenResponse, error)
 	LogoutSession(ctx context.Context, in *LogoutSessionRequest, opts ...grpc.CallOption) (*LogoutSessionResponse, error)
 	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
+	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
+	UpdateOwnProfile(ctx context.Context, in *UpdateOwnProfileRequest, opts ...grpc.CallOption) (*UpdateOwnProfileResponse, error)
+	ChangeOwnPassword(ctx context.Context, in *ChangeOwnPasswordRequest, opts ...grpc.CallOption) (*ChangeOwnPasswordResponse, error)
+	UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error)
+	UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error)
+	ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error)
+	ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error)
 	IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
@@ -123,6 +137,76 @@ func (c *identityClient) GetCurrentUser(ctx context.Context, in *GetCurrentUserR
 	return out, nil
 }
 
+func (c *identityClient) ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUsersResponse)
+	err := c.cc.Invoke(ctx, Identity_ListUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) UpdateOwnProfile(ctx context.Context, in *UpdateOwnProfileRequest, opts ...grpc.CallOption) (*UpdateOwnProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateOwnProfileResponse)
+	err := c.cc.Invoke(ctx, Identity_UpdateOwnProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) ChangeOwnPassword(ctx context.Context, in *ChangeOwnPasswordRequest, opts ...grpc.CallOption) (*ChangeOwnPasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChangeOwnPasswordResponse)
+	err := c.cc.Invoke(ctx, Identity_ChangeOwnPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserRoleResponse)
+	err := c.cc.Invoke(ctx, Identity_UpdateUserRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserStatusResponse)
+	err := c.cc.Invoke(ctx, Identity_UpdateUserStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetUserPasswordResponse)
+	err := c.cc.Invoke(ctx, Identity_ResetUserPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListIdentityAuditsResponse)
+	err := c.cc.Invoke(ctx, Identity_ListIdentityAudits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *identityClient) IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IntrospectAccessTokenResponse)
@@ -154,6 +238,13 @@ type IdentityServer interface {
 	RefreshSessionToken(context.Context, *RefreshSessionTokenRequest) (*RefreshSessionTokenResponse, error)
 	LogoutSession(context.Context, *LogoutSessionRequest) (*LogoutSessionResponse, error)
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error)
+	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
+	UpdateOwnProfile(context.Context, *UpdateOwnProfileRequest) (*UpdateOwnProfileResponse, error)
+	ChangeOwnPassword(context.Context, *ChangeOwnPasswordRequest) (*ChangeOwnPasswordResponse, error)
+	UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*UpdateUserRoleResponse, error)
+	UpdateUserStatus(context.Context, *UpdateUserStatusRequest) (*UpdateUserStatusResponse, error)
+	ResetUserPassword(context.Context, *ResetUserPasswordRequest) (*ResetUserPasswordResponse, error)
+	ListIdentityAudits(context.Context, *ListIdentityAuditsRequest) (*ListIdentityAuditsResponse, error)
 	IntrospectAccessToken(context.Context, *IntrospectAccessTokenRequest) (*IntrospectAccessTokenResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedIdentityServer()
@@ -186,6 +277,27 @@ func (UnimplementedIdentityServer) LogoutSession(context.Context, *LogoutSession
 }
 func (UnimplementedIdentityServer) GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCurrentUser not implemented")
+}
+func (UnimplementedIdentityServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUsers not implemented")
+}
+func (UnimplementedIdentityServer) UpdateOwnProfile(context.Context, *UpdateOwnProfileRequest) (*UpdateOwnProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateOwnProfile not implemented")
+}
+func (UnimplementedIdentityServer) ChangeOwnPassword(context.Context, *ChangeOwnPasswordRequest) (*ChangeOwnPasswordResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ChangeOwnPassword not implemented")
+}
+func (UnimplementedIdentityServer) UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*UpdateUserRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateUserRole not implemented")
+}
+func (UnimplementedIdentityServer) UpdateUserStatus(context.Context, *UpdateUserStatusRequest) (*UpdateUserStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateUserStatus not implemented")
+}
+func (UnimplementedIdentityServer) ResetUserPassword(context.Context, *ResetUserPasswordRequest) (*ResetUserPasswordResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetUserPassword not implemented")
+}
+func (UnimplementedIdentityServer) ListIdentityAudits(context.Context, *ListIdentityAuditsRequest) (*ListIdentityAuditsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListIdentityAudits not implemented")
 }
 func (UnimplementedIdentityServer) IntrospectAccessToken(context.Context, *IntrospectAccessTokenRequest) (*IntrospectAccessTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IntrospectAccessToken not implemented")
@@ -340,6 +452,132 @@ func _Identity_GetCurrentUser_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Identity_ListUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).ListUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_ListUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).ListUsers(ctx, req.(*ListUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_UpdateOwnProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOwnProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).UpdateOwnProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_UpdateOwnProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).UpdateOwnProfile(ctx, req.(*UpdateOwnProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_ChangeOwnPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeOwnPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).ChangeOwnPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_ChangeOwnPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).ChangeOwnPassword(ctx, req.(*ChangeOwnPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_UpdateUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).UpdateUserRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_UpdateUserRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).UpdateUserRole(ctx, req.(*UpdateUserRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_UpdateUserStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).UpdateUserStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_UpdateUserStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).UpdateUserStatus(ctx, req.(*UpdateUserStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_ResetUserPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetUserPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).ResetUserPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_ResetUserPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).ResetUserPassword(ctx, req.(*ResetUserPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_ListIdentityAudits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIdentityAuditsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).ListIdentityAudits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_ListIdentityAudits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).ListIdentityAudits(ctx, req.(*ListIdentityAuditsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Identity_IntrospectAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IntrospectAccessTokenRequest)
 	if err := dec(in); err != nil {
@@ -410,6 +648,34 @@ var Identity_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentUser",
 			Handler:    _Identity_GetCurrentUser_Handler,
+		},
+		{
+			MethodName: "ListUsers",
+			Handler:    _Identity_ListUsers_Handler,
+		},
+		{
+			MethodName: "UpdateOwnProfile",
+			Handler:    _Identity_UpdateOwnProfile_Handler,
+		},
+		{
+			MethodName: "ChangeOwnPassword",
+			Handler:    _Identity_ChangeOwnPassword_Handler,
+		},
+		{
+			MethodName: "UpdateUserRole",
+			Handler:    _Identity_UpdateUserRole_Handler,
+		},
+		{
+			MethodName: "UpdateUserStatus",
+			Handler:    _Identity_UpdateUserStatus_Handler,
+		},
+		{
+			MethodName: "ResetUserPassword",
+			Handler:    _Identity_ResetUserPassword_Handler,
+		},
+		{
+			MethodName: "ListIdentityAudits",
+			Handler:    _Identity_ListIdentityAudits_Handler,
 		},
 		{
 			MethodName: "IntrospectAccessToken",

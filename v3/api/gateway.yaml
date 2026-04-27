@@ -248,6 +248,121 @@ paths:
       summary: AuthMe
       tags:
       - Authentication
+  /api/v3/auth/me/password:
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
+        argument<br>110201-invalid credentials<br>110501-user not found<br>119901-internal
+        error
+      operationId: authAuthChangePassword
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            new_password:
+              example: NewStr0ngP@ssw0rd!
+              type: string
+            old_password:
+              example: OldStr0ngP@ssw0rd!
+              type: string
+          required:
+          - old_password
+          - new_password
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: AuthChangePassword
+      tags:
+      - Authentication
+  /api/v3/auth/me/profile:
+    patch:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
+        argument<br>110501-user not found<br>119901-internal error
+      operationId: authAuthUpdateProfile
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            avatar_url:
+              example: https://cdn.example.com/avatar/alice.png
+              type: string
+            nickname:
+              example: Alice
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
+                    type: string
+                  email:
+                    example: alice@example.com
+                    type: string
+                  nickname:
+                    example: Alice
+                    type: string
+                  role:
+                    example: user
+                    type: string
+                  status:
+                    example: active
+                    type: string
+                  user_id:
+                    example: user_01J8PROFILEEXAMPLE
+                    type: string
+                  username:
+                    example: beehive_user_01
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: AuthUpdateProfile
+      tags:
+      - Authentication
   /api/v3/auth/refresh:
     post:
       consumes:
@@ -1003,6 +1118,133 @@ paths:
       summary: Get public content item by slug
       tags:
       - Public Content
+  /api/v3/studio/audits:
+    get:
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>119901-internal error
+      operationId: identityIdentityAuditList
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - allowEmptyValue: true
+        example: admin_update_user_status
+        in: query
+        name: event_type
+        type: string
+      - allowEmptyValue: true
+        enum:
+        - success
+        - failure
+        example: success
+        in: query
+        name: result
+        type: string
+      - allowEmptyValue: true
+        example: "1"
+        in: query
+        name: user_id
+        type: string
+      - allowEmptyValue: true
+        example: 1713772000
+        in: query
+        name: started_at
+        type: integer
+      - allowEmptyValue: true
+        example: 1713776400
+        in: query
+        name: ended_at
+        type: integer
+      - allowEmptyValue: true
+        default: 1
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - allowEmptyValue: true
+        default: 20
+        example: 20
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    audit_id:
+                      example: "9001"
+                      type: string
+                    auth_source:
+                      enum:
+                      - local
+                      - sso
+                      example: local
+                      type: string
+                    client_ip:
+                      example: 127.0.0.1
+                      type: string
+                    created_at:
+                      example: 1713776400
+                      type: integer
+                    detail_json:
+                      example: '{"target_user_id":"2"}'
+                      type: string
+                    event_type:
+                      example: admin_update_user_status
+                      type: string
+                    provider:
+                      enum:
+                      - github
+                      - qq
+                      - wechat
+                      example: github
+                      type: string
+                    result:
+                      enum:
+                      - success
+                      - failure
+                      example: success
+                      type: string
+                    session_id:
+                      example: "2001"
+                      type: string
+                    user_agent:
+                      example: Mozilla/5.0
+                      type: string
+                    user_id:
+                      example: "1"
+                      type: string
+                  required:
+                  - audit_id
+                  - event_type
+                  - result
+                  - created_at
+                  type: object
+                type: array
+              page:
+                example: 1
+                type: integer
+              page_size:
+                example: 20
+                type: integer
+              total:
+                example: 1
+                type: integer
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List identity audits
+      tags:
+      - Studio Identity
   /api/v3/studio/content/items:
     get:
       description: 100201-authorization required<br>100203-access token invalid<br>120101-invalid
@@ -2680,6 +2922,366 @@ paths:
       summary: Update content tag
       tags:
       - Studio Content
+  /api/v3/studio/users:
+    get:
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>119901-internal error
+      operationId: identityIdentityUserList
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - allowEmptyValue: true
+        example: alice
+        in: query
+        name: keyword
+        type: string
+      - allowEmptyValue: true
+        enum:
+        - member
+        - admin
+        example: member
+        in: query
+        name: role
+        type: string
+      - allowEmptyValue: true
+        enum:
+        - pending
+        - active
+        - disabled
+        - locked
+        example: active
+        in: query
+        name: status
+        type: string
+      - allowEmptyValue: true
+        default: 1
+        example: 1
+        in: query
+        name: page
+        type: integer
+      - allowEmptyValue: true
+        default: 20
+        example: 20
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    avatar_url:
+                      example: https://cdn.example.com/avatar/alice.png
+                      type: string
+                    created_at:
+                      example: 1713772000
+                      type: integer
+                    email:
+                      example: alice@example.com
+                      type: string
+                    last_login_at:
+                      example: 1713772800
+                      type: integer
+                    nickname:
+                      example: Alice
+                      type: string
+                    role:
+                      enum:
+                      - member
+                      - admin
+                      example: member
+                      type: string
+                    status:
+                      enum:
+                      - pending
+                      - active
+                      - disabled
+                      - locked
+                      example: active
+                      type: string
+                    updated_at:
+                      example: 1713776400
+                      type: integer
+                    user_id:
+                      example: "1"
+                      type: string
+                    username:
+                      example: beehive_user_01
+                      type: string
+                  required:
+                  - user_id
+                  - username
+                  - email
+                  - role
+                  - status
+                  - created_at
+                  - updated_at
+                  type: object
+                type: array
+              page:
+                example: 1
+                type: integer
+              page_size:
+                example: 20
+                type: integer
+              total:
+                example: 1
+                type: integer
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List users
+      tags:
+      - Studio Identity
+  /api/v3/studio/users/{user_id}/password/reset:
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>110501-user not found<br>119901-internal
+        error
+      operationId: identityIdentityUserPasswordReset
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1"
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            new_password:
+              example: NewStr0ngP@ssw0rd!
+              type: string
+          required:
+          - new_password
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Reset user password
+      tags:
+      - Studio Identity
+  /api/v3/studio/users/{user_id}/role:
+    patch:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>110501-user not found<br>119901-internal
+        error
+      operationId: identityIdentityUserRoleUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1"
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            role:
+              enum:
+              - member
+              - admin
+              example: admin
+              type: string
+          required:
+          - role
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  email:
+                    example: alice@example.com
+                    type: string
+                  last_login_at:
+                    example: 1713772800
+                    type: integer
+                  nickname:
+                    example: Alice
+                    type: string
+                  role:
+                    enum:
+                    - member
+                    - admin
+                    example: member
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - active
+                    - disabled
+                    - locked
+                    example: active
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  user_id:
+                    example: "1"
+                    type: string
+                  username:
+                    example: beehive_user_01
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update user role
+      tags:
+      - Studio Identity
+  /api/v3/studio/users/{user_id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>110501-user not found<br>119901-internal
+        error
+      operationId: identityIdentityUserStatusUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1"
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            status:
+              enum:
+              - active
+              - disabled
+              - locked
+              example: disabled
+              type: string
+          required:
+          - status
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  email:
+                    example: alice@example.com
+                    type: string
+                  last_login_at:
+                    example: 1713772800
+                    type: integer
+                  nickname:
+                    example: Alice
+                    type: string
+                  role:
+                    enum:
+                    - member
+                    - admin
+                    example: member
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - active
+                    - disabled
+                    - locked
+                    example: active
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  user_id:
+                    example: "1"
+                    type: string
+                  username:
+                    example: beehive_user_01
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update user status
+      tags:
+      - Studio Identity
   /healthz:
     get:
       description: 109901-internal error
@@ -2752,7 +3354,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-25 12:13:38"
+x-date: "2026-04-27 11:13:52"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

@@ -179,6 +179,117 @@ message GetCurrentUserResponse {
   CurrentUser current_user = 1;
 }
 
+message AdminUserView {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string nickname = 4;
+  string avatar_url = 5;
+  Role role = 6;
+  AccountStatus status = 7;
+  int64 last_login_at = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message IdentityAuditView {
+  string audit_id = 1;
+  string user_id = 2;
+  string session_id = 3;
+  string provider = 4;
+  AuthSource auth_source = 5;
+  string event_type = 6;
+  string result = 7;
+  string client_ip = 8;
+  string user_agent = 9;
+  string detail_json = 10;
+  int64 created_at = 11;
+}
+
+message ListUsersRequest {
+  string actor_user_id = 1;
+  string keyword = 2;
+  Role role = 3;
+  AccountStatus status = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ListUsersResponse {
+  repeated AdminUserView items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UpdateOwnProfileRequest {
+  string user_id = 1;
+  string nickname = 2;
+  string avatar_url = 3;
+}
+
+message UpdateOwnProfileResponse {
+  CurrentUser current_user = 1;
+}
+
+message ChangeOwnPasswordRequest {
+  string user_id = 1;
+  string old_password = 2;
+  string new_password = 3;
+}
+
+message ChangeOwnPasswordResponse {
+  bool ok = 1;
+}
+
+message UpdateUserRoleRequest {
+  string actor_user_id = 1;
+  string target_user_id = 2;
+  Role role = 3;
+}
+
+message UpdateUserRoleResponse {
+  AdminUserView user = 1;
+}
+
+message UpdateUserStatusRequest {
+  string actor_user_id = 1;
+  string target_user_id = 2;
+  AccountStatus status = 3;
+}
+
+message UpdateUserStatusResponse {
+  AdminUserView user = 1;
+}
+
+message ResetUserPasswordRequest {
+  string actor_user_id = 1;
+  string target_user_id = 2;
+  string new_password = 3;
+}
+
+message ResetUserPasswordResponse {
+  bool ok = 1;
+}
+
+message ListIdentityAuditsRequest {
+  string actor_user_id = 1;
+  string event_type = 2;
+  string result = 3;
+  string user_id = 4;
+  int64 started_at = 5;
+  int64 ended_at = 6;
+  int32 page = 7;
+  int32 page_size = 8;
+}
+
+message ListIdentityAuditsResponse {
+  repeated IdentityAuditView items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
 message IntrospectAccessTokenRequest {
   string access_token = 1;
 }
@@ -214,6 +325,13 @@ service Identity {
   rpc RefreshSessionToken(RefreshSessionTokenRequest) returns (RefreshSessionTokenResponse);
   rpc LogoutSession(LogoutSessionRequest) returns (LogoutSessionResponse);
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc UpdateOwnProfile(UpdateOwnProfileRequest) returns (UpdateOwnProfileResponse);
+  rpc ChangeOwnPassword(ChangeOwnPasswordRequest) returns (ChangeOwnPasswordResponse);
+  rpc UpdateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
+  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+  rpc ResetUserPassword(ResetUserPasswordRequest) returns (ResetUserPasswordResponse);
+  rpc ListIdentityAudits(ListIdentityAuditsRequest) returns (ListIdentityAuditsResponse);
   rpc IntrospectAccessToken(IntrospectAccessTokenRequest) returns (IntrospectAccessTokenResponse);
   rpc Ping(PingRequest) returns (PingResponse);
 }

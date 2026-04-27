@@ -15,13 +15,21 @@ import (
 
 type (
 	CurrentUser                   = pb.CurrentUser
+	AdminUserView                 = pb.AdminUserView
+	ChangeOwnPasswordRequest      = pb.ChangeOwnPasswordRequest
+	ChangeOwnPasswordResponse     = pb.ChangeOwnPasswordResponse
 	FederatedIdentity             = pb.FederatedIdentity
 	FinishSsoLoginRequest         = pb.FinishSsoLoginRequest
 	FinishSsoLoginResponse        = pb.FinishSsoLoginResponse
 	GetCurrentUserRequest         = pb.GetCurrentUserRequest
 	GetCurrentUserResponse        = pb.GetCurrentUserResponse
+	IdentityAuditView             = pb.IdentityAuditView
 	IntrospectAccessTokenRequest  = pb.IntrospectAccessTokenRequest
 	IntrospectAccessTokenResponse = pb.IntrospectAccessTokenResponse
+	ListIdentityAuditsRequest     = pb.ListIdentityAuditsRequest
+	ListIdentityAuditsResponse    = pb.ListIdentityAuditsResponse
+	ListUsersRequest              = pb.ListUsersRequest
+	ListUsersResponse             = pb.ListUsersResponse
 	LoginLocalUserRequest         = pb.LoginLocalUserRequest
 	LoginLocalUserResponse        = pb.LoginLocalUserResponse
 	LogoutSessionRequest          = pb.LogoutSessionRequest
@@ -32,10 +40,18 @@ type (
 	RefreshSessionTokenResponse   = pb.RefreshSessionTokenResponse
 	RegisterLocalUserRequest      = pb.RegisterLocalUserRequest
 	RegisterLocalUserResponse     = pb.RegisterLocalUserResponse
+	ResetUserPasswordRequest      = pb.ResetUserPasswordRequest
+	ResetUserPasswordResponse     = pb.ResetUserPasswordResponse
 	SessionInfo                   = pb.SessionInfo
 	StartSsoLoginRequest          = pb.StartSsoLoginRequest
 	StartSsoLoginResponse         = pb.StartSsoLoginResponse
 	TokenPair                     = pb.TokenPair
+	UpdateOwnProfileRequest       = pb.UpdateOwnProfileRequest
+	UpdateOwnProfileResponse      = pb.UpdateOwnProfileResponse
+	UpdateUserRoleRequest         = pb.UpdateUserRoleRequest
+	UpdateUserRoleResponse        = pb.UpdateUserRoleResponse
+	UpdateUserStatusRequest       = pb.UpdateUserStatusRequest
+	UpdateUserStatusResponse      = pb.UpdateUserStatusResponse
 
 	Identity interface {
 		RegisterLocalUser(ctx context.Context, in *RegisterLocalUserRequest, opts ...grpc.CallOption) (*RegisterLocalUserResponse, error)
@@ -45,6 +61,13 @@ type (
 		RefreshSessionToken(ctx context.Context, in *RefreshSessionTokenRequest, opts ...grpc.CallOption) (*RefreshSessionTokenResponse, error)
 		LogoutSession(ctx context.Context, in *LogoutSessionRequest, opts ...grpc.CallOption) (*LogoutSessionResponse, error)
 		GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
+		ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
+		UpdateOwnProfile(ctx context.Context, in *UpdateOwnProfileRequest, opts ...grpc.CallOption) (*UpdateOwnProfileResponse, error)
+		ChangeOwnPassword(ctx context.Context, in *ChangeOwnPasswordRequest, opts ...grpc.CallOption) (*ChangeOwnPasswordResponse, error)
+		UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error)
+		UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error)
+		ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error)
+		ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error)
 		IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error)
 		Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	}
@@ -93,6 +116,41 @@ func (m *defaultIdentity) LogoutSession(ctx context.Context, in *LogoutSessionRe
 func (m *defaultIdentity) GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error) {
 	client := pb.NewIdentityClient(m.cli.Conn())
 	return client.GetCurrentUser(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.ListUsers(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) UpdateOwnProfile(ctx context.Context, in *UpdateOwnProfileRequest, opts ...grpc.CallOption) (*UpdateOwnProfileResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.UpdateOwnProfile(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) ChangeOwnPassword(ctx context.Context, in *ChangeOwnPasswordRequest, opts ...grpc.CallOption) (*ChangeOwnPasswordResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.ChangeOwnPassword(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.UpdateUserRole(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.UpdateUserStatus(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.ResetUserPassword(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.ListIdentityAudits(ctx, in, opts...)
 }
 
 func (m *defaultIdentity) IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error) {

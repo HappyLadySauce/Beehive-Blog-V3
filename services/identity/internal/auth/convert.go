@@ -25,6 +25,54 @@ func ToCurrentUser(user *entity.User) *pb.CurrentUser {
 	}
 }
 
+// ToAdminUserView converts a user entity to admin proto view.
+// ToAdminUserView 将用户实体转换为管理员视图 proto。
+func ToAdminUserView(user *entity.User) *pb.AdminUserView {
+	if user == nil {
+		return nil
+	}
+
+	var lastLoginAt int64
+	if user.LastLoginAt != nil {
+		lastLoginAt = user.LastLoginAt.Unix()
+	}
+
+	return &pb.AdminUserView{
+		UserId:      strconv.FormatInt(user.ID, 10),
+		Username:    user.Username,
+		Email:       derefString(user.Email),
+		Nickname:    derefString(user.Nickname),
+		AvatarUrl:   derefString(user.AvatarURL),
+		Role:        ToProtoRole(user.Role),
+		Status:      ToProtoAccountStatus(user.Status),
+		LastLoginAt: lastLoginAt,
+		CreatedAt:   user.CreatedAt.Unix(),
+		UpdatedAt:   user.UpdatedAt.Unix(),
+	}
+}
+
+// ToIdentityAuditView converts an audit entity to proto view.
+// ToIdentityAuditView 将审计实体转换为 proto 视图。
+func ToIdentityAuditView(audit *entity.IdentityAudit) *pb.IdentityAuditView {
+	if audit == nil {
+		return nil
+	}
+
+	return &pb.IdentityAuditView{
+		AuditId:    strconv.FormatInt(audit.ID, 10),
+		UserId:     int64PtrString(audit.UserID),
+		SessionId:  int64PtrString(audit.SessionID),
+		Provider:   derefString(audit.Provider),
+		AuthSource: ToProtoAuthSource(derefString(audit.AuthSource)),
+		EventType:  audit.EventType,
+		Result:     audit.Result,
+		ClientIp:   derefString(audit.ClientIP),
+		UserAgent:  derefString(audit.UserAgent),
+		DetailJson: string(audit.Detail),
+		CreatedAt:  audit.CreatedAt.Unix(),
+	}
+}
+
 // ToSessionInfo converts a session entity to proto.
 // ToSessionInfo 将会话实体转换为 proto。
 func ToSessionInfo(session *entity.UserSession) *pb.SessionInfo {
@@ -72,6 +120,36 @@ func ToProtoRole(role string) pb.Role {
 		return pb.Role_ROLE_MEMBER
 	default:
 		return pb.Role_ROLE_UNSPECIFIED
+	}
+}
+
+// FromProtoRole maps a role proto enum to a storage value.
+// FromProtoRole 将角色 proto 枚举映射为存储值。
+func FromProtoRole(role pb.Role) string {
+	switch role {
+	case pb.Role_ROLE_ADMIN:
+		return UserRoleAdmin
+	case pb.Role_ROLE_MEMBER:
+		return UserRoleMember
+	default:
+		return ""
+	}
+}
+
+// FromProtoAccountStatus maps an account-status proto enum to a storage value.
+// FromProtoAccountStatus 将账号状态 proto 枚举映射为存储值。
+func FromProtoAccountStatus(status pb.AccountStatus) string {
+	switch status {
+	case pb.AccountStatus_ACCOUNT_STATUS_PENDING:
+		return UserStatusPending
+	case pb.AccountStatus_ACCOUNT_STATUS_ACTIVE:
+		return UserStatusActive
+	case pb.AccountStatus_ACCOUNT_STATUS_DISABLED:
+		return UserStatusDisabled
+	case pb.AccountStatus_ACCOUNT_STATUS_LOCKED:
+		return UserStatusLocked
+	default:
+		return ""
 	}
 }
 
@@ -126,4 +204,11 @@ func derefString(value *string) string {
 	}
 
 	return *value
+}
+
+func int64PtrString(value *int64) string {
+	if value == nil {
+		return ""
+	}
+	return strconv.FormatInt(*value, 10)
 }

@@ -66,6 +66,9 @@ const (
 	// CodeIdentityInternalCallerUnauthorized identifies unauthorized internal callers.
 	// CodeIdentityInternalCallerUnauthorized 标识未通过认证的内部调用方。
 	CodeIdentityInternalCallerUnauthorized Code = 110208
+	// CodeIdentityAccessForbidden identifies forbidden identity administration access.
+	// CodeIdentityAccessForbidden 标识 identity 管理访问被拒绝。
+	CodeIdentityAccessForbidden Code = 110301
 	// CodeIdentitySSOProviderDisabled identifies disabled SSO providers.
 	// CodeIdentitySSOProviderDisabled 标识已禁用的 SSO provider。
 	CodeIdentitySSOProviderDisabled Code = 110401

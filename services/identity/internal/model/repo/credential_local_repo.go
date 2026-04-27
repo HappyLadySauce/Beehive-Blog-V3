@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"gorm.io/gorm"
@@ -28,4 +29,25 @@ func (r *CredentialLocalRepository) GetByUserID(ctx context.Context, userID int6
 	}
 
 	return &credential, nil
+}
+
+// UpdatePasswordHash replaces the local password hash for a user.
+// UpdatePasswordHash 替换用户本地密码哈希。
+func (r *CredentialLocalRepository) UpdatePasswordHash(ctx context.Context, userID int64, passwordHash string, at time.Time) error {
+	result := r.db.WithContext(ctx).
+		Model(&entity.CredentialLocal{}).
+		Where("user_id = ?", userID).
+		Updates(map[string]any{
+			"password_hash":       passwordHash,
+			"password_updated_at": at,
+			"updated_at":          at,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }

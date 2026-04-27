@@ -1,5 +1,5 @@
 Name: content.rpc
-ListenOn: 0.0.0.0:8080
+ListenOn: 0.0.0.0:8081
 Etcd:
   Hosts:
   - 127.0.0.1:2379
@@ -7,9 +7,9 @@ Etcd:
 Postgres:
   Host: 127.0.0.1
   Port: 5432
-  User: postgres
-  Password: postgres
-  DBName: beehive_blog_v3
+  User: Beehive-Blog-V3
+  Password: Beehive-Blog-V3
+  DBName: Beehive-Blog-V3
   SSLMode: disable
   TimeZone: Asia/Shanghai
   ConnectTimeoutSeconds: 5

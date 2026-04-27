@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
@@ -21,6 +22,35 @@ func parseID(fieldName, raw string) (int64, error) {
 	}
 
 	return id, nil
+}
+
+// parseOptionalID parses an optional decimal identifier.
+// parseOptionalID 解析可选的十进制标识。
+func parseOptionalID(fieldName, raw string) (*int64, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+
+	id, err := parseID(fieldName, raw)
+	if err != nil {
+		return nil, err
+	}
+
+	return &id, nil
+}
+
+// unixSecondsPtr converts optional unix seconds to a time pointer.
+// unixSecondsPtr 将可选 Unix 秒转换为时间指针。
+func unixSecondsPtr(fieldName string, value int64) (*time.Time, error) {
+	if value == 0 {
+		return nil, nil
+	}
+	if value < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%s is invalid", fieldName)
+	}
+
+	t := time.Unix(value, 0).UTC()
+	return &t, nil
 }
 
 // expiresIn returns the remaining seconds until expiration.

@@ -16,6 +16,7 @@ type Manager struct {
 	Refresh     *RefreshService
 	Logout      *LogoutService
 	CurrentUser *CurrentUserService
+	Users       *UserManagementService
 	Introspect  *IntrospectService
 	SSOStart    *SSOStartService
 	SSOFinish   *SSOFinishService
@@ -32,6 +33,7 @@ func NewManager(c config.Config, store *repo.Store, providers *provider.Registry
 		Refresh:     NewRefreshService(deps),
 		Logout:      NewLogoutService(deps),
 		CurrentUser: NewCurrentUserService(deps),
+		Users:       NewUserManagementService(deps),
 		Introspect:  NewIntrospectService(deps),
 		SSOStart:    NewSSOStartService(deps),
 		SSOFinish:   NewSSOFinishService(deps),

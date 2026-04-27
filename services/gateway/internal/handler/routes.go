@@ -8,6 +8,7 @@ import (
 
 	auth "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/auth"
 	content "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/content"
+	identity "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/identity"
 	ops "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/ops"
 	publiccontent "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/publiccontent"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
@@ -54,6 +55,49 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			Method:  http.MethodGet,
 			Path:    "/me",
 			Handler: auth.AuthMeHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPatch,
+			Path:    "/me/profile",
+			Handler: auth.AuthUpdateProfileHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/me/password",
+			Handler: auth.AuthChangePasswordHandler(serverCtx),
+		},
+	}
+
+	studioIdentityRoutes := []rest.Route{
+		{
+			// List users
+			Method:  http.MethodGet,
+			Path:    "/users",
+			Handler: identity.IdentityUserListHandler(serverCtx),
+		},
+		{
+			// Update user role
+			Method:  http.MethodPatch,
+			Path:    "/users/:user_id/role",
+			Handler: identity.IdentityUserRoleUpdateHandler(serverCtx),
+		},
+		{
+			// Update user status
+			Method:  http.MethodPatch,
+			Path:    "/users/:user_id/status",
+			Handler: identity.IdentityUserStatusUpdateHandler(serverCtx),
+		},
+		{
+			// Reset user password
+			Method:  http.MethodPost,
+			Path:    "/users/:user_id/password/reset",
+			Handler: identity.IdentityUserPasswordResetHandler(serverCtx),
+		},
+		{
+			// List identity audits
+			Method:  http.MethodGet,
+			Path:    "/audits",
+			Handler: identity.IdentityAuditListHandler(serverCtx),
 		},
 	}
 
@@ -196,6 +240,14 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			serverCtx.AuthMiddleware,
 		}, studioContentRoutes...),
 		rest.WithPrefix("/api/v3/studio/content"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares([]rest.Middleware{
+			serverCtx.RequestMetaMiddleware,
+			serverCtx.AuthMiddleware,
+		}, studioIdentityRoutes...),
+		rest.WithPrefix("/api/v3/studio"),
 	)
 
 	server.AddRoutes(
