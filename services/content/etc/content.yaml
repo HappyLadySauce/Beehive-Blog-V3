@@ -28,6 +28,6 @@ Outbox:
   MaxAttempts: 360
   RetryDelaySeconds: 10
   ProcessingTimeoutSeconds: 60
-InternalAuthToken: change-me-in-local-env
+InternalAuthToken: "replace-me-with-a-shared-internal-secret"
 AllowedCallers:
 - gateway

@@ -39,7 +39,7 @@ async function handleSubmit() {
     await authStore.login({
       login_identifier: form.loginIdentifier.trim(),
       password: form.password,
-      client_type: 'studio',
+      client_type: 'web',
       user_agent: navigator.userAgent,
     })
 
