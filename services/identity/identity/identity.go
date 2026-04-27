@@ -14,10 +14,10 @@ import (
 )
 
 type (
-	CurrentUser                   = pb.CurrentUser
 	AdminUserView                 = pb.AdminUserView
 	ChangeOwnPasswordRequest      = pb.ChangeOwnPasswordRequest
 	ChangeOwnPasswordResponse     = pb.ChangeOwnPasswordResponse
+	CurrentUser                   = pb.CurrentUser
 	FederatedIdentity             = pb.FederatedIdentity
 	FinishSsoLoginRequest         = pb.FinishSsoLoginRequest
 	FinishSsoLoginResponse        = pb.FinishSsoLoginResponse
