@@ -32,6 +32,7 @@ const (
 	Identity_UpdateUserRole_FullMethodName        = "/identity.Identity/UpdateUserRole"
 	Identity_UpdateUserStatus_FullMethodName      = "/identity.Identity/UpdateUserStatus"
 	Identity_ResetUserPassword_FullMethodName     = "/identity.Identity/ResetUserPassword"
+	Identity_DeleteUser_FullMethodName            = "/identity.Identity/DeleteUser"
 	Identity_ListIdentityAudits_FullMethodName    = "/identity.Identity/ListIdentityAudits"
 	Identity_IntrospectAccessToken_FullMethodName = "/identity.Identity/IntrospectAccessToken"
 	Identity_Ping_FullMethodName                  = "/identity.Identity/Ping"
@@ -54,6 +55,7 @@ type IdentityClient interface {
 	UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error)
 	UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error)
 	ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error)
+	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error)
 	IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
@@ -197,6 +199,16 @@ func (c *identityClient) ResetUserPassword(ctx context.Context, in *ResetUserPas
 	return out, nil
 }
 
+func (c *identityClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteUserResponse)
+	err := c.cc.Invoke(ctx, Identity_DeleteUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *identityClient) ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListIdentityAuditsResponse)
@@ -244,6 +256,7 @@ type IdentityServer interface {
 	UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*UpdateUserRoleResponse, error)
 	UpdateUserStatus(context.Context, *UpdateUserStatusRequest) (*UpdateUserStatusResponse, error)
 	ResetUserPassword(context.Context, *ResetUserPasswordRequest) (*ResetUserPasswordResponse, error)
+	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	ListIdentityAudits(context.Context, *ListIdentityAuditsRequest) (*ListIdentityAuditsResponse, error)
 	IntrospectAccessToken(context.Context, *IntrospectAccessTokenRequest) (*IntrospectAccessTokenResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
@@ -295,6 +308,9 @@ func (UnimplementedIdentityServer) UpdateUserStatus(context.Context, *UpdateUser
 }
 func (UnimplementedIdentityServer) ResetUserPassword(context.Context, *ResetUserPasswordRequest) (*ResetUserPasswordResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetUserPassword not implemented")
+}
+func (UnimplementedIdentityServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteUser not implemented")
 }
 func (UnimplementedIdentityServer) ListIdentityAudits(context.Context, *ListIdentityAuditsRequest) (*ListIdentityAuditsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListIdentityAudits not implemented")
@@ -560,6 +576,24 @@ func _Identity_ResetUserPassword_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Identity_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).DeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_DeleteUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).DeleteUser(ctx, req.(*DeleteUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Identity_ListIdentityAudits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListIdentityAuditsRequest)
 	if err := dec(in); err != nil {
@@ -672,6 +706,10 @@ var Identity_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetUserPassword",
 			Handler:    _Identity_ResetUserPassword_Handler,
+		},
+		{
+			MethodName: "DeleteUser",
+			Handler:    _Identity_DeleteUser_Handler,
 		},
 		{
 			MethodName: "ListIdentityAudits",

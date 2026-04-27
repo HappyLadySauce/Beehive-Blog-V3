@@ -133,6 +133,14 @@ func ToResetUserPasswordResponse(resp *pb.ResetUserPasswordResponse) *types.Admi
 	}
 }
 
+// ToDeleteUserResponse maps identity soft-delete response.
+// ToDeleteUserResponse 转换 identity 软删除响应。
+func ToDeleteUserResponse(resp *pb.DeleteUserResponse) *types.AdminDeleteUserResp {
+	return &types.AdminDeleteUserResp{
+		Ok: resp.GetOk(),
+	}
+}
+
 // ToAuditListResponse maps identity audit list response.
 // ToAuditListResponse 转换 identity 审计列表响应。
 
@@ -179,6 +187,7 @@ func toAdminUserView(user *pb.AdminUserView) types.AdminUserView {
 		LastLoginAt: user.GetLastLoginAt(),
 		CreatedAt:   user.GetCreatedAt(),
 		UpdatedAt:   user.GetUpdatedAt(),
+		DeletedAt:   user.GetDeletedAt(),
 	}
 }
 

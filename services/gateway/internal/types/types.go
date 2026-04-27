@@ -62,19 +62,21 @@ type AdminUserView struct {
 	Nickname    string `json:"nickname,optional,example=Alice"`
 	AvatarUrl   string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png"`
 	Role        string `json:"role,options=member|admin,example=member"`
-	Status      string `json:"status,options=pending|active|disabled|locked,example=active"`
+	Status      string `json:"status,options=pending|active|disabled|locked|deleted,example=active"`
 	LastLoginAt int64  `json:"last_login_at,optional,example=1713772800"`
 	CreatedAt   int64  `json:"created_at,example=1713772000"`
 	UpdatedAt   int64  `json:"updated_at,example=1713776400"`
+	DeletedAt   int64  `json:"deleted_at,optional,example=0"`
 }
 
 type AdminUserListReq struct {
-	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-	Keyword       string `form:"keyword,optional,example=alice" validate:"omitempty,max=128"`
-	Role          string `form:"role,optional,options=member|admin,example=member"`
-	Status        string `form:"status,optional,options=pending|active|disabled|locked,example=active"`
-	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
-	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+	Authorization  string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Keyword        string `form:"keyword,optional,example=alice" validate:"omitempty,max=128"`
+	Role           string `form:"role,optional,options=member|admin,example=member"`
+	Status         string `form:"status,optional,options=pending|active|disabled|locked|deleted,example=active"`
+	IncludeDeleted bool   `form:"include_deleted,optional,default=false,example=false"`
+	Page           int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize       int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
 }
 
 type AdminUserListResp struct {
@@ -112,6 +114,10 @@ type AdminUserResp struct {
 }
 
 type AdminResetUserPasswordResp struct {
+	Ok bool `json:"ok,example=true"`
+}
+
+type AdminDeleteUserResp struct {
 	Ok bool `json:"ok,example=true"`
 }
 

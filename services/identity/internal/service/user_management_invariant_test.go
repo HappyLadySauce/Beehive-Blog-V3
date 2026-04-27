@@ -22,6 +22,11 @@ func TestEnsureActiveAdminInvariantRejectsRemovingOnlyActiveAdmin(t *testing.T) 
 	if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
 		t.Fatalf("expected invalid argument when disabling only active admin, got %v", err)
 	}
+
+	err = ensureActiveAdminInvariant(activeAdmins, target, target.Role, auth.UserStatusDeleted)
+	if !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
+		t.Fatalf("expected invalid argument when deleting only active admin, got %v", err)
+	}
 }
 
 func TestEnsureActiveAdminInvariantAllowsNonAdminAndNoopChanges(t *testing.T) {

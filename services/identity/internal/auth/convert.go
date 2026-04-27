@@ -36,6 +36,10 @@ func ToAdminUserView(user *entity.User) *pb.AdminUserView {
 	if user.LastLoginAt != nil {
 		lastLoginAt = user.LastLoginAt.Unix()
 	}
+	var deletedAt int64
+	if user.DeletedAt != nil {
+		deletedAt = user.DeletedAt.Unix()
+	}
 
 	return &pb.AdminUserView{
 		UserId:      strconv.FormatInt(user.ID, 10),
@@ -48,6 +52,7 @@ func ToAdminUserView(user *entity.User) *pb.AdminUserView {
 		LastLoginAt: lastLoginAt,
 		CreatedAt:   user.CreatedAt.Unix(),
 		UpdatedAt:   user.UpdatedAt.Unix(),
+		DeletedAt:   deletedAt,
 	}
 }
 
@@ -148,6 +153,8 @@ func FromProtoAccountStatus(status pb.AccountStatus) string {
 		return UserStatusDisabled
 	case pb.AccountStatus_ACCOUNT_STATUS_LOCKED:
 		return UserStatusLocked
+	case pb.AccountStatus_ACCOUNT_STATUS_DELETED:
+		return UserStatusDeleted
 	default:
 		return ""
 	}
@@ -165,6 +172,8 @@ func ToProtoAccountStatus(status string) pb.AccountStatus {
 		return pb.AccountStatus_ACCOUNT_STATUS_DISABLED
 	case UserStatusLocked:
 		return pb.AccountStatus_ACCOUNT_STATUS_LOCKED
+	case UserStatusDeleted:
+		return pb.AccountStatus_ACCOUNT_STATUS_DELETED
 	default:
 		return pb.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED
 	}

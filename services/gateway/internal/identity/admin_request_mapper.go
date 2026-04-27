@@ -7,12 +7,13 @@ import (
 
 func BuildListUsersRequest(actorUserID string, req *types.AdminUserListReq) *pb.ListUsersRequest {
 	return &pb.ListUsersRequest{
-		ActorUserId: actorUserID,
-		Keyword:     req.Keyword,
-		Role:        toProtoRole(req.Role),
-		Status:      toProtoAccountStatus(req.Status),
-		Page:        int32(req.Page),
-		PageSize:    int32(req.PageSize),
+		ActorUserId:    actorUserID,
+		Keyword:        req.Keyword,
+		Role:           toProtoRole(req.Role),
+		Status:         toProtoAccountStatus(req.Status),
+		IncludeDeleted: req.IncludeDeleted,
+		Page:           int32(req.Page),
+		PageSize:       int32(req.PageSize),
 	}
 }
 
@@ -59,6 +60,15 @@ func BuildResetUserPasswordRequest(actorUserID string, req *types.AdminResetUser
 		ActorUserId:  actorUserID,
 		TargetUserId: req.UserId,
 		NewPassword:  req.NewPassword,
+	}
+}
+
+// BuildDeleteUserRequest maps studio user soft deletes.
+// BuildDeleteUserRequest 转换 Studio 用户软删除请求。
+func BuildDeleteUserRequest(actorUserID string, req *types.AdminUserIdReq) *pb.DeleteUserRequest {
+	return &pb.DeleteUserRequest{
+		ActorUserId:  actorUserID,
+		TargetUserId: req.UserId,
 	}
 }
 

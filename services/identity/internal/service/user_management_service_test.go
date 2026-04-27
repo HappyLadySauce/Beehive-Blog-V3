@@ -128,6 +128,9 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 	target := createUserWithRole(t, deps.Store, auth.UserRoleMember, auth.UserStatusActive)
 	targetSession := testkit.CreateSession(t, deps.Store, target.ID)
 	targetRefreshToken := testkit.CreateRefreshToken(t, deps.Store, targetSession.ID, auth.HashRefreshToken("target-refresh-token"))
+	deleteTarget := createUserWithRole(t, deps.Store, auth.UserRoleMember, auth.UserStatusActive)
+	deleteSession := testkit.CreateSession(t, deps.Store, deleteTarget.ID)
+	deleteRefreshToken := testkit.CreateRefreshToken(t, deps.Store, deleteSession.ID, auth.HashRefreshToken("delete-refresh-token"))
 
 	svc := service.NewUserManagementService(deps)
 	roleResult, err := svc.UpdateUserRole(context.Background(), service.UpdateUserRoleInput{
@@ -188,6 +191,50 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 	}
 	if targetToken.RevokedAt == nil {
 		t.Fatalf("expected password reset to revoke target refresh token, got %+v", targetToken)
+	}
+
+	if err := svc.DeleteUser(context.Background(), service.DeleteUserInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: deleteTarget.ID,
+	}); err != nil {
+		t.Fatalf("expected soft delete to succeed, got %v", err)
+	}
+	deleted, err := deps.Store.Users.GetByID(context.Background(), deleteTarget.ID)
+	if err != nil {
+		t.Fatalf("expected deleted user lookup to succeed, got %v", err)
+	}
+	if deleted.Status != auth.UserStatusDeleted || deleted.DeletedAt == nil {
+		t.Fatalf("expected deleted status and timestamp, got %+v", deleted)
+	}
+	deleteSession, err = deps.Store.UserSessions.GetByID(context.Background(), deleteSession.ID)
+	if err != nil {
+		t.Fatalf("expected delete session lookup to succeed, got %v", err)
+	}
+	if deleteSession.Status != auth.SessionStatusRevoked {
+		t.Fatalf("expected soft delete to revoke session, got %+v", deleteSession)
+	}
+	var deletedToken entity.RefreshToken
+	if err := deps.Store.DB().WithContext(context.Background()).Where("id = ?", deleteRefreshToken.ID).First(&deletedToken).Error; err != nil {
+		t.Fatalf("expected delete refresh token lookup to succeed, got %v", err)
+	}
+	if deletedToken.RevokedAt == nil {
+		t.Fatalf("expected soft delete to revoke refresh token, got %+v", deletedToken)
+	}
+	defaultList, err := svc.ListUsers(context.Background(), service.ListUsersInput{ActorUserID: admin.ID, Page: 1, PageSize: 20})
+	if err != nil {
+		t.Fatalf("expected default user list to succeed, got %v", err)
+	}
+	for _, item := range defaultList.Items {
+		if item.ID == deleteTarget.ID {
+			t.Fatalf("expected default user list to hide deleted user")
+		}
+	}
+	includeDeletedList, err := svc.ListUsers(context.Background(), service.ListUsersInput{ActorUserID: admin.ID, Status: auth.UserStatusDeleted, IncludeDeleted: true, Page: 1, PageSize: 20})
+	if err != nil {
+		t.Fatalf("expected include deleted list to succeed, got %v", err)
+	}
+	if includeDeletedList.Total != 1 || len(includeDeletedList.Items) != 1 || includeDeletedList.Items[0].ID != deleteTarget.ID {
+		t.Fatalf("expected include deleted list to contain deleted user, got total=%d items=%v", includeDeletedList.Total, includeDeletedList.Items)
 	}
 
 	audits, err := svc.ListIdentityAudits(context.Background(), service.ListIdentityAuditsInput{

@@ -88,6 +88,11 @@ func (s *IdentityServer) ResetUserPassword(ctx context.Context, in *pb.ResetUser
 	return l.ResetUserPassword(in)
 }
 
+func (s *IdentityServer) DeleteUser(ctx context.Context, in *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+	l := logic.NewDeleteUserLogic(ctx, s.svcCtx)
+	return l.DeleteUser(in)
+}
+
 func (s *IdentityServer) ListIdentityAudits(ctx context.Context, in *pb.ListIdentityAuditsRequest) (*pb.ListIdentityAuditsResponse, error) {
 	l := logic.NewListIdentityAuditsLogic(ctx, s.svcCtx)
 	return l.ListIdentityAudits(in)

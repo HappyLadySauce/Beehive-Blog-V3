@@ -125,6 +125,10 @@ func normalizeStatusValue(status string, allowPending bool) (string, error) {
 		if allowPending {
 			return status, nil
 		}
+	case auth.UserStatusDeleted:
+		if allowPending {
+			return status, nil
+		}
 	}
 	return "", errs.New(errs.CodeIdentityInvalidArgument, "status is invalid")
 }

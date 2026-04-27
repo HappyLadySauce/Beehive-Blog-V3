@@ -109,11 +109,12 @@ func (r *UserRepository) TouchLogin(ctx context.Context, id int64, at time.Time)
 // ListFilter describes user list filtering and pagination.
 // ListFilter 描述用户列表过滤与分页参数。
 type ListFilter struct {
-	Keyword  string
-	Role     string
-	Status   string
-	Page     int
-	PageSize int
+	Keyword        string
+	Role           string
+	Status         string
+	IncludeDeleted bool
+	Page           int
+	PageSize       int
 }
 
 // ProfileUpdate describes mutable profile fields that are present in a patch request.
@@ -140,6 +141,8 @@ func (r *UserRepository) List(ctx context.Context, filter ListFilter) ([]entity.
 	}
 	if status := strings.TrimSpace(filter.Status); status != "" {
 		query = query.Where("status = ?", status)
+	} else if !filter.IncludeDeleted {
+		query = query.Where("status <> ?", "deleted")
 	}
 
 	var total int64
@@ -191,6 +194,23 @@ func (r *UserRepository) UpdateRole(ctx context.Context, id int64, role string, 
 // UpdateStatus 更新用户账号状态。
 func (r *UserRepository) UpdateStatus(ctx context.Context, id int64, status string, at time.Time) (*entity.User, error) {
 	return r.updateStringField(ctx, id, "status", status, at)
+}
+
+// SoftDelete marks a user as deleted without removing historical identity records.
+// SoftDelete 将用户标记为已删除，但保留历史身份记录。
+func (r *UserRepository) SoftDelete(ctx context.Context, id int64, at time.Time) (*entity.User, error) {
+	if err := r.db.WithContext(ctx).
+		Model(&entity.User{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"status":     "deleted",
+			"deleted_at": at,
+			"updated_at": at,
+		}).Error; err != nil {
+		return nil, err
+	}
+
+	return r.GetByID(ctx, id)
 }
 
 func (r *UserRepository) updateStringField(ctx context.Context, id int64, column, value string, at time.Time) (*entity.User, error) {

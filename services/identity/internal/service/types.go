@@ -117,12 +117,13 @@ type GetCurrentUserInput struct {
 // ListUsersInput describes admin user-list filters.
 // ListUsersInput 描述管理员用户列表过滤参数。
 type ListUsersInput struct {
-	ActorUserID int64
-	Keyword     string
-	Role        string
-	Status      string
-	Page        int
-	PageSize    int
+	ActorUserID    int64
+	Keyword        string
+	Role           string
+	Status         string
+	IncludeDeleted bool
+	Page           int
+	PageSize       int
 }
 
 // UpdateOwnProfileInput describes self-service profile updates.
@@ -167,6 +168,14 @@ type ResetUserPasswordInput struct {
 	ActorUserID  int64
 	TargetUserID int64
 	NewPassword  string
+	ClientIP     string
+}
+
+// DeleteUserInput describes admin soft deletes.
+// DeleteUserInput 描述管理员软删除用户。
+type DeleteUserInput struct {
+	ActorUserID  int64
+	TargetUserID int64
 	ClientIP     string
 }
 

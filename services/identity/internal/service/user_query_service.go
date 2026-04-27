@@ -25,11 +25,12 @@ func (s *UserManagementService) ListUsers(ctx context.Context, in ListUsersInput
 
 	page, pageSize := normalizePageInput(in.Page, in.PageSize)
 	users, total, err := s.deps.Store.Users.List(ctx, repo.ListFilter{
-		Keyword:  in.Keyword,
-		Role:     role,
-		Status:   status,
-		Page:     page,
-		PageSize: pageSize,
+		Keyword:        in.Keyword,
+		Role:           role,
+		Status:         status,
+		IncludeDeleted: in.IncludeDeleted,
+		Page:           page,
+		PageSize:       pageSize,
 	})
 	if err != nil {
 		return nil, errs.Wrap(err, errs.CodeIdentityInternal, "list users failed")

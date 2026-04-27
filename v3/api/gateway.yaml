@@ -2951,10 +2951,17 @@ paths:
         - active
         - disabled
         - locked
+        - deleted
         example: active
         in: query
         name: status
         type: string
+      - allowEmptyValue: true
+        default: false
+        example: false
+        in: query
+        name: include_deleted
+        type: boolean
       - allowEmptyValue: true
         default: 1
         example: 1
@@ -2983,6 +2990,9 @@ paths:
                     created_at:
                       example: 1713772000
                       type: integer
+                    deleted_at:
+                      example: 0
+                      type: integer
                     email:
                       example: alice@example.com
                       type: string
@@ -3004,6 +3014,7 @@ paths:
                       - active
                       - disabled
                       - locked
+                      - deleted
                       example: active
                       type: string
                     updated_at:
@@ -3040,6 +3051,42 @@ paths:
       security:
       - bearerAuth: []
       summary: List users
+      tags:
+      - Studio Identity
+  /api/v3/studio/users/{user_id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>110501-user not found<br>119901-internal
+        error
+      operationId: identityIdentityUserDelete
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1"
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Soft delete user
       tags:
       - Studio Identity
   /api/v3/studio/users/{user_id}/password/reset:
@@ -3136,6 +3183,9 @@ paths:
                   created_at:
                     example: 1713772000
                     type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
                   email:
                     example: alice@example.com
                     type: string
@@ -3157,6 +3207,7 @@ paths:
                     - active
                     - disabled
                     - locked
+                    - deleted
                     example: active
                     type: string
                   updated_at:
@@ -3233,6 +3284,9 @@ paths:
                   created_at:
                     example: 1713772000
                     type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
                   email:
                     example: alice@example.com
                     type: string
@@ -3254,6 +3308,7 @@ paths:
                     - active
                     - disabled
                     - locked
+                    - deleted
                     example: active
                     type: string
                   updated_at:
@@ -3354,7 +3409,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-27 12:56:58"
+x-date: "2026-04-28 02:36:23"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

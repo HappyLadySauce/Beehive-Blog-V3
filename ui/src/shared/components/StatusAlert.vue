@@ -25,20 +25,29 @@ withDefaults(
   display: grid;
   gap: 4px;
   border: 1px solid var(--bb-color-line);
+  border-left-width: 4px;
   border-radius: 8px;
   padding: 12px;
-  background: var(--bb-color-subtle);
+  background: var(--bb-color-surface-elevated);
+  box-shadow: var(--bb-shadow-soft);
+}
+
+.status-alert--info {
+  border-left-color: var(--bb-color-info);
 }
 
 .status-alert--success {
+  border-left-color: var(--bb-color-success);
   color: var(--bb-color-success);
 }
 
 .status-alert--warning {
+  border-left-color: var(--bb-color-warning);
   color: var(--bb-color-warning);
 }
 
 .status-alert--danger {
+  border-left-color: var(--bb-color-danger);
   color: var(--bb-color-danger);
 }
 

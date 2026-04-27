@@ -13,6 +13,7 @@ type User struct {
 	Role        string     `gorm:"column:role"`
 	Status      string     `gorm:"column:status"`
 	LastLoginAt *time.Time `gorm:"column:last_login_at"`
+	DeletedAt   *time.Time `gorm:"column:deleted_at"`
 	CreatedAt   time.Time  `gorm:"column:created_at"`
 	UpdatedAt   time.Time  `gorm:"column:updated_at"`
 }

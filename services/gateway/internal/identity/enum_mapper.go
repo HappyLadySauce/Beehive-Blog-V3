@@ -56,6 +56,8 @@ func toProtoAccountStatus(status string) pb.AccountStatus {
 		return pb.AccountStatus_ACCOUNT_STATUS_DISABLED
 	case "locked", "account_status_locked":
 		return pb.AccountStatus_ACCOUNT_STATUS_LOCKED
+	case "deleted", "account_status_deleted":
+		return pb.AccountStatus_ACCOUNT_STATUS_DELETED
 	default:
 		return pb.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED
 	}
@@ -73,6 +75,8 @@ func toOptionalListStatus(status string) (pb.AccountStatus, error) {
 		return pb.AccountStatus_ACCOUNT_STATUS_DISABLED, nil
 	case "locked", "account_status_locked":
 		return pb.AccountStatus_ACCOUNT_STATUS_LOCKED, nil
+	case "deleted", "account_status_deleted":
+		return pb.AccountStatus_ACCOUNT_STATUS_DELETED, nil
 	default:
 		return pb.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED, errs.New(errs.CodeGatewayBadRequest, "status is invalid")
 	}
@@ -88,6 +92,8 @@ func fromProtoAccountStatus(status pb.AccountStatus) string {
 		return "disabled"
 	case pb.AccountStatus_ACCOUNT_STATUS_LOCKED:
 		return "locked"
+	case pb.AccountStatus_ACCOUNT_STATUS_DELETED:
+		return "deleted"
 	default:
 		return ""
 	}

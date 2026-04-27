@@ -37,6 +37,7 @@ defineProps<{
   border: 1px solid var(--bb-color-line);
   border-radius: 8px;
   background: var(--bb-color-surface);
+  box-shadow: var(--bb-shadow-soft);
 }
 
 .data-table:focus-visible {
@@ -61,6 +62,19 @@ th {
   color: var(--bb-color-muted);
   font-size: 0.8rem;
   text-transform: uppercase;
+  background: var(--bb-color-subtle);
+}
+
+td {
+  color: var(--bb-color-text);
+}
+
+tbody tr {
+  transition: background-color 140ms ease;
+}
+
+tbody tr:hover {
+  background: var(--bb-color-subtle);
 }
 
 tr:last-child td {

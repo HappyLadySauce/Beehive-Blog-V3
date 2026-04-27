@@ -37,7 +37,13 @@ const buttonClass = computed(() => ['bb-button', `bb-button--${props.variant}`])
   border-radius: 8px;
   padding: 0 16px;
   font-weight: 650;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  box-shadow: var(--bb-shadow-soft);
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.bb-button:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .bb-button:focus-visible {
@@ -57,12 +63,22 @@ const buttonClass = computed(() => ['bb-button', `bb-button--${props.variant}`])
 .bb-button--secondary {
   color: var(--bb-color-text);
   border-color: var(--bb-color-line);
-  background: var(--bb-color-surface);
+  background: var(--bb-color-surface-elevated);
+}
+
+.bb-button--secondary:hover:not(:disabled) {
+  border-color: var(--bb-color-primary);
 }
 
 .bb-button--ghost {
   color: var(--bb-color-muted);
   background: transparent;
+  box-shadow: none;
+}
+
+.bb-button--ghost:hover:not(:disabled) {
+  color: var(--bb-color-text);
+  background: var(--bb-color-subtle);
 }
 
 .bb-button--danger {
@@ -72,6 +88,7 @@ const buttonClass = computed(() => ['bb-button', `bb-button--${props.variant}`])
 
 .bb-button:disabled {
   opacity: 0.62;
+  box-shadow: none;
 }
 
 .bb-button__spinner {

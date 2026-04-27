@@ -1,25 +1,37 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
 import type { StudioUser } from '@/features/studio'
+import ActionTagButton from '@/shared/components/ActionTagButton.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import FormField from '@/shared/components/FormField.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
+import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import PasswordInput from '@/shared/components/PasswordInput.vue'
+import ReadonlyField from '@/shared/components/ReadonlyField.vue'
+import SideDrawer from '@/shared/components/SideDrawer.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
+import StatusBadge from '@/shared/components/StatusBadge.vue'
+import { useConfirm, useToast } from '@/shared/composables'
+
+type UserMode = 'view' | 'edit'
 
 const authStore = useAuthStore()
+const { confirm } = useConfirm()
+const { pushToast } = useToast()
+
 const users = shallowRef<StudioUser[]>([])
 const total = shallowRef(0)
 const isLoading = shallowRef(true)
 const isMutating = shallowRef(false)
 const errorMessage = shallowRef('')
-const successMessage = shallowRef('')
-const resetTarget = shallowRef<StudioUser | null>(null)
+const selectedUser = shallowRef<StudioUser | null>(null)
+const userMode = shallowRef<UserMode>('view')
 const resetPassword = shallowRef('')
+let filterTimer: number | undefined
 
 const filters = reactive({
   keyword: '',
@@ -27,7 +39,12 @@ const filters = reactive({
   status: '',
 })
 
-const editableUsers = computed(() =>
+const editForm = reactive({
+  role: 'member' as 'member' | 'admin',
+  status: 'active' as 'active' | 'disabled' | 'locked',
+})
+
+const displayUsers = computed(() =>
   users.value.map((user) => ({
     ...user,
     displayName: user.nickname || user.username,
@@ -35,6 +52,8 @@ const editableUsers = computed(() =>
     isSelf: user.user_id === authStore.currentUser?.user_id,
   })),
 )
+
+const drawerTitle = computed(() => (userMode.value === 'edit' ? 'Edit user' : 'User details'))
 
 function formatUnixTime(value?: number): string {
   if (!value) {
@@ -62,58 +81,107 @@ async function loadUsers(): Promise<void> {
     )
     users.value = response.items
     total.value = response.total
-  }
-  catch (error) {
+  } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Unable to load users.'
-  }
-  finally {
+    pushToast({ tone: 'danger', title: 'Users unavailable', message: errorMessage.value })
+  } finally {
     isLoading.value = false
   }
 }
 
-async function updateRole(user: StudioUser, role: 'member' | 'admin'): Promise<void> {
-  await runUserMutation(async () => {
-    const response = await studioApi.updateUserRole(user.user_id, { role }, { accessToken: authStore.accessToken })
-    replaceUser(response.user)
-    successMessage.value = `${response.user.email} role updated.`
-  })
+function scheduleLoadUsers(): void {
+  window.clearTimeout(filterTimer)
+  filterTimer = window.setTimeout(() => {
+    void loadUsers()
+  }, 300)
 }
 
-async function updateStatus(user: StudioUser, status: 'active' | 'disabled' | 'locked'): Promise<void> {
+function openUser(user: StudioUser, mode: UserMode): void {
+  selectedUser.value = user
+  userMode.value = mode
+  editForm.role = normalizeRole(user.role)
+  editForm.status = normalizeStatus(user.status)
+  resetPassword.value = ''
+}
+
+function closeDrawer(): void {
+  selectedUser.value = null
+  resetPassword.value = ''
+}
+
+async function saveUserEdits(): Promise<void> {
+  if (!selectedUser.value) {
+    return
+  }
+  const target = selectedUser.value
   await runUserMutation(async () => {
-    const response = await studioApi.updateUserStatus(user.user_id, { status }, { accessToken: authStore.accessToken })
-    replaceUser(response.user)
-    successMessage.value = `${response.user.email} status updated.`
+    let nextUser = target
+    if (editForm.role !== target.role) {
+      nextUser = (await studioApi.updateUserRole(target.user_id, { role: editForm.role }, { accessToken: authStore.accessToken })).user
+    }
+    if (editForm.status !== nextUser.status) {
+      nextUser = (await studioApi.updateUserStatus(target.user_id, { status: editForm.status }, { accessToken: authStore.accessToken })).user
+    }
+    replaceUser(nextUser)
+    selectedUser.value = nextUser
+    pushToast({ tone: 'success', title: 'User updated', message: `${nextUser.email} has been updated.` })
   })
 }
 
 async function submitPasswordReset(): Promise<void> {
-  if (!resetTarget.value) {
+  if (!selectedUser.value || resetPassword.value.trim() === '') {
+    return
+  }
+  const approved = await confirm({
+    title: 'Reset user password?',
+    message: `This will replace the current password for ${selectedUser.value.email} and revoke existing sessions.`,
+    confirmText: 'Reset password',
+    tone: 'danger',
+  })
+  if (!approved) {
     return
   }
   await runUserMutation(async () => {
     await studioApi.resetUserPassword(
-      resetTarget.value!.user_id,
+      selectedUser.value!.user_id,
       { new_password: resetPassword.value },
       { accessToken: authStore.accessToken },
     )
-    successMessage.value = `${resetTarget.value!.email} password reset.`
-    resetTarget.value = null
+    pushToast({ tone: 'success', title: 'Password reset', message: `${selectedUser.value!.email} can now use the new password.` })
     resetPassword.value = ''
+  })
+}
+
+async function deleteUser(user: StudioUser): Promise<void> {
+  const approved = await confirm({
+    title: 'Delete user?',
+    message: `${user.email} will be soft deleted, hidden from the default list, and all active sessions will be revoked.`,
+    confirmText: 'Delete user',
+    tone: 'danger',
+  })
+  if (!approved) {
+    return
+  }
+  await runUserMutation(async () => {
+    await studioApi.deleteUser(user.user_id, { accessToken: authStore.accessToken })
+    users.value = users.value.filter((item) => item.user_id !== user.user_id)
+    total.value = Math.max(0, total.value - 1)
+    if (selectedUser.value?.user_id === user.user_id) {
+      closeDrawer()
+    }
+    pushToast({ tone: 'success', title: 'User deleted', message: `${user.email} was removed from the active list.` })
   })
 }
 
 async function runUserMutation(action: () => Promise<void>): Promise<void> {
   errorMessage.value = ''
-  successMessage.value = ''
   isMutating.value = true
   try {
     await action()
-  }
-  catch (error) {
+  } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Unable to update user.'
-  }
-  finally {
+    pushToast({ tone: 'danger', title: 'User update failed', message: errorMessage.value })
+  } finally {
     isMutating.value = false
   }
 }
@@ -122,12 +190,21 @@ function replaceUser(nextUser: StudioUser): void {
   users.value = users.value.map((user) => (user.user_id === nextUser.user_id ? nextUser : user))
 }
 
-function openPasswordReset(user: StudioUser): void {
-  resetTarget.value = user
-  resetPassword.value = ''
+function normalizeRole(role: string): 'member' | 'admin' {
+  return role === 'admin' ? 'admin' : 'member'
 }
 
+function normalizeStatus(status: string): 'active' | 'disabled' | 'locked' {
+  if (status === 'disabled' || status === 'locked') {
+    return status
+  }
+  return 'active'
+}
+
+watch(() => [filters.keyword, filters.role, filters.status], scheduleLoadUsers)
+
 onMounted(loadUsers)
+onBeforeUnmount(() => window.clearTimeout(filterTimer))
 </script>
 
 <template>
@@ -135,10 +212,10 @@ onMounted(loadUsers)
     <PageHeader
       eyebrow="Studio"
       title="Users"
-      description="Search accounts, adjust roles and statuses, and reset credentials for recovery."
+      description="Search accounts and manage role, status, password recovery, and soft deletion from row actions."
     />
 
-    <form class="users-page__filters" @submit.prevent="loadUsers">
+    <div class="users-page__filters">
       <FormField label="Search" for-id="user-search">
         <BaseInput id="user-search" v-model="filters.keyword" placeholder="Username, email, or nickname" />
       </FormField>
@@ -160,20 +237,12 @@ onMounted(loadUsers)
           <option value="locked">Locked</option>
         </select>
       </label>
-      <BaseButton type="submit" :busy="isLoading">Apply</BaseButton>
-    </form>
+    </div>
 
-    <StatusAlert v-if="successMessage" tone="success" title="User updated">
-      {{ successMessage }}
-    </StatusAlert>
-    <StatusAlert v-if="errorMessage" tone="danger" title="Users unavailable">
-      {{ errorMessage }}
-    </StatusAlert>
-    <StatusAlert v-else-if="isLoading" tone="info" title="Loading users">
-      User records are being loaded from gateway.
-    </StatusAlert>
+    <StatusAlert v-if="errorMessage" tone="danger" title="Users unavailable">{{ errorMessage }}</StatusAlert>
+    <PageLoadingState v-else-if="isLoading" title="Loading users" :rows="5" />
 
-    <div class="users-page__table" role="region" aria-label="Studio users" tabindex="0">
+    <div v-else class="users-page__table" role="region" aria-label="Studio users" tabindex="0">
       <table>
         <thead>
           <tr>
@@ -185,63 +254,75 @@ onMounted(loadUsers)
           </tr>
         </thead>
         <tbody>
-          <tr v-if="editableUsers.length === 0">
+          <tr v-if="displayUsers.length === 0">
             <td colspan="5">No users found.</td>
           </tr>
-          <tr v-for="user in editableUsers" v-else :key="user.user_id">
+          <tr v-for="user in displayUsers" v-else :key="user.user_id">
             <td>
               <strong>{{ user.displayName }}</strong>
               <span>{{ user.email }}</span>
             </td>
-            <td>
-              <select
-                :value="user.role"
-                :disabled="user.isSelf || isMutating"
-                :aria-label="`Change ${user.email} role`"
-                @change="updateRole(user, (($event.target as HTMLSelectElement).value as 'member' | 'admin'))"
-              >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-            </td>
-            <td>
-              <select
-                :value="user.status"
-                :disabled="user.isSelf || isMutating"
-                :aria-label="`Change ${user.email} status`"
-                @change="updateStatus(user, (($event.target as HTMLSelectElement).value as 'active' | 'disabled' | 'locked'))"
-              >
-                <option value="active">Active</option>
-                <option value="disabled">Disabled</option>
-                <option value="locked">Locked</option>
-              </select>
-            </td>
+            <td><StatusBadge :value="user.role" /></td>
+            <td><StatusBadge :value="user.status" /></td>
             <td>{{ user.lastLogin }}</td>
             <td>
-              <BaseButton variant="secondary" :disabled="user.isSelf || isMutating" @click="openPasswordReset(user)">
-                Reset password
-              </BaseButton>
+              <div class="users-page__actions">
+                <ActionTagButton @click="openUser(user, 'view')">View</ActionTagButton>
+                <ActionTagButton tone="primary" :disabled="user.isSelf || isMutating" @click="openUser(user, 'edit')">Edit</ActionTagButton>
+                <ActionTagButton tone="danger" :disabled="user.isSelf || isMutating" @click="deleteUser(user)">Delete</ActionTagButton>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <p class="users-page__count">{{ total }} total users</p>
+    <p v-if="!isLoading" class="users-page__count">{{ total }} total users</p>
 
-    <form v-if="resetTarget" class="users-page__reset" @submit.prevent="submitPasswordReset">
-      <div>
-        <strong>Set new password</strong>
-        <span>{{ resetTarget.email }}</span>
+    <SideDrawer :open="selectedUser !== null" :title="drawerTitle" :description="selectedUser?.email" @close="closeDrawer">
+      <div v-if="selectedUser" class="users-page__drawer">
+        <div class="users-page__detail-grid">
+          <ReadonlyField label="Username" :value="selectedUser.username" />
+          <ReadonlyField label="Nickname" :value="selectedUser.nickname" />
+          <ReadonlyField label="Email" :value="selectedUser.email" />
+          <ReadonlyField label="User ID" :value="selectedUser.user_id" />
+          <ReadonlyField label="Created" :value="formatUnixTime(selectedUser.created_at)" />
+          <ReadonlyField label="Updated" :value="formatUnixTime(selectedUser.updated_at)" />
+        </div>
+
+        <template v-if="userMode === 'edit'">
+          <div class="users-page__edit-grid">
+            <label class="users-page__select">
+              <span>Role</span>
+              <select v-model="editForm.role" :disabled="isMutating">
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+            <label class="users-page__select">
+              <span>Status</span>
+              <select v-model="editForm.status" :disabled="isMutating">
+                <option value="active">Active</option>
+                <option value="disabled">Disabled</option>
+                <option value="locked">Locked</option>
+              </select>
+            </label>
+          </div>
+          <form class="users-page__reset" @submit.prevent="submitPasswordReset">
+            <FormField label="New password" for-id="reset-password">
+              <PasswordInput id="reset-password" v-model="resetPassword" autocomplete="new-password" />
+            </FormField>
+            <BaseButton type="submit" variant="secondary" :busy="isMutating" :disabled="resetPassword.trim() === ''">
+              Reset password
+            </BaseButton>
+          </form>
+        </template>
       </div>
-      <FormField label="New password" for-id="reset-password">
-        <PasswordInput id="reset-password" v-model="resetPassword" autocomplete="new-password" />
-      </FormField>
-      <div class="users-page__reset-actions">
-        <BaseButton type="submit" :busy="isMutating">Save password</BaseButton>
-        <BaseButton variant="ghost" @click="resetTarget = null">Cancel</BaseButton>
-      </div>
-    </form>
+      <template #footer>
+        <BaseButton v-if="userMode === 'edit'" :busy="isMutating" @click="saveUserEdits">Save changes</BaseButton>
+        <BaseButton variant="ghost" @click="closeDrawer">Close</BaseButton>
+      </template>
+    </SideDrawer>
   </section>
 </template>
 
@@ -253,7 +334,7 @@ onMounted(loadUsers)
 
 .users-page__filters {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(140px, 180px)) auto;
+  grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(140px, 180px));
   align-items: end;
   gap: 12px;
 }
@@ -273,6 +354,17 @@ select {
   padding: 0 10px;
   color: var(--bb-color-text);
   background: var(--bb-color-surface);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+select:hover:not(:disabled) {
+  border-color: var(--bb-color-primary);
+}
+
+select:disabled {
+  color: var(--bb-color-muted);
+  background: var(--bb-color-subtle);
+  cursor: not-allowed;
 }
 
 select:focus-visible,
@@ -286,11 +378,12 @@ select:focus-visible,
   border: 1px solid var(--bb-color-line);
   border-radius: 8px;
   background: var(--bb-color-surface);
+  box-shadow: var(--bb-shadow-soft);
 }
 
 table {
   width: 100%;
-  min-width: 760px;
+  min-width: 820px;
   border-collapse: collapse;
 }
 
@@ -306,6 +399,11 @@ th {
   color: var(--bb-color-muted);
   font-size: 0.8rem;
   text-transform: uppercase;
+  background: var(--bb-color-subtle);
+}
+
+tbody tr:hover {
+  background: var(--bb-color-subtle);
 }
 
 tr:last-child td {
@@ -318,34 +416,38 @@ td:first-child {
 }
 
 td:first-child span,
-.users-page__reset span,
 .users-page__count {
   color: var(--bb-color-muted);
 }
 
-.users-page__reset {
-  width: min(520px, 100%);
-  display: grid;
-  gap: 14px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 16px;
-  background: var(--bb-color-surface);
-}
-
-.users-page__reset div:first-child {
-  display: grid;
-  gap: 2px;
-}
-
-.users-page__reset-actions {
+.users-page__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+}
+
+.users-page__drawer,
+.users-page__reset {
+  display: grid;
+  gap: 16px;
+}
+
+.users-page__detail-grid,
+.users-page__edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.users-page__reset {
+  border-top: 1px solid var(--bb-color-line);
+  padding-top: 16px;
 }
 
 @media (max-width: 760px) {
-  .users-page__filters {
+  .users-page__filters,
+  .users-page__detail-grid,
+  .users-page__edit-grid {
     grid-template-columns: 1fr;
   }
 }

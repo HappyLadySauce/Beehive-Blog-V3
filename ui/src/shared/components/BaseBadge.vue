@@ -30,14 +30,20 @@ withDefaults(
 }
 
 .bb-badge--success {
+  border-color: var(--bb-color-success);
   color: var(--bb-color-success);
+  background: var(--bb-color-success-soft);
 }
 
 .bb-badge--warning {
+  border-color: var(--bb-color-warning);
   color: var(--bb-color-warning);
+  background: var(--bb-color-warning-soft);
 }
 
 .bb-badge--danger {
+  border-color: var(--bb-color-danger);
   color: var(--bb-color-danger);
+  background: var(--bb-color-danger-soft);
 }
 </style>

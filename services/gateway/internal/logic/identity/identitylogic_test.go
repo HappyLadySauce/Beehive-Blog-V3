@@ -21,6 +21,7 @@ type fakeIdentityClient struct {
 	updateRoleFn         func(context.Context, *pb.UpdateUserRoleRequest, ...grpc.CallOption) (*pb.UpdateUserRoleResponse, error)
 	updateStatusFn       func(context.Context, *pb.UpdateUserStatusRequest, ...grpc.CallOption) (*pb.UpdateUserStatusResponse, error)
 	resetPasswordFn      func(context.Context, *pb.ResetUserPasswordRequest, ...grpc.CallOption) (*pb.ResetUserPasswordResponse, error)
+	deleteUserFn         func(context.Context, *pb.DeleteUserRequest, ...grpc.CallOption) (*pb.DeleteUserResponse, error)
 	listIdentityAuditsFn func(context.Context, *pb.ListIdentityAuditsRequest, ...grpc.CallOption) (*pb.ListIdentityAuditsResponse, error)
 }
 
@@ -74,6 +75,10 @@ func (f *fakeIdentityClient) UpdateUserStatus(ctx context.Context, in *pb.Update
 
 func (f *fakeIdentityClient) ResetUserPassword(ctx context.Context, in *pb.ResetUserPasswordRequest, opts ...grpc.CallOption) (*pb.ResetUserPasswordResponse, error) {
 	return f.resetPasswordFn(ctx, in, opts...)
+}
+
+func (f *fakeIdentityClient) DeleteUser(ctx context.Context, in *pb.DeleteUserRequest, opts ...grpc.CallOption) (*pb.DeleteUserResponse, error) {
+	return f.deleteUserFn(ctx, in, opts...)
 }
 
 func (f *fakeIdentityClient) ListIdentityAudits(ctx context.Context, in *pb.ListIdentityAuditsRequest, opts ...grpc.CallOption) (*pb.ListIdentityAuditsResponse, error) {
@@ -158,6 +163,12 @@ func TestIdentityLogicMapsAdminRPCs(t *testing.T) {
 			}
 			return &pb.ResetUserPasswordResponse{Ok: true}, nil
 		},
+		deleteUserFn: func(_ context.Context, in *pb.DeleteUserRequest, _ ...grpc.CallOption) (*pb.DeleteUserResponse, error) {
+			if in.GetActorUserId() != "1" || in.GetTargetUserId() != "2" {
+				t.Fatalf("unexpected delete user request: %+v", in)
+			}
+			return &pb.DeleteUserResponse{Ok: true}, nil
+		},
 		listIdentityAuditsFn: func(_ context.Context, in *pb.ListIdentityAuditsRequest, _ ...grpc.CallOption) (*pb.ListIdentityAuditsResponse, error) {
 			if in.GetActorUserId() != "1" || in.GetEventType() != "admin_update_user_status" {
 				t.Fatalf("unexpected audit list request: %+v", in)
@@ -182,6 +193,9 @@ func TestIdentityLogicMapsAdminRPCs(t *testing.T) {
 	}
 	if resp, err := NewIdentityUserPasswordResetLogic(ctx, svcCtx).IdentityUserPasswordReset(&types.AdminResetUserPasswordReq{UserId: "2", NewPassword: "new-password"}); err != nil || !resp.Ok {
 		t.Fatalf("password reset failed: resp=%+v err=%v", resp, err)
+	}
+	if resp, err := NewIdentityUserDeleteLogic(ctx, svcCtx).IdentityUserDelete(&types.AdminUserIdReq{UserId: "2"}); err != nil || !resp.Ok {
+		t.Fatalf("delete user failed: resp=%+v err=%v", resp, err)
 	}
 	if resp, err := NewIdentityAuditListLogic(ctx, svcCtx).IdentityAuditList(&types.IdentityAuditListReq{EventType: "admin_update_user_status", Page: 1, PageSize: 20}); err != nil || resp.Items[0].AuthSource != "local" {
 		t.Fatalf("audit list failed: resp=%+v err=%v", resp, err)

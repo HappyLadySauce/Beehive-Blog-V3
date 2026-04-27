@@ -94,6 +94,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			Handler: identity.IdentityUserPasswordResetHandler(serverCtx),
 		},
 		{
+			// Soft delete user
+			Method:  http.MethodDelete,
+			Path:    "/users/:user_id",
+			Handler: identity.IdentityUserDeleteHandler(serverCtx),
+		},
+		{
 			// List identity audits
 			Method:  http.MethodGet,
 			Path:    "/audits",

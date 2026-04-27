@@ -96,6 +96,8 @@ func validateActiveUserStatus(accountStatus string) error {
 		return errs.New(errs.CodeIdentityAccountDisabled, "account disabled")
 	case auth.UserStatusLocked:
 		return errs.New(errs.CodeIdentityAccountLocked, "account locked")
+	case auth.UserStatusDeleted:
+		return errs.New(errs.CodeIdentityAccountDisabled, "account deleted")
 	default:
 		return errs.New(errs.CodeIdentityInvalidArgument, "account status is invalid")
 	}

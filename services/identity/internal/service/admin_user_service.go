@@ -37,6 +37,28 @@ func (s *UserManagementService) UpdateUserStatus(ctx context.Context, in UpdateU
 	}, map[string]any{"new_status": status})
 }
 
+// DeleteUser soft deletes a target user by an active administrator.
+// DeleteUser 由活跃管理员软删除目标用户。
+func (s *UserManagementService) DeleteUser(ctx context.Context, in DeleteUserInput) error {
+	now := s.deps.Clock()
+	_, err := s.updateManagedUser(ctx, in.ActorUserID, in.TargetUserID, in.ClientIP, auth.AuditEventAdminDeleteUser, func(txStore *repo.Store, target *entity.User) (*entity.User, error) {
+		if target.Status == auth.UserStatusDeleted {
+			return target, nil
+		}
+		deleted, err := txStore.Users.SoftDelete(ctx, target.ID, now)
+		if err != nil {
+			return nil, errs.Wrap(err, errs.CodeIdentityInternal, "delete user failed")
+		}
+		if err := revokeUserSessionsAndRefreshTokens(ctx, txStore, target.ID, now); err != nil {
+			return nil, err
+		}
+		return deleted, nil
+	}, func(activeAdmins []entity.User, target *entity.User) error {
+		return ensureActiveAdminInvariant(activeAdmins, target, target.Role, auth.UserStatusDeleted)
+	}, map[string]any{"new_status": auth.UserStatusDeleted})
+	return err
+}
+
 func (s *UserManagementService) updateManagedUser(
 	ctx context.Context,
 	actorUserID int64,

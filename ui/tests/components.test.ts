@@ -5,6 +5,7 @@ import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import DataTable from '@/shared/components/DataTable.vue'
 import FormField from '@/shared/components/FormField.vue'
+import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 import UserAvatar from '@/shared/components/UserAvatar.vue'
 
@@ -50,6 +51,15 @@ describe('shared components', () => {
     expect(wrapper.text()).toContain('Nothing here')
   })
 
+  it('renders page loading skeleton rows', () => {
+    const wrapper = mount(PageLoadingState, {
+      props: { title: 'Loading users', rows: 3 },
+    })
+
+    expect(wrapper.attributes('aria-label')).toBe('Loading users')
+    expect(wrapper.findAll('.skeleton-block')).toHaveLength(4)
+  })
+
   it('renders avatar initials when no image is available', () => {
     const wrapper = mount(UserAvatar, {
       props: { name: 'Admin Editor' },
@@ -83,5 +93,35 @@ describe('shared components', () => {
 
     await wrapper.get('button.account-menu__item--danger').trigger('click')
     expect(wrapper.emitted('logout')).toHaveLength(1)
+  })
+
+  it('omits Studio shortcuts from the Studio account menu', () => {
+    const wrapper = mount(UserAccountMenu, {
+      props: {
+        surface: 'studio',
+        user: {
+          user_id: 'user_mock_admin',
+          username: 'admin',
+          email: 'admin@beehive.local',
+          nickname: 'Admin',
+          avatar_url: '',
+          role: 'admin',
+          status: 'active',
+        },
+      },
+      global: {
+        stubs: {
+          RouterLink: {
+            props: ['to'],
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    })
+
+    expect(wrapper.text()).not.toContain('Studio')
+    expect(wrapper.text()).not.toContain('Users')
+    expect(wrapper.text()).toContain('Profile')
+    expect(wrapper.text()).toContain('Change password')
   })
 })

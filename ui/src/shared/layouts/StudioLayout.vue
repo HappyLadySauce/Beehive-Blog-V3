@@ -3,6 +3,7 @@ import { FileText, LayoutDashboard, ScrollText, Settings, Users } from 'lucide-v
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
+import ThemeToggle from '@/shared/components/ThemeToggle.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 
 const authStore = useAuthStore()
@@ -49,7 +50,10 @@ async function handleLogout() {
     <div class="studio-shell__workspace">
       <header class="studio-shell__topbar">
         <div class="studio-shell__topbar-title">Admin workspace</div>
-        <UserAccountMenu :user="authStore.currentUser" surface="studio" @logout="handleLogout" />
+        <div class="studio-shell__topbar-actions">
+          <ThemeToggle />
+          <UserAccountMenu :user="authStore.currentUser" surface="studio" @logout="handleLogout" />
+        </div>
       </header>
       <main class="studio-shell__main">
         <RouterView />
@@ -63,6 +67,7 @@ async function handleLogout() {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
+  background: var(--bb-gradient-page);
 }
 
 .studio-shell__sidebar {
@@ -71,10 +76,14 @@ async function handleLogout() {
   gap: 24px;
   border-right: 1px solid var(--bb-color-line);
   padding: 20px;
-  background: var(--bb-color-surface);
+  background: var(--bb-color-surface-glass);
+  backdrop-filter: blur(16px);
 }
 
 .studio-shell__brand {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
   color: var(--bb-color-text);
   font-weight: 800;
   text-decoration: none;
@@ -94,6 +103,13 @@ async function handleLogout() {
   padding: 10px;
   color: var(--bb-color-muted);
   text-decoration: none;
+  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.studio-shell__nav-link:hover {
+  transform: translateX(2px);
+  color: var(--bb-color-text);
+  background: var(--bb-color-subtle);
 }
 
 .studio-shell__nav-link:focus-visible {
@@ -102,8 +118,8 @@ async function handleLogout() {
 }
 
 .studio-shell__nav-link--active {
-  color: var(--bb-color-text);
-  background: var(--bb-color-subtle);
+  color: var(--bb-color-primary);
+  background: var(--bb-color-primary-soft);
 }
 
 .studio-shell__workspace {
@@ -121,13 +137,19 @@ async function handleLogout() {
   gap: 16px;
   border-bottom: 1px solid var(--bb-color-line);
   padding: 0 24px;
-  background: rgb(255 255 255 / 82%);
-  backdrop-filter: blur(12px);
+  background: var(--bb-color-surface-glass);
+  backdrop-filter: blur(16px);
 }
 
 .studio-shell__topbar-title {
   color: var(--bb-color-muted);
   font-weight: 800;
+}
+
+.studio-shell__topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .studio-shell__main {
@@ -153,6 +175,10 @@ async function handleLogout() {
   .studio-shell__nav-link {
     justify-content: center;
     white-space: nowrap;
+  }
+
+  .studio-shell__topbar {
+    padding: 0 16px;
   }
 }
 </style>

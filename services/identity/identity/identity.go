@@ -18,6 +18,8 @@ type (
 	ChangeOwnPasswordRequest      = pb.ChangeOwnPasswordRequest
 	ChangeOwnPasswordResponse     = pb.ChangeOwnPasswordResponse
 	CurrentUser                   = pb.CurrentUser
+	DeleteUserRequest             = pb.DeleteUserRequest
+	DeleteUserResponse            = pb.DeleteUserResponse
 	FederatedIdentity             = pb.FederatedIdentity
 	FinishSsoLoginRequest         = pb.FinishSsoLoginRequest
 	FinishSsoLoginResponse        = pb.FinishSsoLoginResponse
@@ -67,6 +69,7 @@ type (
 		UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error)
 		UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error)
 		ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error)
+		DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 		ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error)
 		IntrospectAccessToken(ctx context.Context, in *IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*IntrospectAccessTokenResponse, error)
 		Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
@@ -146,6 +149,11 @@ func (m *defaultIdentity) UpdateUserStatus(ctx context.Context, in *UpdateUserSt
 func (m *defaultIdentity) ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error) {
 	client := pb.NewIdentityClient(m.cli.Conn())
 	return client.ResetUserPassword(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.DeleteUser(ctx, in, opts...)
 }
 
 func (m *defaultIdentity) ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error) {

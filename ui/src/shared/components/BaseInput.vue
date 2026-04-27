@@ -53,6 +53,15 @@ defineEmits<{
   padding: 0 12px;
   color: var(--bb-color-text);
   background: var(--bb-color-surface);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.bb-input::placeholder {
+  color: var(--bb-color-muted);
+}
+
+.bb-input:hover:not(:disabled) {
+  border-color: var(--bb-color-subtle-strong);
 }
 
 .bb-input:focus-visible {
@@ -63,5 +72,11 @@ defineEmits<{
 
 .bb-input--invalid {
   border-color: var(--bb-color-danger);
+}
+
+.bb-input:disabled {
+  color: var(--bb-color-muted);
+  background: var(--bb-color-subtle);
+  cursor: not-allowed;
 }
 </style>

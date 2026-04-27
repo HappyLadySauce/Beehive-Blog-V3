@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown, KeyRound, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, UserPlus } from 'lucide-vue-next'
-import { computed, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import type { AuthUserProfile } from '@/features/auth/types'
@@ -19,6 +19,7 @@ const emit = defineEmits<{
 const menuRef = useTemplateRef<HTMLDetailsElement>('accountMenu')
 const isAuthenticated = computed(() => props.user !== null)
 const isAdmin = computed(() => (props.user?.role ?? '').toLowerCase().replace(/^role_/, '') === 'admin')
+const showAdminLinks = computed(() => isAdmin.value && props.surface !== 'studio')
 const displayName = computed(() => props.user?.nickname || props.user?.username || 'Account')
 const email = computed(() => props.user?.email || 'Sign in to continue')
 const profilePath = computed(() => props.surface === 'studio' ? '/studio/profile' : '/account/profile')
@@ -34,6 +35,32 @@ function handleLogout(): void {
   closeMenu()
   emit('logout')
 }
+
+function handleDocumentPointerDown(event: PointerEvent): void {
+  if (!menuRef.value?.open) {
+    return
+  }
+  if (event.target instanceof Node && menuRef.value.contains(event.target)) {
+    return
+  }
+  closeMenu()
+}
+
+function handleDocumentKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    closeMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('pointerdown', handleDocumentPointerDown)
+  document.addEventListener('keydown', handleDocumentKeydown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+  document.removeEventListener('keydown', handleDocumentKeydown)
+})
 </script>
 
 <template>
@@ -56,11 +83,11 @@ function handleLogout(): void {
         <KeyRound :size="16" aria-hidden="true" />
         Change password
       </RouterLink>
-      <RouterLink v-if="isAdmin" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
+      <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
         <LayoutDashboard :size="16" aria-hidden="true" />
         Studio
       </RouterLink>
-      <RouterLink v-if="isAdmin" class="account-menu__item" to="/studio/users" role="menuitem" @click="closeMenu">
+      <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio/users" role="menuitem" @click="closeMenu">
         <ShieldCheck :size="16" aria-hidden="true" />
         Users
       </RouterLink>
@@ -86,6 +113,7 @@ function handleLogout(): void {
 <style scoped>
 .account-menu {
   position: relative;
+  z-index: 120;
 }
 
 .account-menu__summary {
@@ -128,10 +156,10 @@ function handleLogout(): void {
 
 .account-menu__panel {
   position: absolute;
-  z-index: 20;
+  z-index: 120;
   top: calc(100% + 8px);
   right: 0;
-  width: 220px;
+  width: min(220px, calc(100vw - 32px));
   display: grid;
   gap: 4px;
   border: 1px solid var(--bb-color-line);

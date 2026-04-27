@@ -21,6 +21,7 @@ enum AccountStatus {
   ACCOUNT_STATUS_ACTIVE = 2;
   ACCOUNT_STATUS_DISABLED = 3;
   ACCOUNT_STATUS_LOCKED = 4;
+  ACCOUNT_STATUS_DELETED = 5;
 }
 
 enum AuthSource {
@@ -190,6 +191,7 @@ message AdminUserView {
   int64 last_login_at = 8;
   int64 created_at = 9;
   int64 updated_at = 10;
+  int64 deleted_at = 11;
 }
 
 message IdentityAuditView {
@@ -213,6 +215,7 @@ message ListUsersRequest {
   AccountStatus status = 4;
   int32 page = 5;
   int32 page_size = 6;
+  bool include_deleted = 7;
 }
 
 message ListUsersResponse {
@@ -269,6 +272,15 @@ message ResetUserPasswordRequest {
 }
 
 message ResetUserPasswordResponse {
+  bool ok = 1;
+}
+
+message DeleteUserRequest {
+  string actor_user_id = 1;
+  string target_user_id = 2;
+}
+
+message DeleteUserResponse {
   bool ok = 1;
 }
 
@@ -331,6 +343,7 @@ service Identity {
   rpc UpdateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
   rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
   rpc ResetUserPassword(ResetUserPasswordRequest) returns (ResetUserPasswordResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc ListIdentityAudits(ListIdentityAuditsRequest) returns (ListIdentityAuditsResponse);
   rpc IntrospectAccessToken(IntrospectAccessTokenRequest) returns (IntrospectAccessTokenResponse);
   rpc Ping(PingRequest) returns (PingResponse);

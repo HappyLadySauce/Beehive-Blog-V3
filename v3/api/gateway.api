@@ -148,16 +148,18 @@ type (
 		Nickname    string `json:"nickname,optional,example=Alice"`
 		AvatarUrl   string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png"`
 		Role        string `json:"role,options=member|admin,example=member"`
-		Status      string `json:"status,options=pending|active|disabled|locked,example=active"`
+		Status      string `json:"status,options=pending|active|disabled|locked|deleted,example=active"`
 		LastLoginAt int64  `json:"last_login_at,optional,example=1713772800"`
 		CreatedAt   int64  `json:"created_at,example=1713772000"`
 		UpdatedAt   int64  `json:"updated_at,example=1713776400"`
+		DeletedAt   int64  `json:"deleted_at,optional,example=0"`
 	}
 	AdminUserListReq {
 		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 		Keyword       string `form:"keyword,optional,example=alice" validate:"omitempty,max=128"`
 		Role          string `form:"role,optional,options=member|admin,example=member"`
-		Status        string `form:"status,optional,options=pending|active|disabled|locked,example=active"`
+		Status        string `form:"status,optional,options=pending|active|disabled|locked|deleted,example=active"`
+		IncludeDeleted bool `form:"include_deleted,optional,default=false,example=false"`
 		Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
 		PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
 	}
@@ -190,6 +192,9 @@ type (
 		User AdminUserView `json:"user"`
 	}
 	AdminResetUserPasswordResp {
+		Ok bool `json:"ok,example=true"`
+	}
+	AdminDeleteUserResp {
 		Ok bool `json:"ok,example=true"`
 	}
 	IdentityAuditView {
@@ -581,6 +586,13 @@ service gateway {
 	)
 	@handler IdentityUserPasswordReset
 	post /users/:user_id/password/reset (AdminResetUserPasswordReq) returns (AdminResetUserPasswordResp)
+
+	@doc (
+		summary:                "Soft delete user"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>110101-invalid argument<br>110501-user not found<br>119901-internal error"
+	)
+	@handler IdentityUserDelete
+	delete /users/:user_id (AdminUserIdReq) returns (AdminDeleteUserResp)
 
 	@doc (
 		summary:                "List identity audits"

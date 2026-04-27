@@ -36,12 +36,13 @@ func (l *ListUsersLogic) ListUsers(in *pb.ListUsersRequest) (*pb.ListUsersRespon
 	}
 
 	result, err := l.svcCtx.Services.Users.ListUsers(l.ctx, identityservice.ListUsersInput{
-		ActorUserID: actorUserID,
-		Keyword:     in.GetKeyword(),
-		Role:        roleString(in.GetRole()),
-		Status:      accountStatusString(in.GetStatus()),
-		Page:        int(in.GetPage()),
-		PageSize:    int(in.GetPageSize()),
+		ActorUserID:    actorUserID,
+		Keyword:        in.GetKeyword(),
+		Role:           roleString(in.GetRole()),
+		Status:         accountStatusString(in.GetStatus()),
+		IncludeDeleted: in.GetIncludeDeleted(),
+		Page:           int(in.GetPage()),
+		PageSize:       int(in.GetPageSize()),
 	})
 	if err != nil {
 		return nil, toStatusError(err, "list users failed")

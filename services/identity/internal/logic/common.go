@@ -120,6 +120,8 @@ func accountStatusString(value pb.AccountStatus) string {
 		return auth.UserStatusDisabled
 	case pb.AccountStatus_ACCOUNT_STATUS_LOCKED:
 		return auth.UserStatusLocked
+	case pb.AccountStatus_ACCOUNT_STATUS_DELETED:
+		return auth.UserStatusDeleted
 	default:
 		return ""
 	}

@@ -23,6 +23,7 @@ defineProps<{
   padding: 24px;
   color: var(--bb-color-muted);
   background: var(--bb-color-surface);
+  box-shadow: var(--bb-shadow-soft);
 }
 
 .empty-state h2,

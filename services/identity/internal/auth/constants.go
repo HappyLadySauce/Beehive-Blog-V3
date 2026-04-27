@@ -43,6 +43,9 @@ const (
 	// UserStatusLocked means the account is locked.
 	// UserStatusLocked 表示账号已锁定。
 	UserStatusLocked = "locked"
+	// UserStatusDeleted means the account is soft deleted.
+	// UserStatusDeleted 表示账号已软删除。
+	UserStatusDeleted = "deleted"
 )
 
 const (
@@ -94,6 +97,9 @@ const (
 	// AuditEventAdminResetUserPassword marks admin password resets.
 	// AuditEventAdminResetUserPassword 标记管理员重置用户密码事件。
 	AuditEventAdminResetUserPassword = "admin_reset_user_password"
+	// AuditEventAdminDeleteUser marks admin soft deletes.
+	// AuditEventAdminDeleteUser 标记管理员软删除用户事件。
+	AuditEventAdminDeleteUser = "admin_delete_user"
 	// AuditEventUpdateOwnProfile marks self-service profile updates.
 	// AuditEventUpdateOwnProfile 标记用户更新自身资料事件。
 	AuditEventUpdateOwnProfile = "update_own_profile"
