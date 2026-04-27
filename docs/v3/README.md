@@ -6,7 +6,6 @@
 - [服务契约设计](./contracts/service-contracts.md)
 - [第一阶段权限模型](./permission-model.md)
 - [Content 文档索引](./content/README.md)
-- [UI 文档索引](./ui/README.md)
 - [Edge 与 Gateway 路由设计](./gateway/edge-and-gateway-routing-design.md)
 - [基础设施约定](./infrastructure/infrastructure-conventions.md)
 - [编码与配置规范索引](./development/README.md)
