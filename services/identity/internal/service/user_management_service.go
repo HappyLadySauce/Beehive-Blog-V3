@@ -83,6 +83,9 @@ func (s *UserManagementService) UpdateOwnProfile(ctx context.Context, in UpdateO
 		patch.AvatarURL = optionalString(avatarURL)
 		auditDetail["avatar_url"] = avatarURL
 	}
+	if !patch.NicknameSet && !patch.AvatarURLSet {
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "profile patch must include at least one field")
+	}
 
 	now := s.deps.Clock()
 	var updated *entity.User
@@ -179,6 +182,8 @@ func (s *UserManagementService) UpdateUserRole(ctx context.Context, in UpdateUse
 	}
 	return s.updateManagedUser(ctx, in.ActorUserID, in.TargetUserID, in.ClientIP, auth.AuditEventAdminUpdateUserRole, func(txStore *repo.Store, target *entity.User) (*entity.User, error) {
 		return txStore.Users.UpdateRole(ctx, target.ID, role, s.deps.Clock())
+	}, func(activeAdmins []entity.User, target *entity.User) error {
+		return ensureActiveAdminInvariant(activeAdmins, target, role, target.Status)
 	}, map[string]any{"new_role": role})
 }
 
@@ -191,6 +196,8 @@ func (s *UserManagementService) UpdateUserStatus(ctx context.Context, in UpdateU
 	}
 	return s.updateManagedUser(ctx, in.ActorUserID, in.TargetUserID, in.ClientIP, auth.AuditEventAdminUpdateUserStatus, func(txStore *repo.Store, target *entity.User) (*entity.User, error) {
 		return txStore.Users.UpdateStatus(ctx, target.ID, status, s.deps.Clock())
+	}, func(activeAdmins []entity.User, target *entity.User) error {
+		return ensureActiveAdminInvariant(activeAdmins, target, target.Role, status)
 	}, map[string]any{"new_status": status})
 }
 
@@ -226,7 +233,7 @@ func (s *UserManagementService) ResetUserPassword(ctx context.Context, in ResetU
 			return nil, err
 		}
 		return target, nil
-	}, nil)
+	}, nil, nil)
 	return err
 }
 
@@ -270,6 +277,7 @@ func (s *UserManagementService) updateManagedUser(
 	clientIP string,
 	eventType string,
 	mutate func(txStore *repo.Store, target *entity.User) (*entity.User, error),
+	validate func(activeAdmins []entity.User, target *entity.User) error,
 	detail map[string]any,
 ) (*AdminUserResult, error) {
 	if actorUserID == targetUserID {
@@ -278,7 +286,8 @@ func (s *UserManagementService) updateManagedUser(
 
 	var updated *entity.User
 	if err := withTransaction(ctx, s.deps.Store, func(txStore *repo.Store) error {
-		if _, err := s.requireActiveAdminForUpdateWithStore(ctx, txStore, actorUserID); err != nil {
+		activeAdmins, err := s.requireActiveAdminSetForUpdateWithStore(ctx, txStore, actorUserID)
+		if err != nil {
 			return err
 		}
 		target, err := txStore.Users.GetForUpdateByID(ctx, targetUserID)
@@ -296,6 +305,11 @@ func (s *UserManagementService) updateManagedUser(
 		detail["old_role"] = target.Role
 		detail["old_status"] = target.Status
 
+		if validate != nil {
+			if err := validate(activeAdmins, target); err != nil {
+				return err
+			}
+		}
 		updatedUser, err := mutate(txStore, target)
 		if err != nil {
 			return err
@@ -343,9 +357,20 @@ func (s *UserManagementService) requireActiveAdminWithStore(ctx context.Context,
 	return user, nil
 }
 
-func (s *UserManagementService) requireActiveAdminForUpdateWithStore(ctx context.Context, store *repo.Store, userID int64) (*entity.User, error) {
+func (s *UserManagementService) requireActiveAdminSetForUpdateWithStore(ctx context.Context, store *repo.Store, userID int64) ([]entity.User, error) {
 	if userID <= 0 {
 		return nil, errs.New(errs.CodeIdentityInvalidArgument, "actor_user_id is invalid")
+	}
+
+	activeAdmins, err := store.Users.ListActiveAdminsForUpdate(ctx)
+	if err != nil {
+		return nil, errs.Wrap(err, errs.CodeIdentityInternal, "lock active admins failed")
+	}
+
+	for i := range activeAdmins {
+		if activeAdmins[i].ID == userID {
+			return activeAdmins, nil
+		}
 	}
 
 	user, err := store.Users.GetForUpdateByID(ctx, userID)
@@ -361,7 +386,23 @@ func (s *UserManagementService) requireActiveAdminForUpdateWithStore(ctx context
 	if user.Role != auth.UserRoleAdmin {
 		return nil, errs.New(errs.CodeIdentityAccessForbidden, "identity administration requires admin role")
 	}
-	return user, nil
+	return activeAdmins, nil
+}
+
+func ensureActiveAdminInvariant(activeAdmins []entity.User, target *entity.User, nextRole string, nextStatus string) error {
+	if target == nil || target.Role != auth.UserRoleAdmin || target.Status != auth.UserStatusActive {
+		return nil
+	}
+
+	nextRole = strings.ToLower(strings.TrimSpace(nextRole))
+	nextStatus = strings.ToLower(strings.TrimSpace(nextStatus))
+	if nextRole == auth.UserRoleAdmin && nextStatus == auth.UserStatusActive {
+		return nil
+	}
+	if len(activeAdmins) <= 1 {
+		return errs.New(errs.CodeIdentityInvalidArgument, "at least one active admin is required")
+	}
+	return nil
 }
 
 func normalizeRequiredRole(value string) (string, error) {

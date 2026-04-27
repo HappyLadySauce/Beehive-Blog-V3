@@ -83,6 +83,11 @@ func TestUserManagementServiceProfileAndPassword(t *testing.T) {
 	if profile.User.AvatarURL != nil {
 		t.Fatalf("expected explicit empty avatar URL to clear avatar, got %#v", profile.User.AvatarURL)
 	}
+	if _, err := svc.UpdateOwnProfile(context.Background(), service.UpdateOwnProfileInput{
+		UserID: user.ID,
+	}); !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
+		t.Fatalf("expected empty profile patch to be rejected, got %v", err)
+	}
 
 	if err := svc.ChangeOwnPassword(context.Background(), service.ChangeOwnPasswordInput{
 		UserID:      user.ID,

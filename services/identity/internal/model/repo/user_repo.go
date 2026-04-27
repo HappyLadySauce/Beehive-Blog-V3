@@ -47,6 +47,21 @@ func (r *UserRepository) GetForUpdateByID(ctx context.Context, id int64) (*entit
 	return &user, nil
 }
 
+// ListActiveAdminsForUpdate locks all active admin rows in deterministic order.
+// ListActiveAdminsForUpdate 按固定顺序锁定全部活跃管理员记录。
+func (r *UserRepository) ListActiveAdminsForUpdate(ctx context.Context) ([]entity.User, error) {
+	var users []entity.User
+	if err := r.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("role = ? AND status = ?", "admin", "active").
+		Order("id ASC").
+		Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 // GetByUsername fetches a user by normalized username.
 // GetByUsername 按规范化用户名查询用户。
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
