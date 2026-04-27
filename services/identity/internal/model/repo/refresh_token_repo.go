@@ -52,3 +52,16 @@ func (r *RefreshTokenRepository) RevokeActiveBySessionID(ctx context.Context, se
 		Where("session_id = ? AND revoked_at IS NULL", sessionID).
 		Update("revoked_at", revokedAt).Error
 }
+
+// RevokeActiveByUserID revokes active refresh tokens for every session owned by a user.
+// RevokeActiveByUserID 吊销指定用户全部会话下的活跃 refresh token。
+func (r *RefreshTokenRepository) RevokeActiveByUserID(ctx context.Context, userID int64, revokedAt time.Time) error {
+	sessionIDs := r.db.WithContext(ctx).
+		Model(&entity.UserSession{}).
+		Select("id").
+		Where("user_id = ?", userID)
+	return r.db.WithContext(ctx).
+		Model(&entity.RefreshToken{}).
+		Where("session_id IN (?) AND revoked_at IS NULL", sessionIDs).
+		Update("revoked_at", revokedAt).Error
+}

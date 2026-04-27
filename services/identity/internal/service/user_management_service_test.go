@@ -55,6 +55,8 @@ func TestUserManagementServiceProfileAndPassword(t *testing.T) {
 		t.Fatalf("failed to hash old password: %v", err)
 	}
 	testkit.CreateCredentialLocal(t, deps.Store, user.ID, oldHash)
+	session := testkit.CreateSession(t, deps.Store, user.ID)
+	refreshToken := testkit.CreateRefreshToken(t, deps.Store, session.ID, auth.HashRefreshToken("old-refresh-token"))
 
 	svc := service.NewUserManagementService(deps)
 	profile, err := svc.UpdateOwnProfile(context.Background(), service.UpdateOwnProfileInput{
@@ -96,6 +98,20 @@ func TestUserManagementServiceProfileAndPassword(t *testing.T) {
 	if err := auth.VerifyPassword(credential.PasswordHash, "NewPass123!"); err != nil {
 		t.Fatalf("expected new password to verify, got %v", err)
 	}
+	session, err = deps.Store.UserSessions.GetByID(context.Background(), session.ID)
+	if err != nil {
+		t.Fatalf("expected session lookup to succeed, got %v", err)
+	}
+	if session.Status != auth.SessionStatusRevoked || session.RevokedAt == nil {
+		t.Fatalf("expected password change to revoke active session, got %+v", session)
+	}
+	var refreshed entity.RefreshToken
+	if err := deps.Store.DB().WithContext(context.Background()).Where("id = ?", refreshToken.ID).First(&refreshed).Error; err != nil {
+		t.Fatalf("expected refresh token lookup to succeed, got %v", err)
+	}
+	if refreshed.RevokedAt == nil {
+		t.Fatalf("expected password change to revoke refresh token, got %+v", refreshed)
+	}
 }
 
 // TestUserManagementServiceAdminMutationsAndAudits verifies admin writes and audit queries.
@@ -105,6 +121,8 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 	deps := newDeps(t, now)
 	admin := createUserWithRole(t, deps.Store, auth.UserRoleAdmin, auth.UserStatusActive)
 	target := createUserWithRole(t, deps.Store, auth.UserRoleMember, auth.UserStatusActive)
+	targetSession := testkit.CreateSession(t, deps.Store, target.ID)
+	targetRefreshToken := testkit.CreateRefreshToken(t, deps.Store, targetSession.ID, auth.HashRefreshToken("target-refresh-token"))
 
 	svc := service.NewUserManagementService(deps)
 	roleResult, err := svc.UpdateUserRole(context.Background(), service.UpdateUserRoleInput{
@@ -130,6 +148,13 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 	if statusResult.User.Status != auth.UserStatusDisabled {
 		t.Fatalf("expected status disabled, got %s", statusResult.User.Status)
 	}
+	if _, err := svc.UpdateUserStatus(context.Background(), service.UpdateUserStatusInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: target.ID,
+		Status:       "",
+	}); !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
+		t.Fatalf("expected invalid argument for empty status, got %v", err)
+	}
 
 	if err := svc.ResetUserPassword(context.Background(), service.ResetUserPasswordInput{
 		ActorUserID:  admin.ID,
@@ -144,6 +169,20 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 	}
 	if err := auth.VerifyPassword(credential.PasswordHash, "ResetPass123!"); err != nil {
 		t.Fatalf("expected reset password to verify, got %v", err)
+	}
+	targetSession, err = deps.Store.UserSessions.GetByID(context.Background(), targetSession.ID)
+	if err != nil {
+		t.Fatalf("expected target session lookup to succeed, got %v", err)
+	}
+	if targetSession.Status != auth.SessionStatusRevoked || targetSession.RevokedAt == nil {
+		t.Fatalf("expected password reset to revoke target session, got %+v", targetSession)
+	}
+	var targetToken entity.RefreshToken
+	if err := deps.Store.DB().WithContext(context.Background()).Where("id = ?", targetRefreshToken.ID).First(&targetToken).Error; err != nil {
+		t.Fatalf("expected target refresh token lookup to succeed, got %v", err)
+	}
+	if targetToken.RevokedAt == nil {
+		t.Fatalf("expected password reset to revoke target refresh token, got %+v", targetToken)
 	}
 
 	audits, err := svc.ListIdentityAudits(context.Background(), service.ListIdentityAuditsInput{

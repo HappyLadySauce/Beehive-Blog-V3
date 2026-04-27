@@ -72,6 +72,19 @@ func (r *UserSessionRepository) Revoke(ctx context.Context, id int64, revokedAt 
 		}).Error
 }
 
+// RevokeActiveByUserID revokes all active sessions for a user.
+// RevokeActiveByUserID 吊销用户的全部活跃会话。
+func (r *UserSessionRepository) RevokeActiveByUserID(ctx context.Context, userID int64, revokedAt time.Time) error {
+	return r.db.WithContext(ctx).
+		Model(&entity.UserSession{}).
+		Where("user_id = ? AND status = ?", userID, "active").
+		Updates(map[string]any{
+			"status":     "revoked",
+			"revoked_at": revokedAt,
+			"updated_at": revokedAt,
+		}).Error
+}
+
 // MarkExpired marks a session as expired.
 // MarkExpired 将会话标记为已过期。
 func (r *UserSessionRepository) MarkExpired(ctx context.Context, id int64, expiredAt time.Time) error {

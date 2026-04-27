@@ -7,6 +7,7 @@ import (
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // UserRepository encapsulates data access for users.
@@ -26,6 +27,20 @@ func (r *UserRepository) Create(ctx context.Context, user *entity.User) error {
 func (r *UserRepository) GetByID(ctx context.Context, id int64) (*entity.User, error) {
 	var user entity.User
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// GetForUpdateByID fetches a user row with FOR UPDATE inside a transaction.
+// GetForUpdateByID 在事务中使用 FOR UPDATE 锁定用户记录。
+func (r *UserRepository) GetForUpdateByID(ctx context.Context, id int64) (*entity.User, error) {
+	var user entity.User
+	if err := r.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ?", id).
+		First(&user).Error; err != nil {
 		return nil, err
 	}
 

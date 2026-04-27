@@ -98,6 +98,35 @@ func TestIdentityUserListRequiresAdmin(t *testing.T) {
 	}
 }
 
+func TestIdentityUserListRejectsInvalidFilters(t *testing.T) {
+	t.Parallel()
+
+	called := false
+	client := &fakeIdentityClient{
+		listUsersFn: func(context.Context, *pb.ListUsersRequest, ...grpc.CallOption) (*pb.ListUsersResponse, error) {
+			called = true
+			return &pb.ListUsersResponse{}, nil
+		},
+	}
+	logic := NewIdentityUserListLogic(trustedContext("admin"), testServiceContext(client))
+
+	_, err := logic.IdentityUserList(&types.AdminUserListReq{Role: "guest", Status: "active"})
+	if !errors.Is(err, errs.E(errs.CodeGatewayBadRequest)) {
+		t.Fatalf("expected bad request for invalid role filter, got %v", err)
+	}
+	if called {
+		t.Fatalf("expected invalid filters to be rejected before RPC")
+	}
+
+	_, err = logic.IdentityUserList(&types.AdminUserListReq{Role: "admin", Status: "typo"})
+	if !errors.Is(err, errs.E(errs.CodeGatewayBadRequest)) {
+		t.Fatalf("expected bad request for invalid status filter, got %v", err)
+	}
+	if called {
+		t.Fatalf("expected invalid status filter to be rejected before RPC")
+	}
+}
+
 func TestIdentityLogicMapsAdminRPCs(t *testing.T) {
 	t.Parallel()
 

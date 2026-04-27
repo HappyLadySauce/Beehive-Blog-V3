@@ -641,6 +641,55 @@ func TestOutboxDispatcherReclaimsStaleProcessingEvent(t *testing.T) {
 	}
 }
 
+func TestOutboxRepositoryRejectsStaleLeaseMark(t *testing.T) {
+	t.Parallel()
+
+	deps := testkit.NewServiceDependencies(t)
+	event := createOutboxEvent(t, deps.Store, 107, contentservice.EventContentUpdated)
+	firstClaimAt := time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
+	firstClaim, err := deps.Store.Outbox.ClaimDue(context.Background(), firstClaimAt, 1, 30*time.Second)
+	if err != nil {
+		t.Fatalf("first claim failed: %v", err)
+	}
+	if len(firstClaim) != 1 || firstClaim[0].ID != event.ID {
+		t.Fatalf("expected first claim to lock event, got %+v", firstClaim)
+	}
+
+	secondClaimAt := firstClaimAt.Add(31 * time.Second)
+	secondClaim, err := deps.Store.Outbox.ClaimDue(context.Background(), secondClaimAt, 1, 30*time.Second)
+	if err != nil {
+		t.Fatalf("second claim failed: %v", err)
+	}
+	if len(secondClaim) != 1 || secondClaim[0].ID != event.ID {
+		t.Fatalf("expected second claim to reclaim event, got %+v", secondClaim)
+	}
+	if err := deps.Store.Outbox.MarkDone(context.Background(), secondClaim[0].ID, secondClaim[0].UpdatedAt, secondClaimAt.Add(time.Second)); err != nil {
+		t.Fatalf("second worker mark done failed: %v", err)
+	}
+
+	err = deps.Store.Outbox.MarkPublishFailed(
+		context.Background(),
+		firstClaim[0].ID,
+		firstClaim[0].UpdatedAt,
+		1,
+		3,
+		secondClaimAt.Add(time.Minute),
+		"old worker failure",
+		secondClaimAt.Add(2*time.Second),
+	)
+	if err == nil {
+		t.Fatalf("expected stale lease mark failed to be rejected")
+	}
+
+	events, err := deps.Store.Outbox.ListByResource(context.Background(), "content_item", 107)
+	if err != nil {
+		t.Fatalf("list events failed: %v", err)
+	}
+	if events[0].Status != repo.OutboxStatusDone || events[0].LastError == "old worker failure" {
+		t.Fatalf("expected done event to survive stale worker result, got %+v", events[0])
+	}
+}
+
 func TestOutboxDispatcherConcurrentClaimDoesNotDuplicate(t *testing.T) {
 	t.Parallel()
 

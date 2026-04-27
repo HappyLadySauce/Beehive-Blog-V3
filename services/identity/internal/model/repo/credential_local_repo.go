@@ -6,6 +6,7 @@ import (
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // CredentialLocalRepository encapsulates local credential access.
@@ -25,6 +26,20 @@ func (r *CredentialLocalRepository) Create(ctx context.Context, credential *enti
 func (r *CredentialLocalRepository) GetByUserID(ctx context.Context, userID int64) (*entity.CredentialLocal, error) {
 	var credential entity.CredentialLocal
 	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&credential).Error; err != nil {
+		return nil, err
+	}
+
+	return &credential, nil
+}
+
+// GetForUpdateByUserID fetches a local credential row with FOR UPDATE.
+// GetForUpdateByUserID 使用 FOR UPDATE 锁定本地凭证记录。
+func (r *CredentialLocalRepository) GetForUpdateByUserID(ctx context.Context, userID int64) (*entity.CredentialLocal, error) {
+	var credential entity.CredentialLocal
+	if err := r.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("user_id = ?", userID).
+		First(&credential).Error; err != nil {
 		return nil, err
 	}
 

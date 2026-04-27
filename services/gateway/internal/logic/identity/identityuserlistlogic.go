@@ -32,6 +32,9 @@ func (l *IdentityUserListLogic) IdentityUserList(req *types.AdminUserListReq) (r
 	if err != nil {
 		return nil, err
 	}
+	if err := identityadapter.ValidateListUsersFilters(req); err != nil {
+		return nil, err
+	}
 
 	rpcResp, rpcErr := l.svcCtx.IdentityClient.ListUsers(
 		rpcContextWithMeta(l.ctx, l.svcCtx.Config.IdentityRPC),

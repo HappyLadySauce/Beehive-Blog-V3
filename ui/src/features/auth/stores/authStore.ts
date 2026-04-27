@@ -25,6 +25,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = shallowRef(false)
   const isRestoring = shallowRef(false)
   const errorMessage = shallowRef('')
+  let refreshSessionPromise: Promise<boolean> | null = null
+  let restoreSessionPromise: Promise<boolean> | null = null
 
   const isAuthenticated = computed(() => accessToken.value.length > 0 && currentUser.value !== null)
   const isAdmin = computed(() => normalizeAuthRole(currentUser.value?.role) === 'admin')
@@ -100,7 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function refreshSession(): Promise<boolean> {
+  async function runRefreshSession(): Promise<boolean> {
     const storedRefreshToken = tokenStorage.getRefreshToken()
     storedRefreshTokenValue.value = storedRefreshToken
     if (!storedRefreshToken) {
@@ -132,7 +134,18 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function restoreSession(): Promise<boolean> {
+  function refreshSession(): Promise<boolean> {
+    if (refreshSessionPromise) {
+      return refreshSessionPromise
+    }
+
+    refreshSessionPromise = runRefreshSession().finally(() => {
+      refreshSessionPromise = null
+    })
+    return refreshSessionPromise
+  }
+
+  async function runRestoreSession(): Promise<boolean> {
     if (isAuthenticated.value) {
       return true
     }
@@ -147,6 +160,20 @@ export const useAuthStore = defineStore('auth', () => {
     finally {
       isRestoring.value = false
     }
+  }
+
+  function restoreSession(): Promise<boolean> {
+    if (isAuthenticated.value) {
+      return Promise.resolve(true)
+    }
+    if (restoreSessionPromise) {
+      return restoreSessionPromise
+    }
+
+    restoreSessionPromise = runRestoreSession().finally(() => {
+      restoreSessionPromise = null
+    })
+    return restoreSessionPromise
   }
 
   async function logout(): Promise<void> {

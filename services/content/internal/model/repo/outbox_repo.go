@@ -29,13 +29,14 @@ func (r *OutboxRepository) ClaimDue(ctx context.Context, now time.Time, batchSiz
 	if processingTimeout <= 0 {
 		processingTimeout = time.Minute
 	}
-	staleBefore := now.Add(-processingTimeout)
+	claimedAt := normalizeOutboxLeaseTime(now)
+	staleBefore := claimedAt.Add(-processingTimeout)
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
 			Where(
 				"(status = ? AND next_retry_at <= ?) OR (status = ? AND updated_at <= ?)",
 				OutboxStatusPending,
-				now,
+				claimedAt,
 				OutboxStatusProcessing,
 				staleBefore,
 			).
@@ -55,37 +56,55 @@ func (r *OutboxRepository) ClaimDue(ctx context.Context, now time.Time, batchSiz
 			Where("id IN ?", ids).
 			Updates(map[string]any{
 				"status":     OutboxStatusProcessing,
-				"updated_at": now,
+				"updated_at": claimedAt,
 			}).Error
 	})
+	for i := range events {
+		events[i].Status = OutboxStatusProcessing
+		events[i].UpdatedAt = claimedAt
+	}
 	return events, err
 }
 
-func (r *OutboxRepository) MarkDone(ctx context.Context, id int64, now time.Time) error {
-	return r.db.WithContext(ctx).Model(&entity.OutboxEvent{}).
-		Where("id = ?", id).
+func (r *OutboxRepository) MarkDone(ctx context.Context, id int64, claimedAt time.Time, now time.Time) error {
+	result := r.db.WithContext(ctx).Model(&entity.OutboxEvent{}).
+		Where("id = ? AND status = ? AND updated_at = ?", id, OutboxStatusProcessing, normalizeOutboxLeaseTime(claimedAt)).
 		Updates(map[string]any{
 			"status":       OutboxStatusDone,
 			"published_at": now,
 			"updated_at":   now,
 			"last_error":   "",
-		}).Error
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
-func (r *OutboxRepository) MarkPublishFailed(ctx context.Context, id int64, attempts int, maxAttempts int, nextRetryAt time.Time, lastError string, now time.Time) error {
+func (r *OutboxRepository) MarkPublishFailed(ctx context.Context, id int64, claimedAt time.Time, attempts int, maxAttempts int, nextRetryAt time.Time, lastError string, now time.Time) error {
 	status := OutboxStatusPending
 	if maxAttempts > 0 && attempts >= maxAttempts {
 		status = OutboxStatusFailed
 	}
-	return r.db.WithContext(ctx).Model(&entity.OutboxEvent{}).
-		Where("id = ?", id).
+	result := r.db.WithContext(ctx).Model(&entity.OutboxEvent{}).
+		Where("id = ? AND status = ? AND updated_at = ?", id, OutboxStatusProcessing, normalizeOutboxLeaseTime(claimedAt)).
 		Updates(map[string]any{
 			"status":        status,
 			"attempts":      attempts,
 			"next_retry_at": nextRetryAt,
 			"last_error":    lastError,
 			"updated_at":    now,
-		}).Error
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *OutboxRepository) ListByResource(ctx context.Context, resourceType string, resourceID int64) ([]entity.OutboxEvent, error) {
@@ -101,4 +120,8 @@ func (r *OutboxRepository) CountByStatus(ctx context.Context, status string) (in
 	var total int64
 	err := r.db.WithContext(ctx).Model(&entity.OutboxEvent{}).Where("status = ?", status).Count(&total).Error
 	return total, err
+}
+
+func normalizeOutboxLeaseTime(value time.Time) time.Time {
+	return value.UTC().Round(time.Microsecond)
 }

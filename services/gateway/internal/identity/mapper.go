@@ -3,6 +3,7 @@ package identity
 import (
 	"strings"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 )
@@ -113,6 +114,18 @@ func BuildListUsersRequest(actorUserID string, req *types.AdminUserListReq) *pb.
 		Page:        int32(req.Page),
 		PageSize:    int32(req.PageSize),
 	}
+}
+
+// ValidateListUsersFilters rejects unsupported HTTP query enum values before proto mapping.
+// ValidateListUsersFilters 在 proto 映射前拒绝不支持的 HTTP 查询枚举值。
+func ValidateListUsersFilters(req *types.AdminUserListReq) error {
+	if _, err := toOptionalListRole(req.Role); err != nil {
+		return err
+	}
+	if _, err := toOptionalListStatus(req.Status); err != nil {
+		return err
+	}
+	return nil
 }
 
 // BuildUpdateUserRoleRequest maps studio user role updates.
@@ -354,11 +367,11 @@ func toSessionView(session *pb.SessionInfo) types.AuthSessionView {
 	return types.AuthSessionView{
 		SessionId:  session.GetSessionId(),
 		UserId:     session.GetUserId(),
-		AuthSource: session.GetAuthSource().String(),
+		AuthSource: fromProtoAuthSource(session.GetAuthSource()),
 		ClientType: session.GetClientType(),
 		DeviceId:   session.GetDeviceId(),
 		DeviceName: session.GetDeviceName(),
-		Status:     session.GetStatus().String(),
+		Status:     fromProtoSessionStatus(session.GetStatus()),
 		LastSeenAt: session.GetLastSeenAt(),
 		ExpiresAt:  session.GetExpiresAt(),
 	}
@@ -391,6 +404,19 @@ func toProtoRole(role string) pb.Role {
 	}
 }
 
+func toOptionalListRole(role string) (pb.Role, error) {
+	switch strings.ToLower(strings.TrimSpace(role)) {
+	case "":
+		return pb.Role_ROLE_UNSPECIFIED, nil
+	case "admin", "role_admin":
+		return pb.Role_ROLE_ADMIN, nil
+	case "member", "role_member":
+		return pb.Role_ROLE_MEMBER, nil
+	default:
+		return pb.Role_ROLE_UNSPECIFIED, errs.New(errs.CodeGatewayBadRequest, "role is invalid")
+	}
+}
+
 func fromProtoRole(role pb.Role) string {
 	switch role {
 	case pb.Role_ROLE_ADMIN:
@@ -419,6 +445,23 @@ func toProtoAccountStatus(status string) pb.AccountStatus {
 	}
 }
 
+func toOptionalListStatus(status string) (pb.AccountStatus, error) {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "":
+		return pb.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED, nil
+	case "pending", "account_status_pending":
+		return pb.AccountStatus_ACCOUNT_STATUS_PENDING, nil
+	case "active", "account_status_active":
+		return pb.AccountStatus_ACCOUNT_STATUS_ACTIVE, nil
+	case "disabled", "account_status_disabled":
+		return pb.AccountStatus_ACCOUNT_STATUS_DISABLED, nil
+	case "locked", "account_status_locked":
+		return pb.AccountStatus_ACCOUNT_STATUS_LOCKED, nil
+	default:
+		return pb.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED, errs.New(errs.CodeGatewayBadRequest, "status is invalid")
+	}
+}
+
 func fromProtoAccountStatus(status pb.AccountStatus) string {
 	switch status {
 	case pb.AccountStatus_ACCOUNT_STATUS_PENDING:
@@ -440,6 +483,19 @@ func fromProtoAuthSource(authSource pb.AuthSource) string {
 		return "local"
 	case pb.AuthSource_AUTH_SOURCE_SSO:
 		return "sso"
+	default:
+		return ""
+	}
+}
+
+func fromProtoSessionStatus(status pb.SessionStatus) string {
+	switch status {
+	case pb.SessionStatus_SESSION_STATUS_ACTIVE:
+		return "active"
+	case pb.SessionStatus_SESSION_STATUS_REVOKED:
+		return "revoked"
+	case pb.SessionStatus_SESSION_STATUS_EXPIRED:
+		return "expired"
 	default:
 		return ""
 	}

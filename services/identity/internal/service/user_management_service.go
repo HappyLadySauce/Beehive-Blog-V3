@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
@@ -129,7 +130,7 @@ func (s *UserManagementService) ChangeOwnPassword(ctx context.Context, in Change
 
 	now := s.deps.Clock()
 	return withTransaction(ctx, s.deps.Store, func(txStore *repo.Store) error {
-		user, err := txStore.Users.GetByID(ctx, in.UserID)
+		user, err := txStore.Users.GetForUpdateByID(ctx, in.UserID)
 		if err != nil {
 			if repo.IsNotFound(err) {
 				return errs.New(errs.CodeIdentityUserNotFound, "user not found")
@@ -139,7 +140,7 @@ func (s *UserManagementService) ChangeOwnPassword(ctx context.Context, in Change
 		if err := validateActiveUserStatus(user.Status); err != nil {
 			return err
 		}
-		credential, err := txStore.CredentialLocals.GetByUserID(ctx, in.UserID)
+		credential, err := txStore.CredentialLocals.GetForUpdateByUserID(ctx, in.UserID)
 		if err != nil {
 			if repo.IsNotFound(err) {
 				return errs.New(errs.CodeIdentityInvalidCredentials, "local credential not found")
@@ -155,6 +156,9 @@ func (s *UserManagementService) ChangeOwnPassword(ctx context.Context, in Change
 		}
 		if err := txStore.CredentialLocals.UpdatePasswordHash(ctx, in.UserID, hash, now); err != nil {
 			return errs.Wrap(err, errs.CodeIdentityInternal, "update password failed")
+		}
+		if err := revokeUserSessionsAndRefreshTokens(ctx, txStore, in.UserID, now); err != nil {
+			return err
 		}
 		writeAudit(ctx, txStore, auditInput{
 			UserID:    &in.UserID,
@@ -181,7 +185,7 @@ func (s *UserManagementService) UpdateUserRole(ctx context.Context, in UpdateUse
 // UpdateUserStatus updates a target user's status by an active administrator.
 // UpdateUserStatus 由活跃管理员修改目标用户状态。
 func (s *UserManagementService) UpdateUserStatus(ctx context.Context, in UpdateUserStatusInput) (*AdminUserResult, error) {
-	status, err := normalizeOptionalStatus(in.Status, false)
+	status, err := normalizeRequiredStatus(in.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -197,23 +201,29 @@ func (s *UserManagementService) ResetUserPassword(ctx context.Context, in ResetU
 		return errs.Wrap(err, errs.CodeIdentityInvalidArgument, "new_password is invalid")
 	}
 
+	now := s.deps.Clock()
 	_, err := s.updateManagedUser(ctx, in.ActorUserID, in.TargetUserID, in.ClientIP, auth.AuditEventAdminResetUserPassword, func(txStore *repo.Store, target *entity.User) (*entity.User, error) {
 		hash, err := auth.HashPassword(in.NewPassword, s.deps.Config.Security.PasswordHashCost)
 		if err != nil {
 			return nil, errs.Wrap(err, errs.CodeIdentityInternal, "hash password failed")
 		}
-		if err := txStore.CredentialLocals.UpdatePasswordHash(ctx, target.ID, hash, s.deps.Clock()); err != nil {
+		if _, err := txStore.CredentialLocals.GetForUpdateByUserID(ctx, target.ID); err != nil {
 			if repo.IsNotFound(err) {
 				if err := txStore.CredentialLocals.Create(ctx, &entity.CredentialLocal{
 					UserID:            target.ID,
 					PasswordHash:      hash,
-					PasswordUpdatedAt: s.deps.Clock(),
+					PasswordUpdatedAt: now,
 				}); err != nil {
 					return nil, errs.Wrap(err, errs.CodeIdentityInternal, "create password failed")
 				}
-				return target, nil
+			} else {
+				return nil, errs.Wrap(err, errs.CodeIdentityInternal, "load credential failed")
 			}
+		} else if err := txStore.CredentialLocals.UpdatePasswordHash(ctx, target.ID, hash, now); err != nil {
 			return nil, errs.Wrap(err, errs.CodeIdentityInternal, "update password failed")
+		}
+		if err := revokeUserSessionsAndRefreshTokens(ctx, txStore, target.ID, now); err != nil {
+			return nil, err
 		}
 		return target, nil
 	}, nil)
@@ -268,10 +278,10 @@ func (s *UserManagementService) updateManagedUser(
 
 	var updated *entity.User
 	if err := withTransaction(ctx, s.deps.Store, func(txStore *repo.Store) error {
-		if _, err := s.requireActiveAdminWithStore(ctx, txStore, actorUserID); err != nil {
+		if _, err := s.requireActiveAdminForUpdateWithStore(ctx, txStore, actorUserID); err != nil {
 			return err
 		}
-		target, err := txStore.Users.GetByID(ctx, targetUserID)
+		target, err := txStore.Users.GetForUpdateByID(ctx, targetUserID)
 		if err != nil {
 			if repo.IsNotFound(err) {
 				return errs.New(errs.CodeIdentityUserNotFound, "target user not found")
@@ -333,6 +343,27 @@ func (s *UserManagementService) requireActiveAdminWithStore(ctx context.Context,
 	return user, nil
 }
 
+func (s *UserManagementService) requireActiveAdminForUpdateWithStore(ctx context.Context, store *repo.Store, userID int64) (*entity.User, error) {
+	if userID <= 0 {
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "actor_user_id is invalid")
+	}
+
+	user, err := store.Users.GetForUpdateByID(ctx, userID)
+	if err != nil {
+		if repo.IsNotFound(err) {
+			return nil, errs.New(errs.CodeIdentityUserNotFound, "actor user not found")
+		}
+		return nil, errs.Wrap(err, errs.CodeIdentityInternal, "load actor user failed")
+	}
+	if err := validateActiveUserStatus(user.Status); err != nil {
+		return nil, err
+	}
+	if user.Role != auth.UserRoleAdmin {
+		return nil, errs.New(errs.CodeIdentityAccessForbidden, "identity administration requires admin role")
+	}
+	return user, nil
+}
+
 func normalizeRequiredRole(value string) (string, error) {
 	role := strings.ToLower(strings.TrimSpace(value))
 	switch role {
@@ -356,6 +387,18 @@ func normalizeOptionalStatus(value string, allowPending bool) (string, error) {
 	if status == "" {
 		return "", nil
 	}
+	return normalizeStatusValue(status, allowPending)
+}
+
+func normalizeRequiredStatus(value string) (string, error) {
+	status := strings.ToLower(strings.TrimSpace(value))
+	if status == "" {
+		return "", errs.New(errs.CodeIdentityInvalidArgument, "status is invalid")
+	}
+	return normalizeStatusValue(status, false)
+}
+
+func normalizeStatusValue(status string, allowPending bool) (string, error) {
 	switch status {
 	case auth.UserStatusActive, auth.UserStatusDisabled, auth.UserStatusLocked:
 		return status, nil
@@ -406,4 +449,14 @@ func normalizeAvatarURL(value string) (string, error) {
 	}
 
 	return avatarURL, nil
+}
+
+func revokeUserSessionsAndRefreshTokens(ctx context.Context, txStore *repo.Store, userID int64, revokedAt time.Time) error {
+	if err := txStore.RefreshTokens.RevokeActiveByUserID(ctx, userID, revokedAt); err != nil {
+		return errs.Wrap(err, errs.CodeIdentityInternal, "revoke refresh tokens failed")
+	}
+	if err := txStore.UserSessions.RevokeActiveByUserID(ctx, userID, revokedAt); err != nil {
+		return errs.Wrap(err, errs.CodeIdentityInternal, "revoke sessions failed")
+	}
+	return nil
 }
