@@ -2,6 +2,7 @@
 import FormField from '@/shared/components/FormField.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import ImageUploader from '@/shared/components/ImageUploader.vue'
+import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 
 import type { ContentTag } from '../types'
 import { contentStatuses, contentTypes, contentVisibilities, type ContentEditorForm } from './useContentEditor'
@@ -9,6 +10,7 @@ import { contentStatuses, contentTypes, contentVisibilities, type ContentEditorF
 const form = defineModel<ContentEditorForm>({ required: true })
 
 defineProps<{
+  canEditStatus: boolean
   tags: ContentTag[]
 }>()
 </script>
@@ -23,12 +25,13 @@ defineProps<{
           <option v-for="type in contentTypes" :key="type" :value="type">{{ type }}</option>
         </select>
       </label>
-      <label class="content-editor-meta__select">
+      <label v-if="canEditStatus" class="content-editor-meta__select">
         <span>Status</span>
         <select v-model="form.status">
           <option v-for="status in contentStatuses" :key="status" :value="status">{{ status }}</option>
         </select>
       </label>
+      <ReadonlyField v-else label="Status" value="draft" />
       <label class="content-editor-meta__select">
         <span>Visibility</span>
         <select v-model="form.visibility">

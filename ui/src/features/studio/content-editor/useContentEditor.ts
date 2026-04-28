@@ -84,6 +84,7 @@ export function useContentEditor(contentId?: string) {
   const saveState = shallowRef<ContentEditorSaveState>('idle')
   const currentContentId = shallowRef(contentId ?? '')
   const tags = shallowRef<ContentTag[]>([])
+  const canEditStatus = computed(() => mode.value !== 'create')
   const form = reactive(createEmptyContentEditorForm())
   let isHydrating = false
 
@@ -263,7 +264,7 @@ export function useContentEditor(contentId?: string) {
     if (!title) {
       throw new Error('Title is required.')
     }
-    return {
+    const payload: ContentWriteRequest = {
       type: form.type,
       title,
       slug: form.slug.trim() || slugFromTitle(title),
@@ -271,7 +272,6 @@ export function useContentEditor(contentId?: string) {
       body_markdown: form.body_markdown,
       body_json: form.body_json,
       cover_image_url: form.cover_image_url.trim(),
-      status: form.status,
       visibility: form.visibility,
       ai_access: form.ai_access,
       source_type: 'manual',
@@ -281,6 +281,10 @@ export function useContentEditor(contentId?: string) {
       tag_ids: [...form.tag_ids],
       change_summary: form.change_summary.trim() || (mode.value === 'create' ? 'Initial draft' : 'Content update'),
     }
+    if (canEditStatus.value) {
+      payload.status = form.status
+    }
+    return payload
   }
 
   onBeforeUnmount(() => {
@@ -299,6 +303,7 @@ export function useContentEditor(contentId?: string) {
     errorMessage,
     saveState,
     wordCount,
+    canEditStatus,
     tags,
     form,
     editor,

@@ -286,6 +286,13 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 			t.Fatalf("expected default user list to hide deleted user")
 		}
 	}
+	deletedWithoutInclude, err := svc.ListUsers(context.Background(), service.ListUsersInput{ActorUserID: admin.ID, Status: auth.UserStatusDeleted, Page: 1, PageSize: 20})
+	if err != nil {
+		t.Fatalf("expected deleted status list without include flag to succeed, got %v", err)
+	}
+	if deletedWithoutInclude.Total != 0 || len(deletedWithoutInclude.Items) != 0 {
+		t.Fatalf("expected deleted status list without include flag to hide deleted users, got total=%d items=%v", deletedWithoutInclude.Total, deletedWithoutInclude.Items)
+	}
 	includeDeletedList, err := svc.ListUsers(context.Background(), service.ListUsersInput{ActorUserID: admin.ID, Status: auth.UserStatusDeleted, IncludeDeleted: true, Page: 1, PageSize: 20})
 	if err != nil {
 		t.Fatalf("expected include deleted list to succeed, got %v", err)

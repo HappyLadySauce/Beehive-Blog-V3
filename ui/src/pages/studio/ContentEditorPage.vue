@@ -80,6 +80,7 @@ function backToContent(): void {
       <ContentEditorMetaPanel
         v-if="editorState.isSidebarOpen.value && !editorState.isFocusMode.value"
         v-model="editorState.form"
+        :can-edit-status="editorState.canEditStatus.value"
         :tags="editorState.tags.value"
       />
     </div>
