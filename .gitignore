@@ -7,3 +7,4 @@ data/
 .tmp
 logs/
 designs/
+var/
