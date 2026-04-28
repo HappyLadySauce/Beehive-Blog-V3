@@ -35,7 +35,7 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize PostgreSQL failed: %w", err)
 	}
-	objectStorage, localStorage, err := newObjectStorage(c.Storage, c.InternalAuthToken)
+	objectStorage, localStorage, err := newObjectStorage(c.Storage)
 	if err != nil {
 		_ = sqlDB.Close()
 		return nil, fmt.Errorf("initialize file storage failed: %w", err)
@@ -146,17 +146,13 @@ func withPostgresDefaults(c config.PostgresConf) config.PostgresConf {
 	return c
 }
 
-func newObjectStorage(c config.StorageConf, fallbackSecret string) (storage.ObjectStorage, storage.LocalObjectStorage, error) {
+func newObjectStorage(c config.StorageConf) (storage.ObjectStorage, storage.LocalObjectStorage, error) {
 	switch storageDriver(c) {
 	case "s3":
 		objectStorage, err := storage.NewS3Storage(context.Background(), c.S3)
 		return objectStorage, nil, err
 	default:
-		localConf := c.Local
-		if strings.TrimSpace(localConf.UploadSecret) == "" {
-			localConf.UploadSecret = fallbackSecret
-		}
-		localStorage, err := storage.NewLocalStorage(localConf)
+		localStorage, err := storage.NewLocalStorage(c.Local)
 		if err != nil {
 			return nil, nil, err
 		}

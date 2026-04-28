@@ -3,7 +3,9 @@ package file
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -73,7 +75,7 @@ func logStreamCopyError(ctx context.Context, err error) {
 		return
 	}
 	if isClientStreamAbort(err) {
-		logs.Ctx(ctx).Warn("file_asset_stream_client_aborted", logs.String("reason", err.Error()))
+		logs.Ctx(ctx).Warn("file_asset_stream_client_aborted")
 		return
 	}
 	logs.Ctx(ctx).Error("file_asset_stream_failed", err)
@@ -83,9 +85,19 @@ func isClientStreamAbort(err error) bool {
 	if err == nil {
 		return false
 	}
-	message := strings.ToLower(err.Error())
 	return errors.Is(err, context.Canceled) ||
-		strings.Contains(message, "broken pipe") ||
-		strings.Contains(message, "connection reset by peer") ||
-		strings.Contains(message, "client disconnected")
+		errors.Is(err, net.ErrClosed) ||
+		isNetworkStreamAbort(err)
+}
+
+func isNetworkStreamAbort(err error) bool {
+	var netErr *net.OpError
+	if !errors.As(err, &netErr) {
+		return false
+	}
+	var syscallErr *os.SyscallError
+	if !errors.As(netErr, &syscallErr) {
+		return false
+	}
+	return isStreamAbortSyscall(syscallErr.Err)
 }

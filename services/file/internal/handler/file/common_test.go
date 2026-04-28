@@ -3,6 +3,7 @@ package file
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -94,8 +95,11 @@ func TestClientStreamAbortDetection(t *testing.T) {
 	if !isClientStreamAbort(context.Canceled) {
 		t.Fatal("expected context cancellation to be treated as client abort")
 	}
-	if !isClientStreamAbort(errors.New("write tcp: broken pipe")) {
-		t.Fatal("expected broken pipe to be treated as client abort")
+	if !isClientStreamAbort(net.ErrClosed) {
+		t.Fatal("expected closed network connection to be treated as client abort")
+	}
+	if isClientStreamAbort(errors.New("write tcp: broken pipe")) {
+		t.Fatal("expected plain error text not to be treated as client abort")
 	}
 	if isClientStreamAbort(nil) {
 		t.Fatal("expected nil error not to be client abort")

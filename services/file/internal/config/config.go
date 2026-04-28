@@ -119,6 +119,9 @@ func (c LocalStorageConf) Validate() error {
 	if strings.TrimSpace(c.UploadBaseURL) == "" {
 		return fmt.Errorf("Storage.Local.UploadBaseURL is required")
 	}
+	if strings.TrimSpace(c.UploadSecret) == "" {
+		return fmt.Errorf("Storage.Local.UploadSecret is required")
+	}
 	return nil
 }
 
