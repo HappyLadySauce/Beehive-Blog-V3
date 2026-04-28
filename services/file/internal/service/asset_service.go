@@ -40,6 +40,7 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 	}
 	now := time.Now().UTC()
 	objectKey := objectKey(scope, ownerUserID, in.FileName, contentType)
+	publicURL := publicURLForVisibility(m.conf.ObjectStorage.PublicBaseURL, visibility, objectKey)
 	asset := &entity.FileAsset{
 		AssetID:     "asset_" + uuid.NewString(),
 		UploadID:    "upload_" + uuid.NewString(),
@@ -49,7 +50,7 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 		Status:      StatusPending,
 		Bucket:      strings.TrimSpace(m.conf.ObjectStorage.Bucket),
 		ObjectKey:   objectKey,
-		PublicURL:   strings.TrimRight(strings.TrimSpace(m.conf.ObjectStorage.PublicBaseURL), "/") + "/" + objectKey,
+		PublicURL:   publicURL,
 		FileName:    strings.TrimSpace(in.FileName),
 		ContentType: contentType,
 		ByteSize:    in.ByteSize,
@@ -180,14 +181,13 @@ func (m *Manager) DeleteAsset(ctx context.Context, actorUserID string, assetID s
 	if asset.OwnerUserID != ownerUserID {
 		return errs.New(errs.CodeFileAccessForbidden, "asset access is forbidden")
 	}
-	if asset.Status == StatusDeleted {
-		return nil
+	if asset.Status != StatusDeleted {
+		if err := m.store.Assets.MarkDeleted(ctx, asset.AssetID, time.Now().UTC()); err != nil {
+			return errs.Wrap(err, errs.CodeFileInternal, "mark file asset deleted failed")
+		}
 	}
 	if err := m.objectStorage.Delete(ctx, asset.Bucket, asset.ObjectKey); err != nil {
 		return dependencyUnavailable(err)
-	}
-	if err := m.store.Assets.MarkDeleted(ctx, asset.AssetID, time.Now().UTC()); err != nil {
-		return errs.Wrap(err, errs.CodeFileInternal, "delete file asset failed")
 	}
 	return nil
 }
@@ -200,4 +200,16 @@ func objectKey(scope string, ownerUserID int64, fileName string, contentType str
 		ScopeAttachment:   "attachments",
 	}[scope]
 	return prefix + "/" + strconv.FormatInt(ownerUserID, 10) + "/" + uuid.NewString() + extensionFor(fileName, contentType)
+}
+
+func publicURLForVisibility(publicBaseURL string, visibility string, objectKey string) string {
+	if visibility != VisibilityPublic {
+		return ""
+	}
+	baseURL := strings.TrimRight(strings.TrimSpace(publicBaseURL), "/")
+	objectKey = strings.TrimLeft(strings.TrimSpace(objectKey), "/")
+	if baseURL == "" || objectKey == "" {
+		return ""
+	}
+	return baseURL + "/" + objectKey
 }

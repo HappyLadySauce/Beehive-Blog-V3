@@ -155,17 +155,35 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 	if profileResult.User.Nickname == nil || *profileResult.User.Nickname != nickname {
 		t.Fatalf("expected nickname to update, got %#v", profileResult.User.Nickname)
 	}
+	selfUsername := "admin_owner"
 	selfNickname := "Admin Owner"
+	selfAvatarURL := "https://cdn.example.com/admin-owner.png"
 	selfResult, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
 		ActorUserID:  admin.ID,
 		TargetUserID: admin.ID,
+		Username:     &selfUsername,
 		Nickname:     &selfNickname,
+		AvatarURL:    &selfAvatarURL,
 	})
 	if err != nil {
 		t.Fatalf("expected admin to update own basic profile, got %v", err)
 	}
+	if selfResult.User.Username != selfUsername {
+		t.Fatalf("expected admin self username to update, got %s", selfResult.User.Username)
+	}
 	if selfResult.User.Nickname == nil || *selfResult.User.Nickname != selfNickname {
 		t.Fatalf("expected admin self nickname to update, got %#v", selfResult.User.Nickname)
+	}
+	if selfResult.User.AvatarURL == nil || *selfResult.User.AvatarURL != selfAvatarURL {
+		t.Fatalf("expected admin self avatar to update, got %#v", selfResult.User.AvatarURL)
+	}
+	selfEmail := "admin-owner@example.com"
+	if _, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: admin.ID,
+		Email:        &selfEmail,
+	}); !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
+		t.Fatalf("expected admin self email update to be rejected, got %v", err)
 	}
 	if _, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
 		ActorUserID:  admin.ID,

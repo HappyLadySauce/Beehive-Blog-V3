@@ -5,6 +5,7 @@ package ops
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
@@ -12,6 +13,22 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/types"
 )
+
+const readyzProbeTimeout = 2 * time.Second
+
+type readyzProbe interface {
+	Check(ctx context.Context) error
+}
+
+type readyzDependency struct {
+	name  string
+	probe readyzProbe
+}
+
+type readyzProbeResult struct {
+	dependency string
+	err        error
+}
 
 type ReadyzLogic struct {
 	logger *logs.Logger
@@ -38,33 +55,50 @@ func (l *ReadyzLogic) Readyz() (resp *types.ReadyzResp, err error) {
 		return &types.ReadyzResp{Status: "not_ready"}, errs.New(errs.CodeGatewayNotReady, "service is not ready")
 	}
 
-	probeCtx, cancel := context.WithTimeout(l.ctx, 2*time.Second)
-	defer cancel()
-
-	if err := l.svcCtx.IdentityProbe.Check(probeCtx); err != nil {
-		l.logger.Error(
-			"readyz_check",
-			err,
-			logs.String("dependency", "identity"),
-		)
-		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
+	probes := []readyzDependency{
+		{name: "identity", probe: l.svcCtx.IdentityProbe},
+		{name: "content", probe: l.svcCtx.ContentProbe},
+		{name: "file", probe: l.svcCtx.FileProbe},
 	}
-	if err := l.svcCtx.ContentProbe.Check(probeCtx); err != nil {
+	results := runReadyzProbes(l.ctx, probes)
+	for _, result := range results {
+		if result.err == nil {
+			continue
+		}
 		l.logger.Error(
 			"readyz_check",
-			err,
-			logs.String("dependency", "content"),
+			result.err,
+			logs.String("dependency", result.dependency),
 		)
-		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
-	}
-	if err := l.svcCtx.FileProbe.Check(probeCtx); err != nil {
-		l.logger.Error(
-			"readyz_check",
-			err,
-			logs.String("dependency", "file"),
-		)
-		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
+		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(result.err, errs.CodeGatewayNotReady, "service is not ready")
 	}
 
 	return &types.ReadyzResp{Status: "ready"}, nil
+}
+
+func runReadyzProbes(ctx context.Context, probes []readyzDependency) []readyzProbeResult {
+	results := make(chan readyzProbeResult, len(probes))
+	var wg sync.WaitGroup
+	wg.Add(len(probes))
+	for _, item := range probes {
+		dependency := item
+		go func() {
+			defer wg.Done()
+			probeCtx, cancel := context.WithTimeout(ctx, readyzProbeTimeout)
+			defer cancel()
+			results <- readyzProbeResult{
+				dependency: dependency.name,
+				err:        dependency.probe.Check(probeCtx),
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(results)
+
+	collected := make([]readyzProbeResult, 0, len(probes))
+	for result := range results {
+		collected = append(collected, result)
+	}
+	return collected
 }

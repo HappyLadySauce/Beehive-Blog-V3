@@ -64,3 +64,17 @@ func TestObjectKeyUsesScopePrefix(t *testing.T) {
 		t.Fatalf("expected jpeg extension normalization, got %s", key)
 	}
 }
+
+func TestPublicURLForVisibility(t *testing.T) {
+	t.Parallel()
+
+	publicURL := publicURLForVisibility("https://cdn.example.com/files/", VisibilityPublic, "/avatars/42/avatar.png")
+	if publicURL != "https://cdn.example.com/files/avatars/42/avatar.png" {
+		t.Fatalf("unexpected public URL: %s", publicURL)
+	}
+
+	privateURL := publicURLForVisibility("https://cdn.example.com/files/", VisibilityPrivate, "avatars/42/avatar.png")
+	if privateURL != "" {
+		t.Fatalf("expected private asset public URL to be empty, got %s", privateURL)
+	}
+}

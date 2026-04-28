@@ -41,6 +41,30 @@ func TestToStatusAndParseStatus(t *testing.T) {
 	}
 }
 
+func TestToStatusWithFallbackUsesCallerDomain(t *testing.T) {
+	t.Parallel()
+
+	grpcErr := errgrpcx.ToStatusWithFallback(errors.New("storage failed"), errs.CodeFileInternal, "file service failed")
+	st, ok := status.FromError(grpcErr)
+	if !ok {
+		t.Fatalf("expected grpc status")
+	}
+	if st.Code() != codes.Internal {
+		t.Fatalf("unexpected grpc code: %s", st.Code())
+	}
+
+	parsed, ok := errgrpcx.ParseStatus(grpcErr)
+	if !ok {
+		t.Fatalf("expected parse success")
+	}
+	if parsed.Code != errs.CodeFileInternal {
+		t.Fatalf("unexpected business code: %d", parsed.Code)
+	}
+	if parsed.Message != "file service failed" {
+		t.Fatalf("unexpected message: %s", parsed.Message)
+	}
+}
+
 func TestContentCodeToGRPC(t *testing.T) {
 	t.Parallel()
 

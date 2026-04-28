@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	fileservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/service"
@@ -129,5 +130,5 @@ func unixPtr(value *time.Time) int64 {
 }
 
 func toStatus(err error, fallback string) error {
-	return errgrpcx.ToStatus(err, fallback)
+	return errgrpcx.ToStatusWithFallback(err, errs.CodeFileInternal, fallback)
 }
