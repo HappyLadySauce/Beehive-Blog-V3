@@ -14,6 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   logout: []
+  changePassword: []
 }>()
 
 const route = useRoute()
@@ -28,10 +29,9 @@ const panelStyle = reactive({
 const isAuthenticated = computed(() => props.user !== null)
 const isAdmin = computed(() => (props.user?.role ?? '').toLowerCase().replace(/^role_/, '') === 'admin')
 const showAdminLinks = computed(() => isAdmin.value && props.surface !== 'studio')
+const showProfileLink = computed(() => props.surface !== 'studio')
 const displayName = computed(() => props.user?.nickname || props.user?.username || 'Account')
 const email = computed(() => props.user?.email || 'Sign in to continue')
-const profilePath = computed(() => props.surface === 'studio' ? '/studio/profile' : '/account/profile')
-const passwordPath = computed(() => props.surface === 'studio' ? '/studio/change-password' : '/account/change-password')
 
 function updatePanelPosition(): void {
   const trigger = triggerRef.value
@@ -68,6 +68,11 @@ function toggleMenu(): void {
 function handleLogout(): void {
   closeMenu()
   emit('logout')
+}
+
+function handleChangePassword(): void {
+  closeMenu()
+  emit('changePassword')
 }
 
 function handleDocumentPointerDown(event: PointerEvent): void {
@@ -143,14 +148,14 @@ onBeforeUnmount(() => {
           :style="panelStyle"
         >
           <template v-if="isAuthenticated">
-            <RouterLink class="account-menu__item" :to="profilePath" role="menuitem" @click="closeMenu">
+            <RouterLink v-if="showProfileLink" class="account-menu__item" to="/account/profile" role="menuitem" @click="closeMenu">
               <User :size="16" aria-hidden="true" />
               Profile
             </RouterLink>
-            <RouterLink class="account-menu__item" :to="passwordPath" role="menuitem" @click="closeMenu">
+            <button class="account-menu__item" type="button" role="menuitem" @click="handleChangePassword">
               <KeyRound :size="16" aria-hidden="true" />
               Change password
-            </RouterLink>
+            </button>
             <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
               <LayoutDashboard :size="16" aria-hidden="true" />
               Studio

@@ -12,6 +12,7 @@ import (
 type fakeIdentityClient struct {
 	registerFn       func(ctx context.Context, in *pb.RegisterLocalUserRequest, opts ...grpc.CallOption) (*pb.RegisterLocalUserResponse, error)
 	ssoStartFn       func(ctx context.Context, in *pb.StartSsoLoginRequest, opts ...grpc.CallOption) (*pb.StartSsoLoginResponse, error)
+	ssoReauthFn      func(ctx context.Context, in *pb.StartSsoReauthRequest, opts ...grpc.CallOption) (*pb.StartSsoLoginResponse, error)
 	logoutFn         func(ctx context.Context, in *pb.LogoutSessionRequest, opts ...grpc.CallOption) (*pb.LogoutSessionResponse, error)
 	getCurrentFn     func(ctx context.Context, in *pb.GetCurrentUserRequest, opts ...grpc.CallOption) (*pb.GetCurrentUserResponse, error)
 	introspectFn     func(ctx context.Context, in *pb.IntrospectAccessTokenRequest, opts ...grpc.CallOption) (*pb.IntrospectAccessTokenResponse, error)
@@ -19,6 +20,7 @@ type fakeIdentityClient struct {
 	finishSsoFn      func(ctx context.Context, in *pb.FinishSsoLoginRequest, opts ...grpc.CallOption) (*pb.FinishSsoLoginResponse, error)
 	refreshTokenFn   func(ctx context.Context, in *pb.RefreshSessionTokenRequest, opts ...grpc.CallOption) (*pb.RefreshSessionTokenResponse, error)
 	updateProfileFn  func(ctx context.Context, in *pb.UpdateOwnProfileRequest, opts ...grpc.CallOption) (*pb.UpdateOwnProfileResponse, error)
+	updateEmailFn    func(ctx context.Context, in *pb.UpdateOwnEmailRequest, opts ...grpc.CallOption) (*pb.UpdateOwnEmailResponse, error)
 	changePasswordFn func(ctx context.Context, in *pb.ChangeOwnPasswordRequest, opts ...grpc.CallOption) (*pb.ChangeOwnPasswordResponse, error)
 }
 
@@ -42,6 +44,20 @@ func (f *fakeIdentityClient) FinishSsoLogin(ctx context.Context, in *pb.FinishSs
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
 	return f.finishSsoFn(ctx, in, opts...)
+}
+
+func (f *fakeIdentityClient) StartSsoReauth(ctx context.Context, in *pb.StartSsoReauthRequest, opts ...grpc.CallOption) (*pb.StartSsoLoginResponse, error) {
+	if f.ssoReauthFn == nil {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+	return f.ssoReauthFn(ctx, in, opts...)
+}
+
+func (f *fakeIdentityClient) UpdateOwnEmail(ctx context.Context, in *pb.UpdateOwnEmailRequest, opts ...grpc.CallOption) (*pb.UpdateOwnEmailResponse, error) {
+	if f.updateEmailFn == nil {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+	return f.updateEmailFn(ctx, in, opts...)
 }
 
 func (f *fakeIdentityClient) RefreshSessionToken(ctx context.Context, in *pb.RefreshSessionTokenRequest, opts ...grpc.CallOption) (*pb.RefreshSessionTokenResponse, error) {

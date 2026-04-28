@@ -11,6 +11,7 @@ import (
 	identity "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/identity"
 	ops "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/ops"
 	publiccontent "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/publiccontent"
+	upload "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/upload"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
@@ -63,8 +64,26 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 		{
 			Method:  http.MethodPost,
+			Path:    "/me/email/sso/start",
+			Handler: auth.AuthEmailSsoStartHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPatch,
+			Path:    "/me/email",
+			Handler: auth.AuthUpdateEmailHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
 			Path:    "/me/password",
 			Handler: auth.AuthChangePasswordHandler(serverCtx),
+		},
+	}
+
+	uploadRoutes := []rest.Route{
+		{
+			Method:  http.MethodPost,
+			Path:    "/avatar/presign",
+			Handler: upload.UploadAvatarPresignHandler(serverCtx),
 		},
 	}
 
@@ -244,6 +263,14 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			serverCtx.AuthMiddleware,
 		}, authProtectedRoutes...),
 		rest.WithPrefix("/api/v3/auth"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares([]rest.Middleware{
+			serverCtx.RequestMetaMiddleware,
+			serverCtx.AuthMiddleware,
+		}, uploadRoutes...),
+		rest.WithPrefix("/api/v3/uploads"),
 	)
 
 	server.AddRoutes(

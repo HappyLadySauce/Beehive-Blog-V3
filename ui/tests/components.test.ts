@@ -133,7 +133,7 @@ describe('shared components', () => {
 
     expect(document.body.textContent).not.toContain('Studio')
     expect(document.body.textContent).not.toContain('Users')
-    expect(document.body.textContent).toContain('Profile')
+    expect(document.body.textContent).not.toContain('Profile')
     expect(document.body.textContent).toContain('Change password')
   })
 

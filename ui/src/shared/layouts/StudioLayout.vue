@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { FileText, LayoutDashboard, ScrollText, Settings, Users } from 'lucide-vue-next'
+import { shallowRef } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import ThemeToggle from '@/shared/components/ThemeToggle.vue'
+import ChangePasswordDialog from '@/shared/components/ChangePasswordDialog.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const isPasswordDialogOpen = shallowRef(false)
 const navItems = [
   { label: 'Dashboard', to: '/studio', icon: LayoutDashboard },
   { label: 'Content', to: '/studio/content', icon: FileText },
@@ -52,13 +55,14 @@ async function handleLogout() {
         <div class="studio-shell__topbar-title">Admin workspace</div>
         <div class="studio-shell__topbar-actions">
           <ThemeToggle />
-          <UserAccountMenu :user="authStore.currentUser" surface="studio" @logout="handleLogout" />
+          <UserAccountMenu :user="authStore.currentUser" surface="studio" @logout="handleLogout" @change-password="isPasswordDialogOpen = true" />
         </div>
       </header>
       <main class="studio-shell__main">
         <RouterView />
       </main>
     </div>
+    <ChangePasswordDialog :open="isPasswordDialogOpen" @close="isPasswordDialogOpen = false" />
   </div>
 </template>
 

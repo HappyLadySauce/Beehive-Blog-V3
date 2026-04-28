@@ -29,6 +29,12 @@ func (f *fakeIdentityClient) StartSsoLogin(context.Context, *pb.StartSsoLoginReq
 func (f *fakeIdentityClient) FinishSsoLogin(context.Context, *pb.FinishSsoLoginRequest, ...grpc.CallOption) (*pb.FinishSsoLoginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
+func (f *fakeIdentityClient) StartSsoReauth(context.Context, *pb.StartSsoReauthRequest, ...grpc.CallOption) (*pb.StartSsoLoginResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+func (f *fakeIdentityClient) UpdateOwnEmail(context.Context, *pb.UpdateOwnEmailRequest, ...grpc.CallOption) (*pb.UpdateOwnEmailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
 func (f *fakeIdentityClient) RefreshSessionToken(context.Context, *pb.RefreshSessionTokenRequest, ...grpc.CallOption) (*pb.RefreshSessionTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

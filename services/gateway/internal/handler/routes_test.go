@@ -15,6 +15,7 @@ func TestRegisterHandlersKeepsManualMiddlewareGuards(t *testing.T) {
 		"rest.WithMiddleware(serverCtx.RequestMetaMiddleware, authPublicRoutes...)",
 		"serverCtx.RequestMetaMiddleware,\n\t\t\tserverCtx.AuthMiddleware",
 		"}, authProtectedRoutes...)",
+		"}, uploadRoutes...)",
 		"}, studioContentRoutes...)",
 		"}, studioIdentityRoutes...)",
 		"rest.WithMiddleware(serverCtx.RequestMetaMiddleware, opsRoutes...)",
@@ -35,8 +36,8 @@ func TestRegisterHandlersKeepsManualMiddlewareGuards(t *testing.T) {
 		}
 	}
 
-	if got := strings.Count(source, "serverCtx.AuthMiddleware"); got != 3 {
-		t.Fatalf("protected auth middleware should be registered for auth, studio content, and studio identity routes, got %d registrations", got)
+	if got := strings.Count(source, "serverCtx.AuthMiddleware"); got != 4 {
+		t.Fatalf("protected auth middleware should be registered for auth, uploads, studio content, and studio identity routes, got %d registrations", got)
 	}
 }
 

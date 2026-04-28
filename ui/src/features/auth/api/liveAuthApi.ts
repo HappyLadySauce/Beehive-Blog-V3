@@ -58,5 +58,19 @@ export function createLiveAuthApi(): AuthApi {
         body: JSON.stringify(payload),
       })
     },
+    startEmailSso(payload, options) {
+      return requestJson<AuthSsoStartResponse>(`${authBasePath}/me/email/sso/start`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        accessToken: options?.accessToken,
+      })
+    },
+    updateEmail(payload, options) {
+      return requestJson<AuthMeResponse>(`${authBasePath}/me/email`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+        accessToken: options?.accessToken,
+      })
+    },
   }
 }

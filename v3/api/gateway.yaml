@@ -248,6 +248,160 @@ paths:
       summary: AuthMe
       tags:
       - Authentication
+  /api/v3/auth/me/email:
+    patch:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
+        argument<br>110201-invalid credentials<br>110405-sso state invalid<br>110501-user
+        not found<br>110503-email already exists<br>119901-internal error
+      operationId: authAuthUpdateEmail
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            code:
+              example: gho_example_callback_code
+              type: string
+            current_password:
+              example: Str0ngP@ssw0rd!
+              type: string
+            email:
+              example: alice.new@example.com
+              type: string
+            provider:
+              enum:
+              - github
+              - qq
+              - wechat
+              example: github
+              type: string
+            redirect_uri:
+              example: https://app.example.com/auth/sso/callback/github
+              type: string
+            state:
+              example: state_01J8SSOREAUTHEXAMPLE
+              type: string
+            verification_method:
+              enum:
+              - password
+              - sso
+              example: password
+              type: string
+          required:
+          - email
+          - verification_method
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
+                    type: string
+                  email:
+                    example: alice@example.com
+                    type: string
+                  nickname:
+                    example: Alice
+                    type: string
+                  role:
+                    example: user
+                    type: string
+                  status:
+                    example: active
+                    type: string
+                  user_id:
+                    example: user_01J8PROFILEEXAMPLE
+                    type: string
+                  username:
+                    example: beehive_user_01
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: AuthUpdateEmail
+      tags:
+      - Authentication
+  /api/v3/auth/me/email/sso/start:
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
+        argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>119901-internal
+        error
+      operationId: authAuthEmailSsoStart
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            provider:
+              enum:
+              - github
+              - qq
+              - wechat
+              example: github
+              type: string
+            redirect_uri:
+              example: https://app.example.com/auth/sso/callback/github
+              type: string
+            state:
+              example: state_01J8SSOREAUTHEXAMPLE
+              type: string
+          required:
+          - provider
+          - redirect_uri
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              auth_url:
+                example: https://github.com/login/oauth/authorize?client_id=xxx&redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fcallback%2Fgithub&state=state_01J8SSOSTARTEXAMPLE
+                type: string
+              provider:
+                example: github
+                type: string
+              state:
+                example: state_01J8SSOSTARTEXAMPLE
+                type: string
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: AuthEmailSsoStart
+      tags:
+      - Authentication
   /api/v3/auth/me/password:
     post:
       consumes:
@@ -3441,6 +3595,71 @@ paths:
       summary: Update user status
       tags:
       - Studio Identity
+  /api/v3/uploads/avatar/presign:
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
+        argument<br>109901-internal error
+      operationId: uploadUploadAvatarPresign
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            byte_size:
+              example: 153600
+              type: integer
+            content_type:
+              example: image/png
+              type: string
+            file_name:
+              example: avatar.png
+              type: string
+          required:
+          - file_name
+          - content_type
+          - byte_size
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              expires_at:
+                example: 1713776400
+                type: integer
+              headers:
+                additionalProperties:
+                  type: string
+                type: object
+              max_bytes:
+                example: 2097152
+                type: integer
+              object_key:
+                example: avatars/1/01J8AVATAR.png
+                type: string
+              public_url:
+                example: https://cdn.example.com/avatars/1/avatar.png
+                type: string
+              upload_url:
+                example: https://storage.example.com/bucket/avatars/1/avatar.png?X-Amz-Signature=...
+                type: string
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Create avatar upload presign URL
+      tags:
+      - Uploads
   /healthz:
     get:
       description: 109901-internal error
@@ -3513,7 +3732,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-28 14:40:42"
+x-date: "2026-04-28 15:45:54"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

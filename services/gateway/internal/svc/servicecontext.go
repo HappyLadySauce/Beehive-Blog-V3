@@ -4,6 +4,7 @@
 package svc
 
 import (
+	"context"
 	"fmt"
 
 	contentpb "github.com/HappyLadySauce/Beehive-Blog-V3/services/content/pb"
@@ -11,6 +12,7 @@ import (
 	contentadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/content"
 	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/middleware"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/upload"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -22,6 +24,7 @@ type ServiceContext struct {
 	IdentityProbe         identityadapter.ReadinessChecker
 	ContentClient         contentpb.ContentClient
 	ContentProbe          contentadapter.ReadinessChecker
+	AvatarPresigner       *upload.AvatarPresigner
 	AuthMiddleware        rest.Middleware
 	RequestMetaMiddleware rest.Middleware
 }
@@ -50,6 +53,10 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create request meta middleware: %w", err)
 	}
+	avatarPresigner, err := upload.NewAvatarPresigner(context.Background(), c.ObjectStorage)
+	if err != nil {
+		return nil, fmt.Errorf("create avatar presigner: %w", err)
+	}
 
 	return &ServiceContext{
 		Config:                c,
@@ -57,6 +64,7 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		IdentityProbe:         identityProbe,
 		ContentClient:         contentClient,
 		ContentProbe:          contentProbe,
+		AvatarPresigner:       avatarPresigner,
 		AuthMiddleware:        authMiddleware.Handle,
 		RequestMetaMiddleware: requestMetaMiddleware.Handle,
 	}, nil

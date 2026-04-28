@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v3.19.4
-// source: v3/proto/identity.proto
+// source: identity.proto
 
 package pb
 
@@ -23,6 +23,8 @@ const (
 	Identity_LoginLocalUser_FullMethodName        = "/identity.Identity/LoginLocalUser"
 	Identity_StartSsoLogin_FullMethodName         = "/identity.Identity/StartSsoLogin"
 	Identity_FinishSsoLogin_FullMethodName        = "/identity.Identity/FinishSsoLogin"
+	Identity_StartSsoReauth_FullMethodName        = "/identity.Identity/StartSsoReauth"
+	Identity_UpdateOwnEmail_FullMethodName        = "/identity.Identity/UpdateOwnEmail"
 	Identity_RefreshSessionToken_FullMethodName   = "/identity.Identity/RefreshSessionToken"
 	Identity_LogoutSession_FullMethodName         = "/identity.Identity/LogoutSession"
 	Identity_GetCurrentUser_FullMethodName        = "/identity.Identity/GetCurrentUser"
@@ -47,6 +49,8 @@ type IdentityClient interface {
 	LoginLocalUser(ctx context.Context, in *LoginLocalUserRequest, opts ...grpc.CallOption) (*LoginLocalUserResponse, error)
 	StartSsoLogin(ctx context.Context, in *StartSsoLoginRequest, opts ...grpc.CallOption) (*StartSsoLoginResponse, error)
 	FinishSsoLogin(ctx context.Context, in *FinishSsoLoginRequest, opts ...grpc.CallOption) (*FinishSsoLoginResponse, error)
+	StartSsoReauth(ctx context.Context, in *StartSsoReauthRequest, opts ...grpc.CallOption) (*StartSsoLoginResponse, error)
+	UpdateOwnEmail(ctx context.Context, in *UpdateOwnEmailRequest, opts ...grpc.CallOption) (*UpdateOwnEmailResponse, error)
 	RefreshSessionToken(ctx context.Context, in *RefreshSessionTokenRequest, opts ...grpc.CallOption) (*RefreshSessionTokenResponse, error)
 	LogoutSession(ctx context.Context, in *LogoutSessionRequest, opts ...grpc.CallOption) (*LogoutSessionResponse, error)
 	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
@@ -105,6 +109,26 @@ func (c *identityClient) FinishSsoLogin(ctx context.Context, in *FinishSsoLoginR
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FinishSsoLoginResponse)
 	err := c.cc.Invoke(ctx, Identity_FinishSsoLogin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) StartSsoReauth(ctx context.Context, in *StartSsoReauthRequest, opts ...grpc.CallOption) (*StartSsoLoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartSsoLoginResponse)
+	err := c.cc.Invoke(ctx, Identity_StartSsoReauth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityClient) UpdateOwnEmail(ctx context.Context, in *UpdateOwnEmailRequest, opts ...grpc.CallOption) (*UpdateOwnEmailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateOwnEmailResponse)
+	err := c.cc.Invoke(ctx, Identity_UpdateOwnEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -259,6 +283,8 @@ type IdentityServer interface {
 	LoginLocalUser(context.Context, *LoginLocalUserRequest) (*LoginLocalUserResponse, error)
 	StartSsoLogin(context.Context, *StartSsoLoginRequest) (*StartSsoLoginResponse, error)
 	FinishSsoLogin(context.Context, *FinishSsoLoginRequest) (*FinishSsoLoginResponse, error)
+	StartSsoReauth(context.Context, *StartSsoReauthRequest) (*StartSsoLoginResponse, error)
+	UpdateOwnEmail(context.Context, *UpdateOwnEmailRequest) (*UpdateOwnEmailResponse, error)
 	RefreshSessionToken(context.Context, *RefreshSessionTokenRequest) (*RefreshSessionTokenResponse, error)
 	LogoutSession(context.Context, *LogoutSessionRequest) (*LogoutSessionResponse, error)
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error)
@@ -294,6 +320,12 @@ func (UnimplementedIdentityServer) StartSsoLogin(context.Context, *StartSsoLogin
 }
 func (UnimplementedIdentityServer) FinishSsoLogin(context.Context, *FinishSsoLoginRequest) (*FinishSsoLoginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FinishSsoLogin not implemented")
+}
+func (UnimplementedIdentityServer) StartSsoReauth(context.Context, *StartSsoReauthRequest) (*StartSsoLoginResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartSsoReauth not implemented")
+}
+func (UnimplementedIdentityServer) UpdateOwnEmail(context.Context, *UpdateOwnEmailRequest) (*UpdateOwnEmailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateOwnEmail not implemented")
 }
 func (UnimplementedIdentityServer) RefreshSessionToken(context.Context, *RefreshSessionTokenRequest) (*RefreshSessionTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshSessionToken not implemented")
@@ -426,6 +458,42 @@ func _Identity_FinishSsoLogin_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IdentityServer).FinishSsoLogin(ctx, req.(*FinishSsoLoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_StartSsoReauth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartSsoReauthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).StartSsoReauth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_StartSsoReauth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).StartSsoReauth(ctx, req.(*StartSsoReauthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Identity_UpdateOwnEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOwnEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServer).UpdateOwnEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Identity_UpdateOwnEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServer).UpdateOwnEmail(ctx, req.(*UpdateOwnEmailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -706,6 +774,14 @@ var Identity_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Identity_FinishSsoLogin_Handler,
 		},
 		{
+			MethodName: "StartSsoReauth",
+			Handler:    _Identity_StartSsoReauth_Handler,
+		},
+		{
+			MethodName: "UpdateOwnEmail",
+			Handler:    _Identity_UpdateOwnEmail_Handler,
+		},
+		{
 			MethodName: "RefreshSessionToken",
 			Handler:    _Identity_RefreshSessionToken_Handler,
 		},
@@ -763,5 +839,5 @@ var Identity_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "v3/proto/identity.proto",
+	Metadata: "identity.proto",
 }

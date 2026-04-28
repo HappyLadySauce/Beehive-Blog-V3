@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
-import { RouterLink } from 'vue-router'
 import { Eye, KeyRound, Pencil, Trash2 } from 'lucide-vue-next'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
 import type { StudioUpdateUserProfileRequest, StudioUser } from '@/features/studio'
+import AvatarUploader from '@/shared/components/AvatarUploader.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
+import ChangePasswordDialog from '@/shared/components/ChangePasswordDialog.vue'
 import FormField from '@/shared/components/FormField.vue'
 import ModalDialog from '@/shared/components/ModalDialog.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
@@ -32,8 +33,10 @@ const isLoading = shallowRef(true)
 const isMutating = shallowRef(false)
 const errorMessage = shallowRef('')
 const selectedUser = shallowRef<StudioUser | null>(null)
+const passwordTarget = shallowRef<StudioUser | null>(null)
 const userMode = shallowRef<UserMode>('view')
 const resetPassword = shallowRef('')
+const isSelfPasswordDialogOpen = shallowRef(false)
 let filterTimer: number | undefined
 
 const filters = reactive({
@@ -120,11 +123,21 @@ function openUser(user: StudioUser, mode: UserMode): void {
 }
 
 function openPasswordReset(user: StudioUser): void {
-  openUser(user, 'edit')
+  if (user.user_id === authStore.currentUser?.user_id) {
+    isSelfPasswordDialogOpen.value = true
+    return
+  }
+  passwordTarget.value = user
+  resetPassword.value = ''
 }
 
 function closeDialog(): void {
   selectedUser.value = null
+  resetPassword.value = ''
+}
+
+function closePasswordReset(): void {
+  passwordTarget.value = null
   resetPassword.value = ''
 }
 
@@ -153,12 +166,12 @@ async function saveUserEdits(): Promise<void> {
 }
 
 async function submitPasswordReset(): Promise<void> {
-  if (!selectedUser.value || resetPassword.value.trim() === '') {
+  if (!passwordTarget.value || resetPassword.value.trim() === '') {
     return
   }
   const approved = await confirm({
     title: 'Reset user password?',
-    message: `This will replace the current password for ${selectedUser.value.email} and revoke existing sessions.`,
+    message: `This will replace the current password for ${passwordTarget.value.email} and revoke existing sessions.`,
     confirmText: 'Reset password',
     tone: 'danger',
   })
@@ -167,12 +180,12 @@ async function submitPasswordReset(): Promise<void> {
   }
   await runUserMutation(async () => {
     await studioApi.resetUserPassword(
-      selectedUser.value!.user_id,
+      passwordTarget.value!.user_id,
       { new_password: resetPassword.value },
       { accessToken: authStore.accessToken },
     )
-    pushToast({ tone: 'success', title: 'Password reset', message: `${selectedUser.value!.email} can now use the new password.` })
-    resetPassword.value = ''
+    pushToast({ tone: 'success', title: 'Password reset', message: `${passwordTarget.value!.email} can now use the new password.` })
+    closePasswordReset()
   })
 }
 
@@ -348,22 +361,12 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
                 >
                   <Pencil :size="17" aria-hidden="true" />
                 </button>
-                <RouterLink
-                  v-if="user.isSelf"
-                  class="users-page__icon-action"
-                  to="/studio/change-password"
-                  :aria-label="`Change password for ${user.email}`"
-                  :title="`Change password for ${user.email}`"
-                >
-                  <KeyRound :size="17" aria-hidden="true" />
-                </RouterLink>
                 <button
-                  v-else
                   class="users-page__icon-action"
                   type="button"
                   :disabled="isMutating"
-                  :aria-label="`Reset password for ${user.email}`"
-                  :title="`Reset password for ${user.email}`"
+                  :aria-label="user.isSelf ? `Change password for ${user.email}` : `Reset password for ${user.email}`"
+                  :title="user.isSelf ? `Change password for ${user.email}` : `Reset password for ${user.email}`"
                   @click="openPasswordReset(user)"
                 >
                   <KeyRound :size="17" aria-hidden="true" />
@@ -409,9 +412,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <FormField label="Nickname" for-id="edit-nickname">
               <BaseInput id="edit-nickname" v-model="profileForm.nickname" autocomplete="nickname" />
             </FormField>
-            <FormField label="Avatar URL" for-id="edit-avatar-url">
-              <BaseInput id="edit-avatar-url" v-model="profileForm.avatar_url" autocomplete="url" />
-            </FormField>
+            <AvatarUploader class="users-page__avatar-upload" v-model="profileForm.avatar_url" :name="profileForm.nickname || profileForm.username" />
           </div>
           <div v-if="!selectedUserIsSelf" class="users-page__edit-grid">
             <label class="users-page__select">
@@ -430,14 +431,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
               </select>
             </label>
           </div>
-          <form v-if="!selectedUserIsSelf" class="users-page__reset" @submit.prevent="submitPasswordReset">
-            <FormField label="New password" for-id="reset-password">
-              <PasswordInput id="reset-password" v-model="resetPassword" autocomplete="new-password" />
-            </FormField>
-            <BaseButton type="submit" variant="secondary" :busy="isMutating" :disabled="resetPassword.trim() === ''">
-              Reset password
-            </BaseButton>
-          </form>
         </template>
       </div>
       <template #footer>
@@ -445,6 +438,27 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
         <BaseButton variant="ghost" @click="closeDialog">Close</BaseButton>
       </template>
     </ModalDialog>
+
+    <ModalDialog
+      :open="passwordTarget !== null"
+      title="Reset password"
+      :description="passwordTarget?.email"
+      @close="closePasswordReset"
+    >
+      <form class="users-page__reset" novalidate @submit.prevent="submitPasswordReset">
+        <FormField label="New password" for-id="reset-password">
+          <PasswordInput id="reset-password" v-model="resetPassword" autocomplete="new-password" />
+        </FormField>
+      </form>
+      <template #footer>
+        <BaseButton :busy="isMutating" :disabled="resetPassword.trim() === ''" @click="submitPasswordReset">
+          Reset password
+        </BaseButton>
+        <BaseButton variant="ghost" @click="closePasswordReset">Close</BaseButton>
+      </template>
+    </ModalDialog>
+
+    <ChangePasswordDialog :open="isSelfPasswordDialogOpen" @close="isSelfPasswordDialogOpen = false" />
   </section>
 </template>
 
@@ -623,6 +637,10 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 .users-page__reset {
   border-top: 1px solid var(--bb-color-line);
   padding-top: 18px;
+}
+
+.users-page__avatar-upload {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 780px) {

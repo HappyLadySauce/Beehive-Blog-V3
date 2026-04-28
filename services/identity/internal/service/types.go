@@ -219,6 +219,16 @@ type StartSSOInput struct {
 	ClientIP    string
 }
 
+// StartSSOReauthInput describes SSO reauthentication start input.
+// StartSSOReauthInput 描述 SSO 重验发起输入。
+type StartSSOReauthInput struct {
+	UserID      int64
+	Provider    string
+	RedirectURI string
+	State       string
+	ClientIP    string
+}
+
 // FinishSSOInput describes SSO callback completion input.
 // FinishSSOInput 描述 SSO callback 完成输入。
 type FinishSSOInput struct {
@@ -231,4 +241,18 @@ type FinishSSOInput struct {
 	DeviceName  string
 	UserAgent   string
 	ClientIP    string
+}
+
+// UpdateOwnEmailInput describes self-service email updates with explicit proof.
+// UpdateOwnEmailInput 描述带明确验证凭据的自助邮箱修改输入。
+type UpdateOwnEmailInput struct {
+	UserID             int64
+	Email              string
+	VerificationMethod string
+	CurrentPassword    string
+	Provider           string
+	Code               string
+	State              string
+	RedirectURI        string
+	ClientIP           string
 }

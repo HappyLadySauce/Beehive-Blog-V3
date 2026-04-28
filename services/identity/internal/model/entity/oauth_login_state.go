@@ -9,6 +9,8 @@ type OAuthLoginState struct {
 	Provider        string     `gorm:"column:provider"`
 	State           string     `gorm:"column:state"`
 	RedirectURI     string     `gorm:"column:redirect_uri"`
+	Purpose         string     `gorm:"column:purpose"`
+	SubjectUserID   *int64     `gorm:"column:subject_user_id"`
 	ClientType      *string    `gorm:"column:client_type"`
 	DeviceID        *string    `gorm:"column:device_id"`
 	CodeVerifier    *string    `gorm:"column:code_verifier"`

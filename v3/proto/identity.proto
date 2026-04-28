@@ -148,6 +148,28 @@ message FinishSsoLoginResponse {
   SessionInfo session_info = 3;
 }
 
+message StartSsoReauthRequest {
+  string user_id = 1;
+  string provider = 2;
+  string redirect_uri = 3;
+  string state = 4;
+}
+
+message UpdateOwnEmailRequest {
+  string user_id = 1;
+  string email = 2;
+  string verification_method = 3;
+  string current_password = 4;
+  string provider = 5;
+  string code = 6;
+  string state = 7;
+  string redirect_uri = 8;
+}
+
+message UpdateOwnEmailResponse {
+  CurrentUser current_user = 1;
+}
+
 message RefreshSessionTokenRequest {
   string refresh_token = 1;
   reserved 2;
@@ -347,6 +369,8 @@ service Identity {
   rpc LoginLocalUser(LoginLocalUserRequest) returns (LoginLocalUserResponse);
   rpc StartSsoLogin(StartSsoLoginRequest) returns (StartSsoLoginResponse);
   rpc FinishSsoLogin(FinishSsoLoginRequest) returns (FinishSsoLoginResponse);
+  rpc StartSsoReauth(StartSsoReauthRequest) returns (StartSsoLoginResponse);
+  rpc UpdateOwnEmail(UpdateOwnEmailRequest) returns (UpdateOwnEmailResponse);
   rpc RefreshSessionToken(RefreshSessionTokenRequest) returns (RefreshSessionTokenResponse);
   rpc LogoutSession(LogoutSessionRequest) returns (LogoutSessionResponse);
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);

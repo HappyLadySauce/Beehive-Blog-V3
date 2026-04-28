@@ -2,6 +2,7 @@
 import { reactive, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
+import SsoProviderButtons from '@/features/auth/components/SsoProviderButtons.vue'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
@@ -66,6 +67,7 @@ async function handleSubmit() {
     </FormField>
 
     <BaseButton type="submit" :busy="authStore.isLoading">Sign in</BaseButton>
+    <SsoProviderButtons surface="login" />
   </form>
 </template>
 

@@ -36,11 +36,28 @@ type IdentityRPCConf = InternalRPCConf
 // ContentRPCConf 定义 gateway 访问 content RPC 服务的配置。
 type ContentRPCConf = InternalRPCConf
 
+// ObjectStorageConf defines S3-compatible upload settings.
+// ObjectStorageConf 定义 S3 兼容对象存储上传配置。
+type ObjectStorageConf struct {
+	Enabled                   bool     `json:"Enabled"`
+	Endpoint                  string   `json:"Endpoint"`
+	Region                    string   `json:"Region"`
+	Bucket                    string   `json:"Bucket"`
+	AccessKeyID               string   `json:"AccessKeyID"`
+	SecretAccessKey           string   `json:"SecretAccessKey"`
+	PublicBaseURL             string   `json:"PublicBaseURL"`
+	AvatarPrefix              string   `json:"AvatarPrefix"`
+	PresignTTLSeconds         int      `json:"PresignTTLSeconds"`
+	MaxAvatarBytes            int64    `json:"MaxAvatarBytes"`
+	AllowedAvatarContentTypes []string `json:"AllowedAvatarContentTypes"`
+}
+
 type Config struct {
 	rest.RestConf
-	IdentityRPC IdentityRPCConf
-	ContentRPC  ContentRPCConf
-	Security    GatewaySecurityConf
+	IdentityRPC   IdentityRPCConf
+	ContentRPC    ContentRPCConf
+	Security      GatewaySecurityConf
+	ObjectStorage ObjectStorageConf
 }
 
 var supportedTrustedProxyHeaders = map[string]struct{}{
@@ -85,7 +102,33 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.ContentRPC.InternalCallerName) == "" {
 		return fmt.Errorf("ContentRPC.InternalCallerName is required")
 	}
+	if c.ObjectStorage.Enabled {
+		if err := c.ObjectStorage.Validate(); err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+// Validate verifies S3-compatible object storage settings.
+// Validate 校验 S3 兼容对象存储配置。
+func (c ObjectStorageConf) Validate() error {
+	if strings.TrimSpace(c.Endpoint) == "" {
+		return fmt.Errorf("ObjectStorage.Endpoint is required when enabled")
+	}
+	if strings.TrimSpace(c.Region) == "" {
+		return fmt.Errorf("ObjectStorage.Region is required when enabled")
+	}
+	if strings.TrimSpace(c.Bucket) == "" {
+		return fmt.Errorf("ObjectStorage.Bucket is required when enabled")
+	}
+	if strings.TrimSpace(c.AccessKeyID) == "" || strings.TrimSpace(c.SecretAccessKey) == "" {
+		return fmt.Errorf("ObjectStorage access credentials are required when enabled")
+	}
+	if strings.TrimSpace(c.PublicBaseURL) == "" {
+		return fmt.Errorf("ObjectStorage.PublicBaseURL is required when enabled")
+	}
 	return nil
 }
 

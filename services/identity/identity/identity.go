@@ -47,7 +47,10 @@ type (
 	SessionInfo                   = pb.SessionInfo
 	StartSsoLoginRequest          = pb.StartSsoLoginRequest
 	StartSsoLoginResponse         = pb.StartSsoLoginResponse
+	StartSsoReauthRequest         = pb.StartSsoReauthRequest
 	TokenPair                     = pb.TokenPair
+	UpdateOwnEmailRequest         = pb.UpdateOwnEmailRequest
+	UpdateOwnEmailResponse        = pb.UpdateOwnEmailResponse
 	UpdateOwnProfileRequest       = pb.UpdateOwnProfileRequest
 	UpdateOwnProfileResponse      = pb.UpdateOwnProfileResponse
 	UpdateUserProfileRequest      = pb.UpdateUserProfileRequest
@@ -62,6 +65,8 @@ type (
 		LoginLocalUser(ctx context.Context, in *LoginLocalUserRequest, opts ...grpc.CallOption) (*LoginLocalUserResponse, error)
 		StartSsoLogin(ctx context.Context, in *StartSsoLoginRequest, opts ...grpc.CallOption) (*StartSsoLoginResponse, error)
 		FinishSsoLogin(ctx context.Context, in *FinishSsoLoginRequest, opts ...grpc.CallOption) (*FinishSsoLoginResponse, error)
+		StartSsoReauth(ctx context.Context, in *StartSsoReauthRequest, opts ...grpc.CallOption) (*StartSsoLoginResponse, error)
+		UpdateOwnEmail(ctx context.Context, in *UpdateOwnEmailRequest, opts ...grpc.CallOption) (*UpdateOwnEmailResponse, error)
 		RefreshSessionToken(ctx context.Context, in *RefreshSessionTokenRequest, opts ...grpc.CallOption) (*RefreshSessionTokenResponse, error)
 		LogoutSession(ctx context.Context, in *LogoutSessionRequest, opts ...grpc.CallOption) (*LogoutSessionResponse, error)
 		GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
@@ -107,6 +112,16 @@ func (m *defaultIdentity) StartSsoLogin(ctx context.Context, in *StartSsoLoginRe
 func (m *defaultIdentity) FinishSsoLogin(ctx context.Context, in *FinishSsoLoginRequest, opts ...grpc.CallOption) (*FinishSsoLoginResponse, error) {
 	client := pb.NewIdentityClient(m.cli.Conn())
 	return client.FinishSsoLogin(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) StartSsoReauth(ctx context.Context, in *StartSsoReauthRequest, opts ...grpc.CallOption) (*StartSsoLoginResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.StartSsoReauth(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) UpdateOwnEmail(ctx context.Context, in *UpdateOwnEmailRequest, opts ...grpc.CallOption) (*UpdateOwnEmailResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.UpdateOwnEmail(ctx, in, opts...)
 }
 
 func (m *defaultIdentity) RefreshSessionToken(ctx context.Context, in *RefreshSessionTokenRequest, opts ...grpc.CallOption) (*RefreshSessionTokenResponse, error) {
