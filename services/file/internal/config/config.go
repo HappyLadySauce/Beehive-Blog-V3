@@ -42,12 +42,13 @@ type StorageConf struct {
 }
 
 type LocalStorageConf struct {
-	ListenOn      string `json:"ListenOn"`
-	RootDir       string `json:"RootDir"`
-	TempDir       string `json:"TempDir"`
-	Bucket        string `json:"Bucket"`
-	UploadBaseURL string `json:"UploadBaseURL"`
-	UploadSecret  string `json:"UploadSecret"`
+	ListenOn       string   `json:"ListenOn"`
+	RootDir        string   `json:"RootDir"`
+	TempDir        string   `json:"TempDir"`
+	Bucket         string   `json:"Bucket"`
+	UploadBaseURL  string   `json:"UploadBaseURL"`
+	UploadSecret   string   `json:"UploadSecret"`
+	AllowedOrigins []string `json:"AllowedOrigins"`
 }
 
 type S3StorageConf struct {

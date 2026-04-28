@@ -16,7 +16,7 @@ import (
 // Read a public uploaded asset
 func FileAssetGetHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		addDataPlaneCORS(w)
+		addPublicReadCORS(w)
 		var req types.FileAssetReadReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
@@ -31,6 +31,8 @@ func FileAssetGetHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 		defer stream.Reader.Close()
 		writeAssetHeaders(w, stream.ContentType, stream.ByteSize)
-		_, _ = io.Copy(w, stream.Reader)
+		if _, copyErr := io.Copy(w, stream.Reader); copyErr != nil {
+			logStreamCopyError(r.Context(), copyErr)
+		}
 	}
 }

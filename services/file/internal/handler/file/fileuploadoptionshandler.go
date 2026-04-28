@@ -12,7 +12,10 @@ import (
 // Preflight local file upload
 func FileUploadOptionsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		addDataPlaneCORS(w)
+		if !addUploadCORS(w, r, localStorageConf(svcCtx)) {
+			http.Error(w, "origin is not allowed", http.StatusForbidden)
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

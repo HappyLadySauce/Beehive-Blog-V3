@@ -12,7 +12,7 @@ import (
 // Preflight public asset read
 func FileAssetOptionsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		addDataPlaneCORS(w)
+		addPublicReadCORS(w)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

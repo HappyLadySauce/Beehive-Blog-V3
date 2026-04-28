@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const UploadTokenHeader = "X-Upload-Token"
+
 type PresignPutInput struct {
 	UploadID    string
 	Bucket      string

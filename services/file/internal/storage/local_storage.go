@@ -64,9 +64,10 @@ func (s *LocalStorage) PresignPut(ctx context.Context, input PresignPutInput) (*
 	}
 	token := s.signUploadToken(input.UploadID, input.ObjectKey)
 	return &PresignPutOutput{
-		UploadURL: s.uploadBaseURL + "/" + url.PathEscape(input.UploadID) + "?token=" + url.QueryEscape(token),
+		UploadURL: s.uploadBaseURL + "/" + url.PathEscape(input.UploadID),
 		Headers: map[string]string{
-			"Content-Type": input.ContentType,
+			"Content-Type":    input.ContentType,
+			UploadTokenHeader: token,
 		},
 	}, nil
 }

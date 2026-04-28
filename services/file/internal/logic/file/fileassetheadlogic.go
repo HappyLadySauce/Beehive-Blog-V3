@@ -33,7 +33,7 @@ func (l *FileAssetHeadLogic) FileAssetHead(req *types.FileAssetReadReq) (*AssetH
 	}
 	reader, info, err := l.svcCtx.LocalStorage.OpenUploaded(context.WithoutCancel(l.ctx), asset.ObjectKey)
 	if err != nil {
-		return nil, mapStorageReadError(err)
+		return nil, mapStorageReadError(l.ctx, err)
 	}
 	_ = reader.Close()
 	return &AssetHead{ContentType: asset.ContentType, ByteSize: info.ByteSize}, nil

@@ -26,11 +26,12 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
         "200":
-          description: ""
-          schema: {}
+          description: Public asset binary stream
+          schema:
+            type: file
       schemes:
       - https
       summary: Read a public uploaded asset
@@ -45,11 +46,17 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
         "200":
-          description: ""
-          schema: {}
+          description: Public asset metadata
+          headers:
+            Content-Length:
+              description: Asset byte size
+              type: integer
+            Content-Type:
+              description: Asset media type
+              type: string
       schemes:
       - https
       summary: Read public uploaded asset metadata
@@ -64,11 +71,10 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
-        "200":
-          description: ""
-          schema: {}
+        "204":
+          description: No Content
       schemes:
       - https
       summary: Preflight public asset read
@@ -84,17 +90,16 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
-        "200":
-          description: ""
-          schema: {}
+        "204":
+          description: No Content
       schemes:
       - https
       summary: Preflight local file upload
     put:
       consumes:
-      - application/x-www-form-urlencoded
+      - application/octet-stream
       operationId: fileFileUploadPut
       parameters:
       - example: upload_01J8FILEEXAMPLE
@@ -103,16 +108,15 @@ paths:
         required: true
         type: string
       - example: signed_upload_token
-        in: formData
-        name: token
+        in: header
+        name: X-Upload-Token
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
-        "200":
-          description: ""
-          schema: {}
+        "204":
+          description: No Content
       schemes:
       - https
       summary: Upload a pending local file object
@@ -122,7 +126,7 @@ schemes:
 - http
 - https
 swagger: "2.0"
-x-date: "2026-04-28 18:23:19"
+x-date: "2026-04-28 20:58:42"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

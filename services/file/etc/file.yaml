@@ -35,6 +35,9 @@ Storage:
     Bucket: "beehive-local"
     UploadBaseURL: "http://127.0.0.1:8084/files/uploads"
     UploadSecret: "replace-me-with-a-local-upload-signing-secret"
+    AllowedOrigins:
+      - "http://127.0.0.1:5173"
+      - "http://localhost:5173"
   S3:
     Endpoint: "http://127.0.0.1:9000"
     Region: "us-east-1"

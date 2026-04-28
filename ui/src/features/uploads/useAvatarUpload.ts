@@ -1,15 +1,11 @@
 import { shallowRef } from 'vue'
 
-import { requestJson } from '@/shared/api/httpClient'
-
+import { completeFileUpload, createFileUpload, putFileUploadObject } from './api'
 import type {
-  FileAssetResponse,
   FileUploadCreateRequest,
-  FileUploadCreateResponse,
   FileUploadScope,
 } from './types'
 
-const uploadBasePath = '/api/v3/files/uploads'
 const defaultMaxBytesByScope: Record<FileUploadScope, number> = {
   avatar: 2 * 1024 * 1024,
   content_cover: 5 * 1024 * 1024,
@@ -40,9 +36,9 @@ export function useAvatarUpload() {
     try {
       const contentType = normalizeContentType(file)
       validateFile(file, scope, contentType)
-      const upload = await createUpload(file, scope, contentType, accessToken)
-      await putObject(upload.upload_url, upload.headers, file)
-      const completed = await completeUpload(upload.asset.upload_id, accessToken)
+      const upload = await createFileUpload(createUploadPayload(file, scope, contentType), { accessToken })
+      await putFileUploadObject(upload, file)
+      const completed = await completeFileUpload(upload.asset.upload_id, { accessToken })
       return completed.asset.public_url || upload.asset.public_url
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : 'Unable to upload file.'
@@ -84,60 +80,16 @@ function validateFile(file: File, scope: FileUploadScope, contentType: string): 
   }
 }
 
-async function createUpload(
+function createUploadPayload(
   file: File,
   scope: FileUploadScope,
   contentType: string,
-  accessToken?: string,
-): Promise<FileUploadCreateResponse> {
-  requireAccessToken(accessToken)
-  const payload: FileUploadCreateRequest = {
+): FileUploadCreateRequest {
+  return {
     scope,
     file_name: file.name,
     content_type: contentType,
     byte_size: file.size,
     visibility: 'public',
-  }
-  return requestJson<FileUploadCreateResponse>(uploadBasePath, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    accessToken,
-  })
-}
-
-async function completeUpload(uploadId: string, accessToken?: string): Promise<FileAssetResponse> {
-  requireAccessToken(accessToken)
-  return requestJson<FileAssetResponse>(`${uploadBasePath}/${encodeURIComponent(uploadId)}/complete`, {
-    method: 'POST',
-    accessToken,
-  })
-}
-
-async function putObject(uploadURL: string, headers: Record<string, string>, file: File): Promise<void> {
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), 60_000)
-  try {
-    const response = await fetch(uploadURL, {
-      method: 'PUT',
-      body: file,
-      headers,
-      signal: controller.signal,
-    })
-    if (!response.ok) {
-      throw new Error(response.statusText || 'Unable to upload file.')
-    }
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('File upload timed out.')
-    }
-    throw error
-  } finally {
-    window.clearTimeout(timeoutId)
-  }
-}
-
-function requireAccessToken(accessToken?: string): asserts accessToken is string {
-  if (!accessToken) {
-    throw new Error('Sign in to upload files.')
   }
 }

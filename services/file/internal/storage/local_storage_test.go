@@ -45,10 +45,17 @@ func TestLocalStorageLifecycle(t *testing.T) {
 	if !strings.HasSuffix(parsedUploadURL.Path, "/upload_1") {
 		t.Fatalf("unexpected upload URL path: %s", presign.UploadURL)
 	}
-	if !store.VerifyUploadToken("upload_1", "avatars/42/avatar.png", parsedUploadURL.Query().Get("token")) {
+	if parsedUploadURL.RawQuery != "" {
+		t.Fatalf("expected upload URL not to expose query credentials, got %q", parsedUploadURL.RawQuery)
+	}
+	token := presign.Headers[UploadTokenHeader]
+	if token == "" {
+		t.Fatal("expected presigned local upload token header")
+	}
+	if !store.VerifyUploadToken("upload_1", "avatars/42/avatar.png", token) {
 		t.Fatal("expected presigned local upload token to verify")
 	}
-	if store.VerifyUploadToken("upload_1", "avatars/42/other.png", parsedUploadURL.Query().Get("token")) {
+	if store.VerifyUploadToken("upload_1", "avatars/42/other.png", token) {
 		t.Fatal("expected token to be bound to the object key")
 	}
 

@@ -9,7 +9,7 @@ type FileAssetReadReq struct {
 
 type FileUploadPutReq struct {
 	UploadId string `path:"upload_id,example=upload_01J8FILEEXAMPLE" validate:"required"`
-	Token    string `form:"token,example=signed_upload_token" validate:"required"`
+	Token    string `header:"X-Upload-Token,example=signed_upload_token" validate:"required"`
 }
 
 type FileUploadPathReq struct {

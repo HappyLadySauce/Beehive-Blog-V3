@@ -15,7 +15,7 @@ import (
 // Read public uploaded asset metadata
 func FileAssetHeadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		addDataPlaneCORS(w)
+		addPublicReadCORS(w)
 		var req types.FileAssetReadReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)

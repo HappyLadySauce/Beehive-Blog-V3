@@ -15,7 +15,10 @@ import (
 // Upload a pending local file object
 func FileUploadPutHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		addDataPlaneCORS(w)
+		if !addUploadCORS(w, r, localStorageConf(svcCtx)) {
+			http.Error(w, "origin is not allowed", http.StatusForbidden)
+			return
+		}
 		var req types.FileUploadPutReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)

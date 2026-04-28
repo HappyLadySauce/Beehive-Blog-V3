@@ -5,9 +5,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/model/entity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/model/repo"
 	fileservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/service"
@@ -73,14 +75,19 @@ func loadPublicUploadedAsset(ctx context.Context, store interface {
 	return asset, nil
 }
 
-func mapStorageReadError(err error) error {
+func mapStorageReadError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
+	if errors.Is(err, os.ErrNotExist) {
+		return dataPlaneError(http.StatusNotFound, "asset not found")
+	}
 	if errors.Is(err, storage.ErrStorageDisabled) {
+		logs.Ctx(ctx).Error("file_storage_read_disabled", err)
 		return storageUnavailable()
 	}
-	return dataPlaneError(http.StatusNotFound, "asset not found")
+	logs.Ctx(ctx).Error("file_storage_read_failed", err)
+	return dataPlaneError(http.StatusServiceUnavailable, "file storage is unavailable")
 }
 
 func validatePendingUpload(now time.Time, asset *entity.FileAsset) error {

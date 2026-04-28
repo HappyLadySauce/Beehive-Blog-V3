@@ -19,7 +19,7 @@ info (
 type (
 	FileUploadPutReq {
 		UploadId string `path:"upload_id,example=upload_01J8FILEEXAMPLE" validate:"required"`
-		Token    string `form:"token,example=signed_upload_token" validate:"required"`
+		Token    string `header:"X-Upload-Token,example=signed_upload_token" validate:"required"`
 	}
 	FileUploadPathReq {
 		UploadId string `path:"upload_id,example=upload_01J8FILEEXAMPLE" validate:"required"`
@@ -69,4 +69,3 @@ service file-api {
 	@handler FileAssetOptions
 	options /assets/:asset_id (FileAssetReadReq)
 }
-

@@ -33,7 +33,7 @@ func (l *FileAssetGetLogic) FileAssetGet(req *types.FileAssetReadReq) (*AssetStr
 	}
 	reader, info, err := l.svcCtx.LocalStorage.OpenUploaded(context.WithoutCancel(l.ctx), asset.ObjectKey)
 	if err != nil {
-		return nil, mapStorageReadError(err)
+		return nil, mapStorageReadError(l.ctx, err)
 	}
 	return &AssetStream{
 		Reader:      reader,
