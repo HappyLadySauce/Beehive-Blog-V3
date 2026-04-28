@@ -21,12 +21,14 @@ type ErrorResponse struct {
 // CodeToHTTP 将业务错误码映射为 HTTP 状态码。
 func CodeToHTTP(code errs.Code) int {
 	switch code {
-	case errs.CodeGatewayNotReady, errs.CodeGatewayAuthServiceUnavailable, errs.CodeGatewayContentServiceUnavailable:
+	case errs.CodeGatewayNotReady, errs.CodeGatewayAuthServiceUnavailable, errs.CodeGatewayContentServiceUnavailable, errs.CodeGatewayFileServiceUnavailable:
 		return http.StatusServiceUnavailable
 	case errs.CodeGatewayUpstreamTimeout:
 		return http.StatusGatewayTimeout
-	case errs.CodeContentNotFound, errs.CodeContentTagNotFound, errs.CodeContentRevisionNotFound, errs.CodeContentRelationNotFound:
+	case errs.CodeContentNotFound, errs.CodeContentTagNotFound, errs.CodeContentRevisionNotFound, errs.CodeContentRelationNotFound, errs.CodeFileAssetNotFound, errs.CodeFileUploadNotFound:
 		return http.StatusNotFound
+	case errs.CodeFileInvalidState:
+		return http.StatusPreconditionFailed
 	case errs.CodeContentTagInUse:
 		return http.StatusPreconditionFailed
 	case errs.CodeIdentityAccountPending, errs.CodeIdentityAccountDisabled, errs.CodeIdentityAccountLocked,

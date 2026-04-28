@@ -18,24 +18,15 @@ ContentRPC:
   InternalAuthToken: "replace-me-with-a-shared-internal-secret"
   InternalCallerName: "gateway"
 
+FileRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: file.rpc
+  InternalAuthToken: "replace-me-with-a-shared-internal-secret"
+  InternalCallerName: "gateway"
+
 Security:
   TokenPrefix: Bearer
   TrustedProxyCIDRs: []
   TrustedProxyHeaders: []
-
-ObjectStorage:
-  Enabled: false
-  Endpoint: "http://127.0.0.1:9000"
-  Region: "us-east-1"
-  Bucket: "beehive"
-  AccessKeyID: ""
-  SecretAccessKey: ""
-  PublicBaseURL: "http://127.0.0.1:9000/beehive"
-  AvatarPrefix: "avatars"
-  PresignTTLSeconds: 300
-  MaxAvatarBytes: 2097152
-  AllowedAvatarContentTypes:
-    - image/png
-    - image/jpeg
-    - image/webp
-    - image/avif

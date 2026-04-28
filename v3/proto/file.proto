@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "services/file/pb";
+
+service FileService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc CreateUpload(CreateUploadRequest) returns (CreateUploadResponse);
+  rpc CompleteUpload(CompleteUploadRequest) returns (AssetResponse);
+  rpc GetAsset(GetAssetRequest) returns (AssetResponse);
+  rpc DeleteAsset(DeleteAssetRequest) returns (DeleteAssetResponse);
+}
+
+enum FileScope {
+  FILE_SCOPE_UNSPECIFIED = 0;
+  FILE_SCOPE_AVATAR = 1;
+  FILE_SCOPE_CONTENT_COVER = 2;
+  FILE_SCOPE_CONTENT_IMAGE = 3;
+  FILE_SCOPE_ATTACHMENT = 4;
+}
+
+enum AssetVisibility {
+  ASSET_VISIBILITY_UNSPECIFIED = 0;
+  ASSET_VISIBILITY_PUBLIC = 1;
+  ASSET_VISIBILITY_PRIVATE = 2;
+}
+
+enum AssetStatus {
+  ASSET_STATUS_UNSPECIFIED = 0;
+  ASSET_STATUS_PENDING = 1;
+  ASSET_STATUS_UPLOADED = 2;
+  ASSET_STATUS_DELETED = 3;
+}
+
+message PingRequest {}
+
+message PingResponse {
+  bool ok = 1;
+  string service = 2;
+}
+
+message Asset {
+  string asset_id = 1;
+  string upload_id = 2;
+  string owner_user_id = 3;
+  FileScope scope = 4;
+  AssetVisibility visibility = 5;
+  AssetStatus status = 6;
+  string bucket = 7;
+  string object_key = 8;
+  string public_url = 9;
+  string file_name = 10;
+  string content_type = 11;
+  int64 byte_size = 12;
+  int64 created_at = 13;
+  int64 expires_at = 14;
+  int64 uploaded_at = 15;
+  int64 deleted_at = 16;
+}
+
+message CreateUploadRequest {
+  string actor_user_id = 1;
+  FileScope scope = 2;
+  string file_name = 3;
+  string content_type = 4;
+  int64 byte_size = 5;
+  AssetVisibility visibility = 6;
+}
+
+message CreateUploadResponse {
+  Asset asset = 1;
+  string upload_url = 2;
+  map<string, string> headers = 3;
+  int64 expires_at = 4;
+  int64 max_bytes = 5;
+}
+
+message CompleteUploadRequest {
+  string actor_user_id = 1;
+  string upload_id = 2;
+}
+
+message GetAssetRequest {
+  string actor_user_id = 1;
+  string asset_id = 2;
+}
+
+message AssetResponse {
+  Asset asset = 1;
+}
+
+message DeleteAssetRequest {
+  string actor_user_id = 1;
+  string asset_id = 2;
+}
+
+message DeleteAssetResponse {
+  bool ok = 1;
+}

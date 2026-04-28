@@ -4,15 +4,15 @@
 package svc
 
 import (
-	"context"
 	"fmt"
 
 	contentpb "github.com/HappyLadySauce/Beehive-Blog-V3/services/content/pb"
+	filepb "github.com/HappyLadySauce/Beehive-Blog-V3/services/file/pb"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	contentadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/content"
+	fileadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/file"
 	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/middleware"
-	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/upload"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -24,7 +24,8 @@ type ServiceContext struct {
 	IdentityProbe         identityadapter.ReadinessChecker
 	ContentClient         contentpb.ContentClient
 	ContentProbe          contentadapter.ReadinessChecker
-	AvatarPresigner       *upload.AvatarPresigner
+	FileClient            filepb.FileServiceClient
+	FileProbe             fileadapter.ReadinessChecker
 	AuthMiddleware        rest.Middleware
 	RequestMetaMiddleware rest.Middleware
 }
@@ -48,14 +49,17 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	contentClient := contentpb.NewContentClient(contentRPC.Conn())
 	contentProbe := contentadapter.NewProbe(contentClient, c.ContentRPC)
 
+	fileRPC, err := zrpc.NewClient(c.FileRPC.RpcClientConf)
+	if err != nil {
+		return nil, fmt.Errorf("create file rpc client: %w", err)
+	}
+	fileClient := filepb.NewFileServiceClient(fileRPC.Conn())
+	fileProbe := fileadapter.NewProbe(fileClient, c.FileRPC)
+
 	authMiddleware := middleware.NewAuthMiddleware(identityClient, c.Security, c.IdentityRPC)
 	requestMetaMiddleware, err := middleware.NewRequestMetaMiddleware(c.Security)
 	if err != nil {
 		return nil, fmt.Errorf("create request meta middleware: %w", err)
-	}
-	avatarPresigner, err := upload.NewAvatarPresigner(context.Background(), c.ObjectStorage)
-	if err != nil {
-		return nil, fmt.Errorf("create avatar presigner: %w", err)
 	}
 
 	return &ServiceContext{
@@ -64,7 +68,8 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		IdentityProbe:         identityProbe,
 		ContentClient:         contentClient,
 		ContentProbe:          contentProbe,
-		AvatarPresigner:       avatarPresigner,
+		FileClient:            fileClient,
+		FileProbe:             fileProbe,
 		AuthMiddleware:        authMiddleware.Handle,
 		RequestMetaMiddleware: requestMetaMiddleware.Handle,
 	}, nil

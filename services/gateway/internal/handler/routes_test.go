@@ -15,7 +15,7 @@ func TestRegisterHandlersKeepsManualMiddlewareGuards(t *testing.T) {
 		"rest.WithMiddleware(serverCtx.RequestMetaMiddleware, authPublicRoutes...)",
 		"serverCtx.RequestMetaMiddleware,\n\t\t\tserverCtx.AuthMiddleware",
 		"}, authProtectedRoutes...)",
-		"}, uploadRoutes...)",
+		"}, fileRoutes...)",
 		"}, studioContentRoutes...)",
 		"}, studioIdentityRoutes...)",
 		"rest.WithMiddleware(serverCtx.RequestMetaMiddleware, opsRoutes...)",

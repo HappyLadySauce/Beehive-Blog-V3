@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FormField from '@/shared/components/FormField.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
+import ImageUploader from '@/shared/components/ImageUploader.vue'
 
 import type { ContentTag } from '../types'
 import { contentStatuses, contentTypes, contentVisibilities, type ContentEditorForm } from './useContentEditor'
@@ -51,9 +52,10 @@ defineProps<{
       <FormField label="Summary" for-id="editor-summary">
         <BaseInput id="editor-summary" v-model="form.summary" />
       </FormField>
-      <FormField label="Cover URL" for-id="editor-cover">
-        <BaseInput id="editor-cover" v-model="form.cover_image_url" />
-      </FormField>
+      <div class="content-editor-meta__field">
+        <span>Cover image</span>
+        <ImageUploader v-model="form.cover_image_url" scope="content_cover" label="Upload cover" />
+      </div>
       <FormField label="Change summary" for-id="editor-change-summary">
         <BaseInput id="editor-change-summary" v-model="form.change_summary" />
       </FormField>
@@ -112,6 +114,7 @@ defineProps<{
 }
 
 .content-editor-meta__select,
+.content-editor-meta__field,
 .content-editor-meta__check,
 .content-editor-meta__tags label {
   display: grid;

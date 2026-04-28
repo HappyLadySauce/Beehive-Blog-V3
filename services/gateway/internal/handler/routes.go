@@ -8,10 +8,10 @@ import (
 
 	auth "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/auth"
 	content "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/content"
+	file "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/file"
 	identity "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/identity"
 	ops "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/ops"
 	publiccontent "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/publiccontent"
-	upload "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/upload"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
@@ -79,11 +79,21 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	}
 
-	uploadRoutes := []rest.Route{
+	fileRoutes := []rest.Route{
 		{
 			Method:  http.MethodPost,
-			Path:    "/avatar/presign",
-			Handler: upload.UploadAvatarPresignHandler(serverCtx),
+			Path:    "/uploads",
+			Handler: file.FileUploadCreateHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/uploads/:upload_id/complete",
+			Handler: file.FileUploadCompleteHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodDelete,
+			Path:    "/assets/:asset_id",
+			Handler: file.FileAssetDeleteHandler(serverCtx),
 		},
 	}
 
@@ -269,8 +279,8 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		rest.WithMiddlewares([]rest.Middleware{
 			serverCtx.RequestMetaMiddleware,
 			serverCtx.AuthMiddleware,
-		}, uploadRoutes...),
-		rest.WithPrefix("/api/v3/uploads"),
+		}, fileRoutes...),
+		rest.WithPrefix("/api/v3/files"),
 	)
 
 	server.AddRoutes(

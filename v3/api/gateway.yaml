@@ -935,6 +935,307 @@ paths:
       summary: AuthSsoStart
       tags:
       - Authentication
+  /api/v3/files/assets/{asset_id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>130301-access
+        forbidden<br>130501-asset not found<br>100604-file service unavailable<br>139901-file
+        internal error
+      operationId: fileFileAssetDelete
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: asset_01J8FILEEXAMPLE
+        in: path
+        name: asset_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Delete file asset
+      tags:
+      - Files
+  /api/v3/files/uploads:
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>130101-invalid
+        argument<br>130102-invalid scope<br>130103-invalid content type<br>130104-file
+        too large<br>100604-file service unavailable<br>139901-file internal error
+      operationId: fileFileUploadCreate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            byte_size:
+              example: 153600
+              type: integer
+            content_type:
+              example: image/png
+              type: string
+            file_name:
+              example: avatar.png
+              type: string
+            scope:
+              enum:
+              - avatar
+              - content_cover
+              - content_image
+              - attachment
+              example: avatar
+              type: string
+            visibility:
+              default: public
+              enum:
+              - public
+              - private
+              example: public
+              type: string
+          required:
+          - scope
+          - file_name
+          - content_type
+          - byte_size
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              asset:
+                properties:
+                  asset_id:
+                    example: asset_01J8FILEEXAMPLE
+                    type: string
+                  bucket:
+                    example: beehive
+                    type: string
+                  byte_size:
+                    example: 153600
+                    type: integer
+                  content_type:
+                    example: image/png
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
+                  expires_at:
+                    example: 1713776400
+                    type: integer
+                  file_name:
+                    example: avatar.png
+                    type: string
+                  object_key:
+                    example: avatars/1/01J8AVATAR.png
+                    type: string
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  public_url:
+                    example: https://cdn.example.com/avatars/1/01J8AVATAR.png
+                    type: string
+                  scope:
+                    enum:
+                    - avatar
+                    - content_cover
+                    - content_image
+                    - attachment
+                    example: avatar
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - uploaded
+                    - deleted
+                    example: pending
+                    type: string
+                  upload_id:
+                    example: upload_01J8FILEEXAMPLE
+                    type: string
+                  uploaded_at:
+                    example: 1713773000
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - private
+                    example: public
+                    type: string
+                required:
+                - asset_id
+                - upload_id
+                - owner_user_id
+                - scope
+                - visibility
+                - status
+                - bucket
+                - object_key
+                - public_url
+                - file_name
+                - content_type
+                - byte_size
+                - created_at
+                - expires_at
+                type: object
+              expires_at:
+                example: 1713776400
+                type: integer
+              headers:
+                additionalProperties:
+                  type: string
+                type: object
+              max_bytes:
+                example: 2097152
+                type: integer
+              upload_url:
+                example: https://storage.example.com/bucket/avatars/1/avatar.png?X-Amz-Signature=...
+                type: string
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Create direct file upload
+      tags:
+      - Files
+  /api/v3/files/uploads/{upload_id}/complete:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>130401-invalid
+        state<br>130502-upload not found<br>100604-file service unavailable<br>139901-file
+        internal error
+      operationId: fileFileUploadComplete
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: upload_01J8FILEEXAMPLE
+        in: path
+        name: upload_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              asset:
+                properties:
+                  asset_id:
+                    example: asset_01J8FILEEXAMPLE
+                    type: string
+                  bucket:
+                    example: beehive
+                    type: string
+                  byte_size:
+                    example: 153600
+                    type: integer
+                  content_type:
+                    example: image/png
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
+                  expires_at:
+                    example: 1713776400
+                    type: integer
+                  file_name:
+                    example: avatar.png
+                    type: string
+                  object_key:
+                    example: avatars/1/01J8AVATAR.png
+                    type: string
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  public_url:
+                    example: https://cdn.example.com/avatars/1/01J8AVATAR.png
+                    type: string
+                  scope:
+                    enum:
+                    - avatar
+                    - content_cover
+                    - content_image
+                    - attachment
+                    example: avatar
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - uploaded
+                    - deleted
+                    example: pending
+                    type: string
+                  upload_id:
+                    example: upload_01J8FILEEXAMPLE
+                    type: string
+                  uploaded_at:
+                    example: 1713773000
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - private
+                    example: public
+                    type: string
+                required:
+                - asset_id
+                - upload_id
+                - owner_user_id
+                - scope
+                - visibility
+                - status
+                - bucket
+                - object_key
+                - public_url
+                - file_name
+                - content_type
+                - byte_size
+                - created_at
+                - expires_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Complete direct file upload
+      tags:
+      - Files
   /api/v3/public/content/items:
     get:
       description: 120101-invalid argument<br>100603-content service unavailable<br>129901-content
@@ -3595,71 +3896,6 @@ paths:
       summary: Update user status
       tags:
       - Studio Identity
-  /api/v3/uploads/avatar/presign:
-    post:
-      consumes:
-      - application/json
-      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
-        argument<br>109901-internal error
-      operationId: uploadUploadAvatarPresign
-      parameters:
-      - example: Bearer eyJhbGciOi...
-        in: header
-        name: Authorization
-        type: string
-      - in: body
-        name: body
-        required: true
-        schema:
-          properties:
-            byte_size:
-              example: 153600
-              type: integer
-            content_type:
-              example: image/png
-              type: string
-            file_name:
-              example: avatar.png
-              type: string
-          required:
-          - file_name
-          - content_type
-          - byte_size
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-          schema:
-            properties:
-              expires_at:
-                example: 1713776400
-                type: integer
-              headers:
-                additionalProperties:
-                  type: string
-                type: object
-              max_bytes:
-                example: 2097152
-                type: integer
-              object_key:
-                example: avatars/1/01J8AVATAR.png
-                type: string
-              public_url:
-                example: https://cdn.example.com/avatars/1/avatar.png
-                type: string
-              upload_url:
-                example: https://storage.example.com/bucket/avatars/1/avatar.png?X-Amz-Signature=...
-                type: string
-            type: object
-      schemes:
-      - https
-      security:
-      - bearerAuth: []
-      summary: Create avatar upload presign URL
-      tags:
-      - Uploads
   /healthz:
     get:
       description: 109901-internal error
@@ -3683,7 +3919,8 @@ paths:
   /readyz:
     get:
       description: 100401-gateway not ready<br>100601-auth service unavailable<br>100603-content
-        service unavailable<br>100602-upstream timeout<br>109901-internal error
+        service unavailable<br>100604-file service unavailable<br>100602-upstream
+        timeout<br>109901-internal error
       operationId: opsReadyz
       produces:
       - application/json
@@ -3732,7 +3969,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-28 15:45:54"
+x-date: "2026-04-28 16:26:32"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/
