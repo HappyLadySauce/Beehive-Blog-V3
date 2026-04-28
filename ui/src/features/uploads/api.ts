@@ -5,6 +5,7 @@ import type { FileAsset, FileAssetResponse, FileUploadCreateRequest, FileUploadC
 
 const fileBasePath = '/api/v3/files'
 const mockUploads = new Map<string, { asset: FileAsset, publicUrl: string }>()
+let activeCompletedMockObjectUrl = ''
 
 export async function createFileUpload(
   payload: FileUploadCreateRequest,
@@ -70,14 +71,20 @@ export async function completeFileUpload(
       created_at: now,
       expires_at: now + 300,
     } satisfies FileAsset
-    return {
+    const publicUrl = state?.publicUrl || asset.public_url || mockPublicUrl(uploadId)
+    const response = {
       asset: {
         ...asset,
         status: 'uploaded',
-        public_url: state?.publicUrl || asset.public_url || mockPublicUrl(uploadId),
+        public_url: publicUrl,
         uploaded_at: now,
       },
     }
+    mockUploads.delete(uploadId)
+    if (state) {
+      replaceCompletedMockObjectUrl(publicUrl)
+    }
+    return response
   }
 
   requireLiveAccessToken(options.accessToken)
@@ -132,6 +139,21 @@ function createPreviewUrl(file: File, uploadId: string): string {
     return URL.createObjectURL(file)
   }
   return mockPublicUrl(uploadId)
+}
+
+function replaceCompletedMockObjectUrl(nextUrl: string): void {
+  if (
+    activeCompletedMockObjectUrl &&
+    activeCompletedMockObjectUrl !== nextUrl &&
+    typeof URL.revokeObjectURL === 'function'
+  ) {
+    URL.revokeObjectURL(activeCompletedMockObjectUrl)
+  }
+  activeCompletedMockObjectUrl = isObjectUrl(nextUrl) ? nextUrl : ''
+}
+
+function isObjectUrl(url: string): boolean {
+  return url.startsWith('blob:')
 }
 
 function mockPublicUrl(uploadId: string): string {
