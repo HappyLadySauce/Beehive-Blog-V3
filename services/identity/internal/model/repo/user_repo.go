@@ -154,7 +154,8 @@ func (r *UserRepository) List(ctx context.Context, filter ListFilter) ([]entity.
 	}
 	if status := strings.TrimSpace(filter.Status); status != "" {
 		query = query.Where("status = ?", status)
-	} else if !filter.IncludeDeleted {
+	}
+	if !filter.IncludeDeleted {
 		query = query.Where("status <> ?", "deleted")
 	}
 
