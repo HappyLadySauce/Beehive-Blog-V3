@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ChevronDown, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, UserPlus } from 'lucide-vue-next'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, shallowRef, useTemplateRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 
 import type { AuthUserProfile } from '@/features/auth/types'
@@ -16,6 +17,7 @@ const emit = defineEmits<{
   logout: []
 }>()
 
+const { t } = useI18n()
 const route = useRoute()
 const triggerRef = useTemplateRef<HTMLButtonElement>('menuTrigger')
 const panelRef = useTemplateRef<HTMLElement>('menuPanel')
@@ -29,8 +31,8 @@ const isAuthenticated = computed(() => props.user !== null)
 const isAdmin = computed(() => (props.user?.role ?? '').toLowerCase().replace(/^role_/, '') === 'admin')
 const showAdminLinks = computed(() => isAdmin.value && props.surface !== 'studio')
 const showProfileLink = computed(() => props.surface !== 'studio')
-const displayName = computed(() => props.user?.nickname || props.user?.username || 'Account')
-const email = computed(() => props.user?.email || 'Sign in to continue')
+const displayName = computed(() => props.user?.nickname || props.user?.username || t('account.account'))
+const email = computed(() => props.user?.email || t('account.signInHint'))
 
 function updatePanelPosition(): void {
   const trigger = triggerRef.value
@@ -120,7 +122,7 @@ onBeforeUnmount(() => {
       type="button"
       aria-haspopup="menu"
       :aria-expanded="isOpen"
-      aria-label="Open account menu"
+      :aria-label="t('account.openMenu')"
       @click="toggleMenu"
     >
       <UserAvatar :name="displayName" :src="user?.avatar_url" size="md" />
@@ -144,29 +146,29 @@ onBeforeUnmount(() => {
           <template v-if="isAuthenticated">
             <RouterLink v-if="showProfileLink" class="account-menu__item" to="/account/profile" role="menuitem" @click="closeMenu">
               <User :size="16" aria-hidden="true" />
-              Profile
+              {{ t('account.profile') }}
             </RouterLink>
             <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
               <LayoutDashboard :size="16" aria-hidden="true" />
-              Studio
+              {{ t('account.studio') }}
             </RouterLink>
             <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio/users" role="menuitem" @click="closeMenu">
               <ShieldCheck :size="16" aria-hidden="true" />
-              Users
+              {{ t('account.users') }}
             </RouterLink>
             <button class="account-menu__item account-menu__item--danger" type="button" role="menuitem" @click="handleLogout">
               <LogOut :size="16" aria-hidden="true" />
-              Logout
+              {{ t('account.logout') }}
             </button>
           </template>
           <template v-else>
             <RouterLink class="account-menu__item" to="/login" role="menuitem" @click="closeMenu">
               <LogIn :size="16" aria-hidden="true" />
-              Login
+              {{ t('account.login') }}
             </RouterLink>
             <RouterLink class="account-menu__item" to="/register" role="menuitem" @click="closeMenu">
               <UserPlus :size="16" aria-hidden="true" />
-              Register
+              {{ t('account.register') }}
             </RouterLink>
           </template>
         </div>

@@ -8,6 +8,7 @@ import HomePage from '@/pages/public/HomePage.vue'
 import ContentEditorPage from '@/pages/studio/ContentEditorPage.vue'
 import StudioContentPage from '@/pages/studio/StudioContentPage.vue'
 import StudioUsersPage from '@/pages/studio/StudioUsersPage.vue'
+import { i18n, setLocale } from '@/shared/i18n'
 
 function createTestRouter() {
   return createRouter({
@@ -45,7 +46,7 @@ async function mountWithApp(component: object, initialPath = '/') {
   const wrapper = mount(component, {
     attachTo: document.body,
     global: {
-      plugins: [pinia, router],
+      plugins: [pinia, i18n, router],
     },
   })
   return { wrapper, router }
@@ -54,6 +55,7 @@ async function mountWithApp(component: object, initialPath = '/') {
 describe('studio UX flows', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
+    setLocale('en-US')
   })
 
   it('does not render public homepage placeholder drafts', async () => {

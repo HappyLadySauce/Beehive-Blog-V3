@@ -1,15 +1,18 @@
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import DataTable from '@/shared/components/DataTable.vue'
 import FormField from '@/shared/components/FormField.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
+import BaseSelect from '@/shared/components/BaseSelect.vue'
+import LocaleToggle from '@/shared/components/LocaleToggle.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 import UserAvatar from '@/shared/components/UserAvatar.vue'
+import { i18n, setLocale } from '@/shared/i18n'
 
 async function mountWithRouter(component: typeof UserAccountMenu, options: Parameters<typeof mount>[1]) {
   const router = createRouter({
@@ -23,14 +26,19 @@ async function mountWithRouter(component: typeof UserAccountMenu, options: Param
     attachTo: document.body,
     global: {
       ...(options?.global ?? {}),
-      plugins: [router],
+      plugins: [i18n, router],
     },
   })
 }
 
 describe('shared components', () => {
+  beforeEach(() => {
+    setLocale('en-US')
+  })
+
   afterEach(() => {
     document.body.innerHTML = ''
+    setLocale('en-US')
   })
 
   it('disables busy buttons and exposes aria busy', () => {
@@ -89,6 +97,44 @@ describe('shared components', () => {
     })
 
     expect(wrapper.text()).toBe('AE')
+  })
+
+  it('selects options from the custom select listbox', async () => {
+    const wrapper = mount(BaseSelect, {
+      attachTo: document.body,
+      props: {
+        modelValue: '',
+        options: [
+          { value: '', label: 'All roles' },
+          { value: 'member', label: 'Member' },
+          { value: 'admin', label: 'Admin' },
+        ],
+        ariaLabel: 'Role',
+      },
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    await wrapper.get('button').trigger('click')
+    document.body.querySelectorAll<HTMLElement>('[role="option"]')[2]?.click()
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['admin'])
+  })
+
+  it('persists locale changes from the locale toggle', async () => {
+    setLocale('zh-CN')
+    const wrapper = mount(LocaleToggle, {
+      attachTo: document.body,
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    await wrapper.get('button').trigger('click')
+    document.body.querySelectorAll<HTMLElement>('[role="option"]')[1]?.click()
+
+    expect(window.localStorage.getItem('beehive.ui.locale')).toBe('en-US')
   })
 
   it('emits logout from the account menu', async () => {

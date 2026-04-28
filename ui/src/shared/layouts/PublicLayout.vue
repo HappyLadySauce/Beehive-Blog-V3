@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
+import LocaleToggle from '@/shared/components/LocaleToggle.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import ThemeToggle from '@/shared/components/ThemeToggle.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const authStore = useAuthStore()
 const isStudioForbidden = computed(() => {
@@ -30,10 +33,11 @@ async function handleLogout(): Promise<void> {
     <header class="public-shell__header">
       <RouterLink class="public-shell__brand" to="/">
         <span class="public-shell__brand-mark">B</span>
-        <span>Beehive Blog</span>
+        <span>{{ t('app.brand') }}</span>
       </RouterLink>
       <nav class="public-shell__nav" aria-label="Primary navigation">
-        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/">{{ t('nav.home') }}</RouterLink>
+        <LocaleToggle />
         <ThemeToggle />
         <UserAccountMenu :user="authStore.currentUser" surface="public" @logout="handleLogout" />
       </nav>

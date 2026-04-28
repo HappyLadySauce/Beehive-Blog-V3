@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Moon, Sun } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useTheme } from '@/shared/composables'
 
+const { t } = useI18n()
 const { resolvedTheme, toggleTheme } = useTheme()
-const label = computed(() => (resolvedTheme.value === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'))
+const label = computed(() => (resolvedTheme.value === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')))
 </script>
 
 <template>

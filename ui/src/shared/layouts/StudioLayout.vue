@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { FileText, LayoutDashboard, ScrollText, Settings, Users } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
+import LocaleToggle from '@/shared/components/LocaleToggle.vue'
 import ThemeToggle from '@/shared/components/ThemeToggle.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const router = useRouter()
-const navItems = [
-  { label: 'Dashboard', to: '/studio', icon: LayoutDashboard },
-  { label: 'Content', to: '/studio/content', icon: FileText },
-  { label: 'Users', to: '/studio/users', icon: Users },
-  { label: 'Audits', to: '/studio/audits', icon: ScrollText },
-  { label: 'Settings', to: '/studio/settings', icon: Settings },
-] as const
+const navItems = computed(() => [
+  { label: t('nav.dashboard'), to: '/studio', icon: LayoutDashboard },
+  { label: t('nav.content'), to: '/studio/content', icon: FileText },
+  { label: t('nav.users'), to: '/studio/users', icon: Users },
+  { label: t('nav.audits'), to: '/studio/audits', icon: ScrollText },
+  { label: t('nav.settings'), to: '/studio/settings', icon: Settings },
+])
 
 async function handleLogout() {
   await authStore.logout()
@@ -25,7 +29,7 @@ async function handleLogout() {
 <template>
   <div class="studio-shell">
     <aside class="studio-shell__sidebar">
-      <RouterLink class="studio-shell__brand" to="/">Beehive Studio</RouterLink>
+      <RouterLink class="studio-shell__brand" to="/">{{ t('app.studioBrand') }}</RouterLink>
       <nav class="studio-shell__nav" aria-label="Studio navigation">
         <RouterLink
           v-for="item in navItems"
@@ -49,8 +53,9 @@ async function handleLogout() {
     </aside>
     <div class="studio-shell__workspace">
       <header class="studio-shell__topbar">
-        <div class="studio-shell__topbar-title">Admin workspace</div>
+        <div class="studio-shell__topbar-title">{{ t('app.adminWorkspace') }}</div>
         <div class="studio-shell__topbar-actions">
+          <LocaleToggle />
           <ThemeToggle />
           <UserAccountMenu :user="authStore.currentUser" surface="studio" @logout="handleLogout" />
         </div>

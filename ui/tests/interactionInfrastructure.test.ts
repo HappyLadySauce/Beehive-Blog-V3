@@ -2,6 +2,8 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { i18n, setLocale } from '@/shared/i18n'
+
 function installMatchMedia(matches: boolean): void {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
@@ -18,6 +20,7 @@ function installMatchMedia(matches: boolean): void {
 describe('theme infrastructure', () => {
   beforeEach(() => {
     vi.resetModules()
+    setLocale('en-US')
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.style.colorScheme = ''
   })
@@ -43,7 +46,11 @@ describe('theme infrastructure', () => {
   it('toggles between resolved light and dark themes from the button', async () => {
     installMatchMedia(false)
     const { default: ThemeToggle } = await import('@/shared/components/ThemeToggle.vue')
-    const wrapper = mount(ThemeToggle)
+    const wrapper = mount(ThemeToggle, {
+      global: {
+        plugins: [i18n],
+      },
+    })
 
     expect(wrapper.get('button').attributes('aria-label')).toBe('Switch to dark theme')
 

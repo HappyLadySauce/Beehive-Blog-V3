@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Archive, Eye, Pencil, Trash2 } from 'lucide-vue-next'
-import { onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
@@ -17,6 +18,7 @@ import type {
 } from '@/features/studio'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
+import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
 import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
@@ -26,6 +28,7 @@ import SideDrawer from '@/shared/components/SideDrawer.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
 import { useConfirm, useToast } from '@/shared/composables'
+import { useLocale } from '@/shared/i18n'
 
 type StudioTab = 'content' | 'tags'
 
@@ -35,6 +38,8 @@ const visibilities: ContentVisibility[] = ['public', 'member', 'private']
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
+const { locale } = useLocale()
 const { confirm } = useConfirm()
 const { pushToast } = useToast()
 
@@ -60,6 +65,19 @@ const filters = reactive({
   visibility: '',
 })
 
+const typeOptions = computed<BaseSelectOption[]>(() => [
+  { value: '', label: t('contentType.all') },
+  ...contentTypes.map((type) => ({ value: type, label: t(`contentType.${type}`) })),
+])
+const statusOptions = computed<BaseSelectOption[]>(() => [
+  { value: '', label: t('contentStatus.all') },
+  ...statuses.map((status) => ({ value: status, label: t(`contentStatus.${status}`) })),
+])
+const visibilityOptions = computed<BaseSelectOption[]>(() => [
+  { value: '', label: t('visibility.all') },
+  ...visibilities.map((visibility) => ({ value: visibility, label: t(`visibility.${visibility}`) })),
+])
+
 const tagForm = reactive({
   name: '',
   slug: '',
@@ -84,10 +102,12 @@ async function loadContents(): Promise<void> {
     )
     contents.value = response.items
     total.value = response.total
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to load content.'
-    pushToast({ tone: 'danger', title: 'Content unavailable', message: errorMessage.value })
-  } finally {
+  }
+  catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('content.unavailableTitle')
+    pushToast({ tone: 'danger', title: t('content.unavailableTitle'), message: errorMessage.value })
+  }
+  finally {
     isLoading.value = false
   }
 }
@@ -97,9 +117,11 @@ async function loadTags(): Promise<void> {
   try {
     const response = await studioApi.listTags({ page: 1, page_size: 100 }, { accessToken: authStore.accessToken })
     tags.value = response.items
-  } catch (error) {
+  }
+  catch (error) {
     pushToast({ tone: 'danger', title: 'Tags unavailable', message: error instanceof Error ? error.message : 'Unable to load tags.' })
-  } finally {
+  }
+  finally {
     isTagsLoading.value = false
   }
 }
@@ -125,9 +147,11 @@ async function viewContent(content: ContentSummary): Promise<void> {
     const response = await studioApi.getContent(content.content_id, { accessToken: authStore.accessToken })
     selectedContent.value = response.content
     await Promise.all([loadRelations(response.content.content_id), loadRevisions(response.content.content_id)])
-  } catch (error) {
-    pushToast({ tone: 'danger', title: 'Content unavailable', message: error instanceof Error ? error.message : 'Unable to load content.' })
-  } finally {
+  }
+  catch (error) {
+    pushToast({ tone: 'danger', title: t('content.unavailableTitle'), message: error instanceof Error ? error.message : t('content.unavailableTitle') })
+  }
+  finally {
     isDetailLoading.value = false
   }
 }
@@ -140,9 +164,9 @@ function closeContentDrawer(): void {
 
 async function archiveContent(content: ContentSummary): Promise<void> {
   const approved = await confirm({
-    title: 'Archive content?',
-    message: `${content.title} will be moved out of active publishing flows.`,
-    confirmText: 'Archive',
+    title: t('content.archiveConfirmTitle'),
+    message: t('content.archiveConfirmMessage', { title: content.title }),
+    confirmText: t('content.archiveConfirmAction'),
     tone: 'danger',
   })
   if (!approved) {
@@ -151,7 +175,7 @@ async function archiveContent(content: ContentSummary): Promise<void> {
   await runMutation(async () => {
     await studioApi.archiveContent(content.content_id, { accessToken: authStore.accessToken })
     await loadContents()
-    pushToast({ tone: 'success', title: 'Content archived', message: `${content.title} has been archived.` })
+    pushToast({ tone: 'success', title: t('content.archivedTitle'), message: t('content.archivedMessage', { title: content.title }) })
   })
 }
 
@@ -207,18 +231,20 @@ async function runMutation(action: () => Promise<void>): Promise<void> {
   isMutating.value = true
   try {
     await action()
-  } catch (error) {
+  }
+  catch (error) {
     pushToast({ tone: 'danger', title: 'Operation failed', message: error instanceof Error ? error.message : 'Unable to update content.' })
-  } finally {
+  }
+  finally {
     isMutating.value = false
   }
 }
 
 function formatUnixTime(value?: number): string {
   if (!value) {
-    return 'None'
+    return t('common.none')
   }
-  return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value * 1000))
+  return new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value * 1000))
 }
 
 watch(() => [filters.keyword, filters.type, filters.status, filters.visibility], scheduleLoadContents)
@@ -233,66 +259,54 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 <template>
   <section class="content-page">
     <PageHeader
-      eyebrow="Studio"
-      title="Content"
-      description="Manage content items, tags, relations, and revisions through the gateway content API."
+      :eyebrow="t('content.eyebrow')"
+      :title="t('content.title')"
+      :description="t('content.description')"
     >
       <template #actions>
-        <BaseButton @click="openNewDraft">New draft</BaseButton>
+        <BaseButton @click="openNewDraft">{{ t('content.newDraft') }}</BaseButton>
       </template>
     </PageHeader>
 
     <div class="content-page__tabs" role="tablist" aria-label="Content workspace">
-      <button type="button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">Content</button>
-      <button type="button" :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'">Tags</button>
+      <button type="button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">{{ t('content.tabs.content') }}</button>
+      <button type="button" :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'">{{ t('content.tabs.tags') }}</button>
     </div>
 
     <template v-if="activeTab === 'content'">
       <div class="content-page__filters">
-        <FormField label="Search" for-id="content-search">
-          <BaseInput id="content-search" v-model="filters.keyword" placeholder="Title or slug" />
+        <FormField :label="t('common.search')" for-id="content-search">
+          <BaseInput id="content-search" v-model="filters.keyword" :placeholder="t('content.searchPlaceholder')" />
         </FormField>
-        <label class="content-page__select">
-          <span>Type</span>
-          <select v-model="filters.type">
-            <option value="">All types</option>
-            <option v-for="type in contentTypes" :key="type" :value="type">{{ type }}</option>
-          </select>
-        </label>
-        <label class="content-page__select">
-          <span>Status</span>
-          <select v-model="filters.status">
-            <option value="">All statuses</option>
-            <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
-          </select>
-        </label>
-        <label class="content-page__select">
-          <span>Visibility</span>
-          <select v-model="filters.visibility">
-            <option value="">All visibility</option>
-            <option v-for="visibility in visibilities" :key="visibility" :value="visibility">{{ visibility }}</option>
-          </select>
-        </label>
+        <FormField :label="t('content.columns.type')" for-id="content-type-filter">
+          <BaseSelect id="content-type-filter" v-model="filters.type" :options="typeOptions" :aria-label="t('content.columns.type')" />
+        </FormField>
+        <FormField :label="t('content.columns.status')" for-id="content-status-filter">
+          <BaseSelect id="content-status-filter" v-model="filters.status" :options="statusOptions" :aria-label="t('content.columns.status')" />
+        </FormField>
+        <FormField :label="t('content.columns.visibility')" for-id="content-visibility-filter">
+          <BaseSelect id="content-visibility-filter" v-model="filters.visibility" :options="visibilityOptions" :aria-label="t('content.columns.visibility')" />
+        </FormField>
       </div>
 
-      <StatusAlert v-if="errorMessage" tone="danger" title="Content unavailable">{{ errorMessage }}</StatusAlert>
-      <PageLoadingState v-else-if="isLoading" title="Loading content" :rows="5" />
+      <StatusAlert v-if="errorMessage" tone="danger" :title="t('content.unavailableTitle')">{{ errorMessage }}</StatusAlert>
+      <PageLoadingState v-else-if="isLoading" :title="t('content.loadingTitle')" :rows="5" />
 
       <div v-else class="content-page__table" role="region" aria-label="Studio content" tabindex="0">
         <table>
           <thead>
             <tr>
-              <th scope="col">Title</th>
-              <th scope="col">Type</th>
-              <th scope="col">Status</th>
-              <th scope="col">Visibility</th>
-              <th scope="col">Updated</th>
-              <th scope="col">Actions</th>
+              <th scope="col">{{ t('content.columns.title') }}</th>
+              <th scope="col">{{ t('content.columns.type') }}</th>
+              <th scope="col">{{ t('content.columns.status') }}</th>
+              <th scope="col">{{ t('content.columns.visibility') }}</th>
+              <th scope="col">{{ t('content.columns.updated') }}</th>
+              <th scope="col">{{ t('common.actions') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="contents.length === 0">
-              <td colspan="6">No content yet.</td>
+              <td colspan="6">{{ t('content.empty') }}</td>
             </tr>
             <tr v-for="content in contents" v-else :key="content.content_id">
               <td>
@@ -305,17 +319,17 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
               <td>{{ formatUnixTime(content.updated_at) }}</td>
               <td>
                 <div class="content-page__actions">
-                  <IconActionButton :aria-label="`View ${content.title}`" :title="`View ${content.title}`" @click="viewContent(content)">
+                  <IconActionButton :aria-label="t('content.actions.view', { title: content.title })" :title="t('content.actions.view', { title: content.title })" @click="viewContent(content)">
                     <Eye :size="17" aria-hidden="true" />
                   </IconActionButton>
-                  <IconActionButton tone="primary" :aria-label="`Edit ${content.title}`" :title="`Edit ${content.title}`" @click="editContent(content)">
+                  <IconActionButton tone="primary" :aria-label="t('content.actions.edit', { title: content.title })" :title="t('content.actions.edit', { title: content.title })" @click="editContent(content)">
                     <Pencil :size="17" aria-hidden="true" />
                   </IconActionButton>
                   <IconActionButton
                     tone="danger"
                     :disabled="content.status === 'archived' || isMutating"
-                    :aria-label="`Archive ${content.title}`"
-                    :title="`Archive ${content.title}`"
+                    :aria-label="t('content.actions.archive', { title: content.title })"
+                    :title="t('content.actions.archive', { title: content.title })"
                     @click="archiveContent(content)"
                   >
                     <Archive :size="17" aria-hidden="true" />
@@ -326,7 +340,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
           </tbody>
         </table>
       </div>
-      <p class="content-page__count">{{ total }} total content items</p>
+      <p class="content-page__count">{{ t('content.count', { count: total }) }}</p>
     </template>
 
     <template v-else>
@@ -343,7 +357,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
         <FormField label="Description" for-id="tag-description">
           <BaseInput id="tag-description" v-model="tagForm.description" />
         </FormField>
-        <BaseButton type="submit" :busy="isMutating">{{ selectedTag ? 'Save tag' : 'Create tag' }}</BaseButton>
+        <BaseButton type="submit" :busy="isMutating">{{ selectedTag ? t('common.save') : t('common.save') }}</BaseButton>
       </form>
       <PageLoadingState v-if="isTagsLoading" title="Loading tags" :rows="3" />
       <div v-else class="content-page__tag-list">
@@ -353,10 +367,10 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <span>{{ tag.slug }}</span>
           </div>
           <div class="content-page__actions">
-            <IconActionButton :aria-label="`Edit ${tag.name}`" :title="`Edit ${tag.name}`" @click="editTag(tag)">
+            <IconActionButton :aria-label="t('content.actions.editTag', { name: tag.name })" :title="t('content.actions.editTag', { name: tag.name })" @click="editTag(tag)">
               <Pencil :size="17" aria-hidden="true" />
             </IconActionButton>
-            <IconActionButton tone="danger" :aria-label="`Delete ${tag.name}`" :title="`Delete ${tag.name}`" @click="deleteTag(tag)">
+            <IconActionButton tone="danger" :aria-label="t('content.actions.deleteTag', { name: tag.name })" :title="t('content.actions.deleteTag', { name: tag.name })" @click="deleteTag(tag)">
               <Trash2 :size="17" aria-hidden="true" />
             </IconActionButton>
           </div>
@@ -364,16 +378,16 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       </div>
     </template>
 
-    <SideDrawer :open="selectedContent !== null" title="Content details" :description="selectedContent?.slug" size="lg" @close="closeContentDrawer">
+    <SideDrawer :open="selectedContent !== null" :title="t('content.detailTitle')" :description="selectedContent?.slug" size="lg" @close="closeContentDrawer">
       <PageLoadingState v-if="isDetailLoading" title="Loading content detail" :rows="4" />
       <div v-else-if="selectedContent" class="content-page__drawer">
         <div class="content-page__detail-grid">
-          <ReadonlyField label="Title" :value="selectedContent.title" />
-          <ReadonlyField label="Slug" :value="selectedContent.slug" />
-          <ReadonlyField label="Type" :value="selectedContent.type" />
-          <ReadonlyField label="Status" :value="selectedContent.status" />
-          <ReadonlyField label="Visibility" :value="selectedContent.visibility" />
-          <ReadonlyField label="Updated" :value="formatUnixTime(selectedContent.updated_at)" />
+          <ReadonlyField :label="t('content.columns.title')" :value="selectedContent.title" />
+          <ReadonlyField :label="t('content.columns.slug')" :value="selectedContent.slug" />
+          <ReadonlyField :label="t('content.columns.type')" :value="selectedContent.type" />
+          <ReadonlyField :label="t('content.columns.status')" :value="selectedContent.status" />
+          <ReadonlyField :label="t('content.columns.visibility')" :value="selectedContent.visibility" />
+          <ReadonlyField :label="t('content.columns.updated')" :value="formatUnixTime(selectedContent.updated_at)" />
         </div>
 
         <section class="content-page__subsection">
@@ -398,7 +412,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
         </section>
       </div>
       <template #footer>
-        <BaseButton variant="ghost" @click="closeContentDrawer">Close</BaseButton>
+        <BaseButton variant="ghost" @click="closeContentDrawer">{{ t('common.close') }}</BaseButton>
       </template>
     </SideDrawer>
   </section>
@@ -443,24 +457,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   gap: 12px;
 }
 
-.content-page__select {
-  display: grid;
-  gap: 6px;
-  color: var(--bb-color-muted);
-  font-size: 0.92rem;
-  font-weight: 650;
-}
-
-.content-page__select select {
-  min-height: 44px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 0 10px;
-  color: var(--bb-color-text);
-  background: var(--bb-color-surface);
-}
-
-.content-page__select select:focus-visible,
 .content-page__table:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--bb-color-focus);

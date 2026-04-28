@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import FormField from '@/shared/components/FormField.vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
 import BaseInput from '@/shared/components/BaseInput.vue'
+import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
+import FormField from '@/shared/components/FormField.vue'
 import ImageUploader from '@/shared/components/ImageUploader.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 
@@ -8,86 +12,82 @@ import type { ContentTag } from '../types'
 import { contentStatuses, contentTypes, contentVisibilities, type ContentEditorForm } from './useContentEditor'
 
 const form = defineModel<ContentEditorForm>({ required: true })
+const { t } = useI18n()
 
 defineProps<{
   canEditStatus: boolean
   tags: ContentTag[]
 }>()
+
+const typeOptions = computed<BaseSelectOption[]>(() => contentTypes.map((type) => ({ value: type, label: t(`contentType.${type}`) })))
+const statusOptions = computed<BaseSelectOption[]>(() => contentStatuses.map((status) => ({ value: status, label: t(`contentStatus.${status}`) })))
+const visibilityOptions = computed<BaseSelectOption[]>(() => contentVisibilities.map((visibility) => ({ value: visibility, label: t(`visibility.${visibility}`) })))
+const aiAccessOptions = computed<BaseSelectOption[]>(() => [
+  { value: 'denied', label: t('aiAccess.denied') },
+  { value: 'allowed', label: t('aiAccess.allowed') },
+])
 </script>
 
 <template>
-  <aside class="content-editor-meta" aria-label="Content settings">
+  <aside class="content-editor-meta" :aria-label="t('editor.settings')">
     <section class="content-editor-meta__section">
-      <h2>Content settings</h2>
-      <label class="content-editor-meta__select">
-        <span>Type</span>
-        <select v-model="form.type">
-          <option v-for="type in contentTypes" :key="type" :value="type">{{ type }}</option>
-        </select>
-      </label>
-      <label v-if="canEditStatus" class="content-editor-meta__select">
-        <span>Status</span>
-        <select v-model="form.status">
-          <option v-for="status in contentStatuses" :key="status" :value="status">{{ status }}</option>
-        </select>
-      </label>
-      <ReadonlyField v-else label="Status" value="draft" />
-      <label class="content-editor-meta__select">
-        <span>Visibility</span>
-        <select v-model="form.visibility">
-          <option v-for="visibility in contentVisibilities" :key="visibility" :value="visibility">{{ visibility }}</option>
-        </select>
-      </label>
-      <label class="content-editor-meta__select">
-        <span>AI access</span>
-        <select v-model="form.ai_access">
-          <option value="denied">Denied</option>
-          <option value="allowed">Allowed</option>
-        </select>
-      </label>
+      <h2>{{ t('editor.settings') }}</h2>
+      <FormField :label="t('editor.type')" for-id="editor-type">
+        <BaseSelect id="editor-type" v-model="form.type" :options="typeOptions" :aria-label="t('editor.type')" />
+      </FormField>
+      <FormField v-if="canEditStatus" :label="t('editor.status')" for-id="editor-status">
+        <BaseSelect id="editor-status" v-model="form.status" :options="statusOptions" :aria-label="t('editor.status')" />
+      </FormField>
+      <ReadonlyField v-else :label="t('editor.status')" :value="t('contentStatus.draft')" />
+      <FormField :label="t('editor.visibility')" for-id="editor-visibility">
+        <BaseSelect id="editor-visibility" v-model="form.visibility" :options="visibilityOptions" :aria-label="t('editor.visibility')" />
+      </FormField>
+      <FormField :label="t('editor.aiAccess')" for-id="editor-ai-access">
+        <BaseSelect id="editor-ai-access" v-model="form.ai_access" :options="aiAccessOptions" :aria-label="t('editor.aiAccess')" />
+      </FormField>
     </section>
 
     <section class="content-editor-meta__section">
-      <h2>Metadata</h2>
-      <FormField label="Slug" for-id="editor-slug">
+      <h2>{{ t('editor.metadata') }}</h2>
+      <FormField :label="t('editor.slug')" for-id="editor-slug">
         <BaseInput id="editor-slug" v-model="form.slug" />
       </FormField>
-      <FormField label="Summary" for-id="editor-summary">
+      <FormField :label="t('editor.summary')" for-id="editor-summary">
         <BaseInput id="editor-summary" v-model="form.summary" />
       </FormField>
       <div class="content-editor-meta__field">
-        <span>Cover image</span>
-        <ImageUploader v-model="form.cover_image_url" scope="content_cover" label="Upload cover" />
+        <span>{{ t('editor.coverImage') }}</span>
+        <ImageUploader v-model="form.cover_image_url" scope="content_cover" :label="t('editor.uploadCover')" />
       </div>
-      <FormField label="Change summary" for-id="editor-change-summary">
+      <FormField :label="t('editor.changeSummary')" for-id="editor-change-summary">
         <BaseInput id="editor-change-summary" v-model="form.change_summary" />
       </FormField>
     </section>
 
     <section class="content-editor-meta__section">
-      <h2>Options</h2>
+      <h2>{{ t('editor.options') }}</h2>
       <label class="content-editor-meta__check">
         <input v-model="form.comment_enabled" type="checkbox" />
-        Comments
+        {{ t('editor.comments') }}
       </label>
       <label class="content-editor-meta__check">
         <input v-model="form.is_featured" type="checkbox" />
-        Featured
+        {{ t('editor.featured') }}
       </label>
-      <FormField label="Sort order" for-id="editor-sort-order">
+      <FormField :label="t('editor.sortOrder')" for-id="editor-sort-order">
         <BaseInput id="editor-sort-order" v-model.number="form.sort_order" type="number" />
       </FormField>
     </section>
 
     <section class="content-editor-meta__section">
-      <h2>Tags</h2>
+      <h2>{{ t('editor.tags') }}</h2>
       <div v-if="tags.length > 0" class="content-editor-meta__tags">
         <label v-for="tag in tags" :key="tag.tag_id">
           <input v-model="form.tag_ids" type="checkbox" :value="tag.tag_id" />
           {{ tag.name }}
         </label>
       </div>
-      <p v-else class="content-editor-meta__empty">No tags are available.</p>
+      <p v-else class="content-editor-meta__empty">{{ t('editor.noTags') }}</p>
     </section>
   </aside>
 </template>
@@ -116,7 +116,6 @@ defineProps<{
   font-size: 0.95rem;
 }
 
-.content-editor-meta__select,
 .content-editor-meta__field,
 .content-editor-meta__check,
 .content-editor-meta__tags label {
@@ -133,16 +132,6 @@ defineProps<{
   align-items: center;
 }
 
-.content-editor-meta__select select {
-  min-height: 40px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 0 10px;
-  color: var(--bb-color-text);
-  background: var(--bb-color-surface-elevated);
-}
-
-.content-editor-meta__select select:focus-visible,
 .content-editor-meta__check input:focus-visible,
 .content-editor-meta__tags input:focus-visible {
   outline: none;

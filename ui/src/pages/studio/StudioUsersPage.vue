@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
 import { Eye, KeyRound, Pencil, Trash2 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
@@ -8,6 +9,7 @@ import type { StudioUpdateUserProfileRequest, StudioUser } from '@/features/stud
 import AvatarUploader from '@/shared/components/AvatarUploader.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
+import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
 import ChangePasswordDialog from '@/shared/components/ChangePasswordDialog.vue'
 import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
@@ -19,6 +21,7 @@ import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
 import { useConfirm, useToast } from '@/shared/composables'
+import { useLocale } from '@/shared/i18n'
 
 type UserMode = 'view' | 'edit'
 type EditableRole = 'member' | 'admin'
@@ -26,6 +29,8 @@ type EditableStatus = 'active' | 'disabled' | 'locked'
 type UserFormStatus = EditableStatus | 'pending' | 'deleted'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
+const { locale } = useLocale()
 const { confirm } = useConfirm()
 const { pushToast } = useToast()
 
@@ -68,14 +73,34 @@ const displayUsers = computed(() =>
   })),
 )
 
-const dialogTitle = computed(() => (userMode.value === 'edit' ? 'Edit user' : 'User details'))
+const roleOptions = computed<BaseSelectOption[]>(() => [
+  { value: '', label: t('roles.all') },
+  { value: 'member', label: t('roles.member') },
+  { value: 'admin', label: t('roles.admin') },
+])
+const editableRoleOptions = computed<BaseSelectOption[]>(() => roleOptions.value.filter((option) => option.value !== ''))
+const statusOptions = computed<BaseSelectOption[]>(() => [
+  { value: '', label: t('userStatus.all') },
+  { value: 'pending', label: t('userStatus.pending') },
+  { value: 'active', label: t('userStatus.active') },
+  { value: 'disabled', label: t('userStatus.disabled') },
+  { value: 'locked', label: t('userStatus.locked') },
+])
+const editableStatusOptions = computed<BaseSelectOption[]>(() => [
+  ...(editForm.status === 'pending' ? [{ value: 'pending', label: t('userStatus.pending'), disabled: true }] : []),
+  { value: 'active', label: t('userStatus.active') },
+  { value: 'disabled', label: t('userStatus.disabled') },
+  { value: 'locked', label: t('userStatus.locked') },
+  ...(editForm.status === 'deleted' ? [{ value: 'deleted', label: t('userStatus.deleted'), disabled: true }] : []),
+])
+const dialogTitle = computed(() => (userMode.value === 'edit' ? t('users.editDialog.title') : t('users.viewDialog.title')))
 const selectedUserIsSelf = computed(() => selectedUser.value?.user_id === authStore.currentUser?.user_id)
 
 function formatUnixTime(value?: number): string {
   if (!value) {
-    return 'Never'
+    return t('common.never')
   }
-  return new Intl.DateTimeFormat('en', {
+  return new Intl.DateTimeFormat(locale.value, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value * 1000))
@@ -97,10 +122,12 @@ async function loadUsers(): Promise<void> {
     )
     users.value = response.items
     total.value = response.total
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to load users.'
-    pushToast({ tone: 'danger', title: 'Users unavailable', message: errorMessage.value })
-  } finally {
+  }
+  catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('users.unavailableTitle')
+    pushToast({ tone: 'danger', title: t('users.unavailableTitle'), message: errorMessage.value })
+  }
+  finally {
     isLoading.value = false
   }
 }
@@ -163,7 +190,7 @@ async function saveUserEdits(): Promise<void> {
     replaceUser(nextUser)
     selectedUser.value = nextUser
     updateCurrentUserSnapshot(nextUser)
-    pushToast({ tone: 'success', title: 'User updated', message: `${nextUser.email} has been updated.` })
+    pushToast({ tone: 'success', title: t('users.toast.savedTitle'), message: t('users.toast.savedMessage') })
   })
 }
 
@@ -172,9 +199,9 @@ async function submitPasswordReset(): Promise<void> {
     return
   }
   const approved = await confirm({
-    title: 'Reset user password?',
-    message: `This will replace the current password for ${passwordTarget.value.email} and revoke existing sessions.`,
-    confirmText: 'Reset password',
+    title: t('users.passwordDialog.resetTitle'),
+    message: t('users.actions.resetPassword', { email: passwordTarget.value.email }),
+    confirmText: t('common.reset'),
     tone: 'danger',
   })
   if (!approved) {
@@ -186,16 +213,16 @@ async function submitPasswordReset(): Promise<void> {
       { new_password: resetPassword.value },
       { accessToken: authStore.accessToken },
     )
-    pushToast({ tone: 'success', title: 'Password reset', message: `${passwordTarget.value!.email} can now use the new password.` })
+    pushToast({ tone: 'success', title: t('users.toast.passwordTitle'), message: t('users.toast.passwordMessage') })
     closePasswordReset()
   })
 }
 
 async function deleteUser(user: StudioUser): Promise<void> {
   const approved = await confirm({
-    title: 'Delete user?',
-    message: `${user.email} will be soft deleted, hidden from the default list, and all active sessions will be revoked.`,
-    confirmText: 'Delete user',
+    title: t('users.confirm.deleteTitle'),
+    message: t('users.confirm.deleteMessage', { email: user.email }),
+    confirmText: t('users.confirm.deleteAction'),
     tone: 'danger',
   })
   if (!approved) {
@@ -208,7 +235,7 @@ async function deleteUser(user: StudioUser): Promise<void> {
     if (selectedUser.value?.user_id === user.user_id) {
       closeDialog()
     }
-    pushToast({ tone: 'success', title: 'User deleted', message: `${user.email} was removed from the active list.` })
+    pushToast({ tone: 'success', title: t('users.toast.deletedTitle'), message: t('users.toast.deletedMessage', { email: user.email }) })
   })
 }
 
@@ -217,10 +244,12 @@ async function runUserMutation(action: () => Promise<void>): Promise<void> {
   isMutating.value = true
   try {
     await action()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to update user.'
-    pushToast({ tone: 'danger', title: 'User update failed', message: errorMessage.value })
-  } finally {
+  }
+  catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('users.unavailableTitle')
+    pushToast({ tone: 'danger', title: t('users.unavailableTitle'), message: errorMessage.value })
+  }
+  finally {
     isMutating.value = false
   }
 }
@@ -291,52 +320,40 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 <template>
   <section class="users-page">
     <PageHeader
-      eyebrow="Studio"
-      title="Users"
-      description="Search accounts, review access, and manage user changes from row actions."
+      :eyebrow="t('users.eyebrow')"
+      :title="t('users.title')"
+      :description="t('users.description')"
     />
 
     <div class="users-page__filters">
-      <FormField class="users-page__search" label="Search" for-id="user-search">
-        <BaseInput id="user-search" v-model="filters.keyword" placeholder="Search username, email, or nickname..." />
+      <FormField class="users-page__search" :label="t('common.search')" for-id="user-search">
+        <BaseInput id="user-search" v-model="filters.keyword" :placeholder="t('users.searchPlaceholder')" />
       </FormField>
-      <label class="users-page__select">
-        <span>Role</span>
-        <select v-model="filters.role" class="users-page__select-control">
-          <option value="">All roles</option>
-          <option value="member">Member</option>
-          <option value="admin">Admin</option>
-        </select>
-      </label>
-      <label class="users-page__select">
-        <span>Status</span>
-        <select v-model="filters.status" class="users-page__select-control">
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="active">Active</option>
-          <option value="disabled">Disabled</option>
-          <option value="locked">Locked</option>
-        </select>
-      </label>
+      <FormField :label="t('users.columns.role')" for-id="user-role-filter">
+        <BaseSelect id="user-role-filter" v-model="filters.role" :options="roleOptions" :aria-label="t('users.columns.role')" />
+      </FormField>
+      <FormField :label="t('users.columns.status')" for-id="user-status-filter">
+        <BaseSelect id="user-status-filter" v-model="filters.status" :options="statusOptions" :aria-label="t('users.columns.status')" />
+      </FormField>
     </div>
 
-    <StatusAlert v-if="errorMessage" tone="danger" title="Users unavailable">{{ errorMessage }}</StatusAlert>
-    <PageLoadingState v-else-if="isLoading" title="Loading users" :rows="5" />
+    <StatusAlert v-if="errorMessage" tone="danger" :title="t('users.unavailableTitle')">{{ errorMessage }}</StatusAlert>
+    <PageLoadingState v-else-if="isLoading" :title="t('users.loadingTitle')" :rows="5" />
 
     <div v-else class="users-page__table" role="region" aria-label="Studio users" tabindex="0">
       <table class="users-page__grid">
         <thead class="users-page__head">
           <tr class="users-page__row">
-            <th class="users-page__cell users-page__cell--user" scope="col">User</th>
-            <th class="users-page__cell" scope="col">Role</th>
-            <th class="users-page__cell" scope="col">Status</th>
-            <th class="users-page__cell" scope="col">Last login</th>
-            <th class="users-page__cell users-page__cell--actions" scope="col">Actions</th>
+            <th class="users-page__cell users-page__cell--user" scope="col">{{ t('users.columns.user') }}</th>
+            <th class="users-page__cell" scope="col">{{ t('users.columns.role') }}</th>
+            <th class="users-page__cell" scope="col">{{ t('users.columns.status') }}</th>
+            <th class="users-page__cell" scope="col">{{ t('users.columns.lastLogin') }}</th>
+            <th class="users-page__cell users-page__cell--actions" scope="col">{{ t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="users-page__body">
           <tr v-if="displayUsers.length === 0" class="users-page__row">
-            <td class="users-page__cell users-page__empty" colspan="5">No users found.</td>
+            <td class="users-page__cell users-page__empty" colspan="5">{{ t('users.empty') }}</td>
           </tr>
           <tr v-for="user in displayUsers" v-else :key="user.user_id" class="users-page__row">
             <td class="users-page__cell users-page__cell--user">
@@ -348,22 +365,22 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <td class="users-page__cell">{{ user.lastLogin }}</td>
             <td class="users-page__cell users-page__cell--actions">
               <div class="users-page__actions">
-                <IconActionButton :aria-label="`View ${user.email}`" :title="`View ${user.email}`" @click="openUser(user, 'view')">
+                <IconActionButton :aria-label="t('users.actions.viewUser', { email: user.email })" :title="t('users.actions.viewUser', { email: user.email })" @click="openUser(user, 'view')">
                   <Eye :size="17" aria-hidden="true" />
                 </IconActionButton>
                 <IconActionButton
                   tone="primary"
                   :disabled="isMutating"
-                  :aria-label="`Edit ${user.email}`"
-                  :title="`Edit ${user.email}`"
+                  :aria-label="t('users.actions.editUser', { email: user.email })"
+                  :title="t('users.actions.editUser', { email: user.email })"
                   @click="openUser(user, 'edit')"
                 >
                   <Pencil :size="17" aria-hidden="true" />
                 </IconActionButton>
                 <IconActionButton
                   :disabled="isMutating"
-                  :aria-label="user.isSelf ? `Change password for ${user.email}` : `Reset password for ${user.email}`"
-                  :title="user.isSelf ? `Change password for ${user.email}` : `Reset password for ${user.email}`"
+                  :aria-label="user.isSelf ? t('users.actions.changePassword', { email: user.email }) : t('users.actions.resetPassword', { email: user.email })"
+                  :title="user.isSelf ? t('users.actions.changePassword', { email: user.email }) : t('users.actions.resetPassword', { email: user.email })"
                   @click="openPasswordReset(user)"
                 >
                   <KeyRound :size="17" aria-hidden="true" />
@@ -371,8 +388,8 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
                 <IconActionButton
                   tone="danger"
                   :disabled="isMutating"
-                  :aria-label="`Delete ${user.email}`"
-                  :title="`Delete ${user.email}`"
+                  :aria-label="t('users.actions.deleteUser', { email: user.email })"
+                  :title="t('users.actions.deleteUser', { email: user.email })"
                   @click="deleteUser(user)"
                 >
                   <Trash2 :size="17" aria-hidden="true" />
@@ -384,14 +401,14 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       </table>
     </div>
 
-    <p v-if="!isLoading" class="users-page__count">{{ total }} total users</p>
+    <p v-if="!isLoading" class="users-page__count">{{ t('users.count', { count: total }) }}</p>
 
     <ModalDialog :open="selectedUser !== null" :title="dialogTitle" :description="selectedUser?.email" size="lg" @close="closeDialog">
       <div v-if="selectedUser" class="users-page__modal">
         <div v-if="userMode === 'view'" class="users-page__detail-grid">
-          <ReadonlyField label="Username" :value="selectedUser.username" />
-          <ReadonlyField label="Nickname" :value="selectedUser.nickname" />
-          <ReadonlyField label="Email" :value="selectedUser.email" />
+            <ReadonlyField :label="t('users.editDialog.username')" :value="selectedUser.username" />
+            <ReadonlyField :label="t('users.editDialog.nickname')" :value="selectedUser.nickname" />
+            <ReadonlyField :label="t('users.editDialog.email')" :value="selectedUser.email" />
           <ReadonlyField label="User ID" :value="selectedUser.user_id" />
           <ReadonlyField label="Created" :value="formatUnixTime(selectedUser.created_at)" />
           <ReadonlyField label="Updated" :value="formatUnixTime(selectedUser.updated_at)" />
@@ -399,47 +416,36 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 
         <template v-if="userMode === 'edit'">
           <div class="users-page__edit-grid">
-            <FormField label="Username" for-id="edit-username">
+            <FormField :label="t('users.editDialog.username')" for-id="edit-username">
               <BaseInput id="edit-username" v-model="profileForm.username" autocomplete="username" />
             </FormField>
-            <FormField label="Email" for-id="edit-email">
+            <FormField :label="t('users.editDialog.email')" for-id="edit-email">
               <BaseInput id="edit-email" v-model="profileForm.email" autocomplete="email" />
             </FormField>
-            <FormField label="Nickname" for-id="edit-nickname">
+            <FormField :label="t('users.editDialog.nickname')" for-id="edit-nickname">
               <BaseInput id="edit-nickname" v-model="profileForm.nickname" autocomplete="nickname" />
             </FormField>
             <AvatarUploader class="users-page__avatar-upload" v-model="profileForm.avatar_url" :name="profileForm.nickname || profileForm.username" />
           </div>
           <div v-if="!selectedUserIsSelf" class="users-page__edit-grid">
-            <label class="users-page__select">
-              <span>Role</span>
-              <select v-model="editForm.role" class="users-page__select-control" :disabled="isMutating">
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-            </label>
-            <label class="users-page__select">
-              <span>Status</span>
-              <select v-model="editForm.status" class="users-page__select-control" :disabled="isMutating">
-                <option v-if="editForm.status === 'pending'" value="pending" disabled>Pending</option>
-                <option value="active">Active</option>
-                <option value="disabled">Disabled</option>
-                <option value="locked">Locked</option>
-                <option v-if="editForm.status === 'deleted'" value="deleted" disabled>Deleted</option>
-              </select>
-            </label>
+            <FormField :label="t('users.columns.role')" for-id="edit-role">
+              <BaseSelect id="edit-role" v-model="editForm.role" :options="editableRoleOptions" :disabled="isMutating" :aria-label="t('users.columns.role')" />
+            </FormField>
+            <FormField :label="t('users.columns.status')" for-id="edit-status">
+              <BaseSelect id="edit-status" v-model="editForm.status" :options="editableStatusOptions" :disabled="isMutating" :aria-label="t('users.columns.status')" />
+            </FormField>
           </div>
         </template>
       </div>
       <template #footer>
-        <BaseButton v-if="userMode === 'edit'" :busy="isMutating" @click="saveUserEdits">Save changes</BaseButton>
-        <BaseButton variant="ghost" @click="closeDialog">Close</BaseButton>
+        <BaseButton v-if="userMode === 'edit'" :busy="isMutating" @click="saveUserEdits">{{ t('common.saveChanges') }}</BaseButton>
+        <BaseButton variant="ghost" @click="closeDialog">{{ t('common.close') }}</BaseButton>
       </template>
     </ModalDialog>
 
     <ModalDialog
       :open="passwordTarget !== null"
-      title="Reset password"
+      :title="t('users.passwordDialog.resetTitle')"
       :description="passwordTarget?.email"
       @close="closePasswordReset"
     >
@@ -450,9 +456,9 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       </form>
       <template #footer>
         <BaseButton :busy="isMutating" :disabled="resetPassword.trim() === ''" @click="submitPasswordReset">
-          Reset password
+          {{ t('common.reset') }}
         </BaseButton>
-        <BaseButton variant="ghost" @click="closePasswordReset">Close</BaseButton>
+        <BaseButton variant="ghost" @click="closePasswordReset">{{ t('common.close') }}</BaseButton>
       </template>
     </ModalDialog>
 
@@ -477,35 +483,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   min-width: 0;
 }
 
-.users-page__select {
-  display: grid;
-  gap: 6px;
-  color: var(--bb-color-muted);
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.users-page__select-control {
-  min-height: 44px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 0 12px;
-  color: var(--bb-color-text);
-  background: var(--bb-color-surface);
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
-}
-
-.users-page__select-control:hover:not(:disabled) {
-  border-color: var(--bb-color-primary);
-}
-
-.users-page__select-control:disabled {
-  color: var(--bb-color-muted);
-  background: var(--bb-color-subtle);
-  cursor: not-allowed;
-}
-
-.users-page__select-control:focus-visible,
 .users-page__table:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--bb-color-focus);
