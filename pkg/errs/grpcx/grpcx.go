@@ -60,6 +60,12 @@ func CodeToGRPC(code errs.Code) codes.Code {
 // ToStatus converts a domain error into a gRPC status error with structured details.
 // ToStatus 将领域错误转换为带结构化明细的 gRPC status 错误。
 func ToStatus(err error, fallbackMessage string) error {
+	return ToStatusWithFallback(err, errs.CodeIdentityInternal, fallbackMessage)
+}
+
+// ToStatusWithFallback converts an error and applies the provided domain code to non-domain errors.
+// ToStatusWithFallback 转换错误，并为非领域错误应用调用方提供的领域错误码。
+func ToStatusWithFallback(err error, fallbackCode errs.Code, fallbackMessage string) error {
 	if err == nil {
 		return nil
 	}
@@ -72,8 +78,11 @@ func ToStatus(err error, fallbackMessage string) error {
 		if fallbackMessage == "" {
 			fallbackMessage = "internal error"
 		}
+		if fallbackCode == 0 {
+			fallbackCode = errs.CodeIdentityInternal
+		}
 		parsed = &errs.Error{
-			Code:    errs.CodeIdentityInternal,
+			Code:    fallbackCode,
 			Message: fallbackMessage,
 			Cause:   err,
 		}

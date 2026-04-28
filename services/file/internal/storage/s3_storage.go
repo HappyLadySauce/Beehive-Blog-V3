@@ -16,6 +16,7 @@ type S3Storage struct {
 	client  *s3.Client
 	presign *s3.PresignClient
 	enabled bool
+	bucket  string
 }
 
 func NewS3Storage(ctx context.Context, conf config.ObjectStorageConf) (*S3Storage, error) {
@@ -38,6 +39,7 @@ func NewS3Storage(ctx context.Context, conf config.ObjectStorageConf) (*S3Storag
 		client:  client,
 		presign: s3.NewPresignClient(client),
 		enabled: true,
+		bucket:  strings.TrimSpace(conf.Bucket),
 	}, nil
 }
 
@@ -93,6 +95,8 @@ func (s *S3Storage) Health(ctx context.Context) error {
 	if s == nil || !s.enabled || s.client == nil {
 		return ErrStorageDisabled
 	}
-	_, err := s.client.ListBuckets(ctx, &s3.ListBucketsInput{})
+	_, err := s.client.HeadBucket(ctx, &s3.HeadBucketInput{
+		Bucket: aws.String(s.bucket),
+	})
 	return err
 }

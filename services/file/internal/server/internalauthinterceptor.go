@@ -48,7 +48,7 @@ func (i *InternalAuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 				logs.RequestID(ctxmeta.GetRequestIDFromIncomingContext(ctx)),
 				logs.Err(authErr),
 			)
-			return nil, errgrpcx.ToStatus(authErr, "internal caller authentication failed")
+			return nil, errgrpcx.ToStatusWithFallback(authErr, errs.CodeFileInternal, "internal caller authentication failed")
 		}
 		return handler(ctxmeta.WithTrustedInternalCaller(ctx, caller), req)
 	}

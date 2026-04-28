@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/logs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
@@ -72,7 +73,7 @@ func toStatusError(err error, fallbackMessage string) error {
 	if err == nil {
 		return nil
 	}
-	return errgrpcx.ToStatus(err, fallbackMessage)
+	return errgrpcx.ToStatusWithFallback(err, errs.CodeIdentityInternal, fallbackMessage)
 }
 
 // withLogContext enriches a logic context with request-scoped log metadata.

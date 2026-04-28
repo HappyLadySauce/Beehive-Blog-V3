@@ -56,6 +56,9 @@ func (s *UserManagementService) UpdateUserProfile(ctx context.Context, in Update
 		auditDetail["username"] = username
 	}
 	if in.Email != nil {
+		if in.ActorUserID == in.TargetUserID {
+			return nil, errs.New(errs.CodeIdentityInvalidArgument, "use current-user email verification to update own email")
+		}
 		email, err := auth.NormalizeEmail(*in.Email)
 		if err != nil {
 			return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "email is invalid")

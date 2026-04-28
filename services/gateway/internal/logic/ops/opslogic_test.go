@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
@@ -62,6 +63,80 @@ func TestReadyzReadyWhenProbeSucceeds(t *testing.T) {
 	}
 	if resp.Status != "ready" {
 		t.Fatalf("expected ready, got %s", resp.Status)
+	}
+}
+
+func TestReadyzRunsProbesInParallel(t *testing.T) {
+	t.Parallel()
+
+	started := make(chan string, 3)
+	release := make(chan struct{})
+	defer func() {
+		select {
+		case <-release:
+		default:
+			close(release)
+		}
+	}()
+	blockingProbe := func(name string) *fakeProbe {
+		return &fakeProbe{checkFn: func(ctx context.Context) error {
+			select {
+			case started <- name:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			select {
+			case <-release:
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}}
+	}
+
+	logic := NewReadyzLogic(context.Background(), &svc.ServiceContext{
+		IdentityProbe: blockingProbe("identity"),
+		ContentProbe:  blockingProbe("content"),
+		FileProbe:     blockingProbe("file"),
+	})
+	done := make(chan struct {
+		respStatus string
+		err        error
+	}, 1)
+	go func() {
+		resp, err := logic.Readyz()
+		status := ""
+		if resp != nil {
+			status = resp.Status
+		}
+		done <- struct {
+			respStatus string
+			err        error
+		}{respStatus: status, err: err}
+	}()
+
+	seen := make(map[string]bool, 3)
+	timeout := time.After(500 * time.Millisecond)
+	for len(seen) < 3 {
+		select {
+		case name := <-started:
+			seen[name] = true
+		case <-timeout:
+			t.Fatalf("expected all readyz probes to start in parallel, saw %v", seen)
+		}
+	}
+	close(release)
+
+	select {
+	case result := <-done:
+		if result.err != nil {
+			t.Fatalf("unexpected error: %v", result.err)
+		}
+		if result.respStatus != "ready" {
+			t.Fatalf("expected ready, got %s", result.respStatus)
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatalf("expected readyz probes to finish after release")
 	}
 }
 

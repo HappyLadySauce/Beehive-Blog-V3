@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/ctxmeta"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	errgrpcx "github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs/grpcx"
 	contentservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/content/internal/service"
 	"google.golang.org/grpc/codes"
@@ -42,5 +43,5 @@ func toStatusError(err error, fallbackMessage string) error {
 	if err == nil {
 		return nil
 	}
-	return errgrpcx.ToStatus(err, fallbackMessage)
+	return errgrpcx.ToStatusWithFallback(err, errs.CodeContentInternal, fallbackMessage)
 }

@@ -60,7 +60,7 @@ func (i *InternalAuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 				logs.RequestID(requestID),
 				logs.Err(authErr),
 			)
-			return nil, errgrpcx.ToStatus(authErr, "internal caller authentication failed")
+			return nil, errgrpcx.ToStatusWithFallback(authErr, errs.CodeIdentityInternal, "internal caller authentication failed")
 		}
 
 		logs.Ctx(ctx).Debug(
