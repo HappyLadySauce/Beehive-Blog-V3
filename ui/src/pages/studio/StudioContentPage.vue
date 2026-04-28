@@ -101,6 +101,7 @@ const drawerTitle = computed(() => {
   }
   return 'Content details'
 })
+const canEditContentStatus = computed(() => contentMode.value !== 'create')
 
 async function loadContents(): Promise<void> {
   isLoading.value = true
@@ -184,7 +185,6 @@ async function saveContent(): Promise<void> {
       body_markdown: contentForm.body_markdown,
       body_json: contentForm.body_json,
       cover_image_url: contentForm.cover_image_url,
-      status: contentForm.status,
       visibility: contentForm.visibility,
       ai_access: contentForm.ai_access,
       source_type: 'manual',
@@ -196,7 +196,7 @@ async function saveContent(): Promise<void> {
     }
     const response = contentMode.value === 'create'
       ? await studioApi.createContent(payload, { accessToken: authStore.accessToken })
-      : await studioApi.updateContent(selectedContent.value!.content_id, payload, { accessToken: authStore.accessToken })
+      : await studioApi.updateContent(selectedContent.value!.content_id, { ...payload, status: contentForm.status }, { accessToken: authStore.accessToken })
     selectedContent.value = response.content
     contentMode.value = 'edit'
     hydrateContentForm(response.content)
@@ -503,12 +503,13 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
                 <option v-for="type in contentTypes" :key="type" :value="type">{{ type }}</option>
               </select>
             </label>
-            <label class="content-page__select">
+            <label v-if="canEditContentStatus" class="content-page__select">
               <span>Status</span>
               <select v-model="contentForm.status">
                 <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
               </select>
             </label>
+            <ReadonlyField v-else label="Status" value="draft" />
             <FormField label="Title" for-id="content-title">
               <BaseInput id="content-title" v-model="contentForm.title" />
             </FormField>

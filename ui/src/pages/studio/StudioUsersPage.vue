@@ -18,6 +18,8 @@ import StatusBadge from '@/shared/components/StatusBadge.vue'
 import { useConfirm, useToast } from '@/shared/composables'
 
 type UserMode = 'view' | 'edit'
+type EditableUserStatus = 'active' | 'disabled' | 'locked'
+type UserFormStatus = EditableUserStatus | 'pending' | 'deleted'
 
 const authStore = useAuthStore()
 const { confirm } = useConfirm()
@@ -41,7 +43,7 @@ const filters = reactive({
 
 const editForm = reactive({
   role: 'member' as 'member' | 'admin',
-  status: 'active' as 'active' | 'disabled' | 'locked',
+  status: 'active' as UserFormStatus,
 })
 
 const displayUsers = computed(() =>
@@ -100,7 +102,7 @@ function openUser(user: StudioUser, mode: UserMode): void {
   selectedUser.value = user
   userMode.value = mode
   editForm.role = normalizeRole(user.role)
-  editForm.status = normalizeStatus(user.status)
+  editForm.status = normalizeFormStatus(user.status)
   resetPassword.value = ''
 }
 
@@ -119,7 +121,7 @@ async function saveUserEdits(): Promise<void> {
     if (editForm.role !== target.role) {
       nextUser = (await studioApi.updateUserRole(target.user_id, { role: editForm.role }, { accessToken: authStore.accessToken })).user
     }
-    if (editForm.status !== nextUser.status) {
+    if (isEditableStatus(editForm.status) && editForm.status !== nextUser.status) {
       nextUser = (await studioApi.updateUserStatus(target.user_id, { status: editForm.status }, { accessToken: authStore.accessToken })).user
     }
     replaceUser(nextUser)
@@ -194,11 +196,15 @@ function normalizeRole(role: string): 'member' | 'admin' {
   return role === 'admin' ? 'admin' : 'member'
 }
 
-function normalizeStatus(status: string): 'active' | 'disabled' | 'locked' {
-  if (status === 'disabled' || status === 'locked') {
+function normalizeFormStatus(status: string): UserFormStatus {
+  if (status === 'pending' || status === 'disabled' || status === 'locked' || status === 'deleted') {
     return status
   }
   return 'active'
+}
+
+function isEditableStatus(status: UserFormStatus): status is EditableUserStatus {
+  return status === 'active' || status === 'disabled' || status === 'locked'
 }
 
 watch(() => [filters.keyword, filters.role, filters.status], scheduleLoadUsers)
@@ -302,9 +308,11 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <label class="users-page__select">
               <span>Status</span>
               <select v-model="editForm.status" :disabled="isMutating">
+                <option v-if="editForm.status === 'pending'" value="pending" disabled>Pending</option>
                 <option value="active">Active</option>
                 <option value="disabled">Disabled</option>
                 <option value="locked">Locked</option>
+                <option v-if="editForm.status === 'deleted'" value="deleted" disabled>Deleted</option>
               </select>
             </label>
           </div>

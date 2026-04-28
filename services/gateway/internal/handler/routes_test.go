@@ -9,7 +9,8 @@ import (
 )
 
 func TestRegisterHandlersKeepsManualMiddlewareGuards(t *testing.T) {
-	source := readRoutesSource(t)
+	source := strings.ReplaceAll(readRoutesSource(t), "\r\n", "\n")
+	source = strings.ReplaceAll(source, "\r", "\n")
 
 	requiredSnippets := []string{
 		"rest.WithMiddleware(serverCtx.RequestMetaMiddleware, authPublicRoutes...)",
