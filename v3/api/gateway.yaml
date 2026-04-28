@@ -248,6 +248,160 @@ paths:
       summary: AuthMe
       tags:
       - Authentication
+  /api/v3/auth/me/email:
+    patch:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
+        argument<br>110201-invalid credentials<br>110405-sso state invalid<br>110501-user
+        not found<br>110503-email already exists<br>119901-internal error
+      operationId: authAuthUpdateEmail
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            code:
+              example: gho_example_callback_code
+              type: string
+            current_password:
+              example: Str0ngP@ssw0rd!
+              type: string
+            email:
+              example: alice.new@example.com
+              type: string
+            provider:
+              enum:
+              - github
+              - qq
+              - wechat
+              example: github
+              type: string
+            redirect_uri:
+              example: https://app.example.com/auth/sso/callback/github
+              type: string
+            state:
+              example: state_01J8SSOREAUTHEXAMPLE
+              type: string
+            verification_method:
+              enum:
+              - password
+              - sso
+              example: password
+              type: string
+          required:
+          - email
+          - verification_method
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
+                    type: string
+                  email:
+                    example: alice@example.com
+                    type: string
+                  nickname:
+                    example: Alice
+                    type: string
+                  role:
+                    example: user
+                    type: string
+                  status:
+                    example: active
+                    type: string
+                  user_id:
+                    example: user_01J8PROFILEEXAMPLE
+                    type: string
+                  username:
+                    example: beehive_user_01
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: AuthUpdateEmail
+      tags:
+      - Authentication
+  /api/v3/auth/me/email/sso/start:
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>110101-invalid
+        argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>119901-internal
+        error
+      operationId: authAuthEmailSsoStart
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            provider:
+              enum:
+              - github
+              - qq
+              - wechat
+              example: github
+              type: string
+            redirect_uri:
+              example: https://app.example.com/auth/sso/callback/github
+              type: string
+            state:
+              example: state_01J8SSOREAUTHEXAMPLE
+              type: string
+          required:
+          - provider
+          - redirect_uri
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              auth_url:
+                example: https://github.com/login/oauth/authorize?client_id=xxx&redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fcallback%2Fgithub&state=state_01J8SSOSTARTEXAMPLE
+                type: string
+              provider:
+                example: github
+                type: string
+              state:
+                example: state_01J8SSOSTARTEXAMPLE
+                type: string
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: AuthEmailSsoStart
+      tags:
+      - Authentication
   /api/v3/auth/me/password:
     post:
       consumes:
@@ -781,6 +935,307 @@ paths:
       summary: AuthSsoStart
       tags:
       - Authentication
+  /api/v3/files/assets/{asset_id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>130301-access
+        forbidden<br>130501-asset not found<br>100604-file service unavailable<br>139901-file
+        internal error
+      operationId: fileFileAssetDelete
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: asset_01J8FILEEXAMPLE
+        in: path
+        name: asset_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              ok:
+                example: true
+                type: boolean
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Delete file asset
+      tags:
+      - Files
+  /api/v3/files/uploads:
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>130101-invalid
+        argument<br>130102-invalid scope<br>130103-invalid content type<br>130104-file
+        too large<br>100604-file service unavailable<br>139901-file internal error
+      operationId: fileFileUploadCreate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            byte_size:
+              example: 153600
+              type: integer
+            content_type:
+              example: image/png
+              type: string
+            file_name:
+              example: avatar.png
+              type: string
+            scope:
+              enum:
+              - avatar
+              - content_cover
+              - content_image
+              - attachment
+              example: avatar
+              type: string
+            visibility:
+              default: public
+              enum:
+              - public
+              - private
+              example: public
+              type: string
+          required:
+          - scope
+          - file_name
+          - content_type
+          - byte_size
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              asset:
+                properties:
+                  asset_id:
+                    example: asset_01J8FILEEXAMPLE
+                    type: string
+                  bucket:
+                    example: beehive
+                    type: string
+                  byte_size:
+                    example: 153600
+                    type: integer
+                  content_type:
+                    example: image/png
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
+                  expires_at:
+                    example: 1713776400
+                    type: integer
+                  file_name:
+                    example: avatar.png
+                    type: string
+                  object_key:
+                    example: avatars/1/01J8AVATAR.png
+                    type: string
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  public_url:
+                    example: https://cdn.example.com/avatars/1/01J8AVATAR.png
+                    type: string
+                  scope:
+                    enum:
+                    - avatar
+                    - content_cover
+                    - content_image
+                    - attachment
+                    example: avatar
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - uploaded
+                    - deleted
+                    example: pending
+                    type: string
+                  upload_id:
+                    example: upload_01J8FILEEXAMPLE
+                    type: string
+                  uploaded_at:
+                    example: 1713773000
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - private
+                    example: public
+                    type: string
+                required:
+                - asset_id
+                - upload_id
+                - owner_user_id
+                - scope
+                - visibility
+                - status
+                - bucket
+                - object_key
+                - public_url
+                - file_name
+                - content_type
+                - byte_size
+                - created_at
+                - expires_at
+                type: object
+              expires_at:
+                example: 1713776400
+                type: integer
+              headers:
+                additionalProperties:
+                  type: string
+                type: object
+              max_bytes:
+                example: 2097152
+                type: integer
+              upload_url:
+                example: https://storage.example.com/bucket/avatars/1/avatar.png?X-Amz-Signature=...
+                type: string
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Create direct file upload
+      tags:
+      - Files
+  /api/v3/files/uploads/{upload_id}/complete:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>130401-invalid
+        state<br>130502-upload not found<br>100604-file service unavailable<br>139901-file
+        internal error
+      operationId: fileFileUploadComplete
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: upload_01J8FILEEXAMPLE
+        in: path
+        name: upload_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              asset:
+                properties:
+                  asset_id:
+                    example: asset_01J8FILEEXAMPLE
+                    type: string
+                  bucket:
+                    example: beehive
+                    type: string
+                  byte_size:
+                    example: 153600
+                    type: integer
+                  content_type:
+                    example: image/png
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
+                  expires_at:
+                    example: 1713776400
+                    type: integer
+                  file_name:
+                    example: avatar.png
+                    type: string
+                  object_key:
+                    example: avatars/1/01J8AVATAR.png
+                    type: string
+                  owner_user_id:
+                    example: "1"
+                    type: string
+                  public_url:
+                    example: https://cdn.example.com/avatars/1/01J8AVATAR.png
+                    type: string
+                  scope:
+                    enum:
+                    - avatar
+                    - content_cover
+                    - content_image
+                    - attachment
+                    example: avatar
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - uploaded
+                    - deleted
+                    example: pending
+                    type: string
+                  upload_id:
+                    example: upload_01J8FILEEXAMPLE
+                    type: string
+                  uploaded_at:
+                    example: 1713773000
+                    type: integer
+                  visibility:
+                    enum:
+                    - public
+                    - private
+                    example: public
+                    type: string
+                required:
+                - asset_id
+                - upload_id
+                - owner_user_id
+                - scope
+                - visibility
+                - status
+                - bucket
+                - object_key
+                - public_url
+                - file_name
+                - content_type
+                - byte_size
+                - created_at
+                - expires_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Complete direct file upload
+      tags:
+      - Files
   /api/v3/public/content/items:
     get:
       description: 120101-invalid argument<br>100603-content service unavailable<br>129901-content
@@ -3136,6 +3591,110 @@ paths:
       summary: Reset user password
       tags:
       - Studio Identity
+  /api/v3/studio/users/{user_id}/profile:
+    patch:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>110501-user not found<br>110502-username
+        already exists<br>110503-email already exists<br>119901-internal error
+      operationId: identityIdentityUserProfileUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1"
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            avatar_url:
+              example: https://cdn.example.com/avatar/alice.png
+              type: string
+            email:
+              example: alice@example.com
+              type: string
+            nickname:
+              example: Alice
+              type: string
+            username:
+              example: beehive_user_01
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
+                  email:
+                    example: alice@example.com
+                    type: string
+                  last_login_at:
+                    example: 1713772800
+                    type: integer
+                  nickname:
+                    example: Alice
+                    type: string
+                  role:
+                    enum:
+                    - member
+                    - admin
+                    example: member
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - active
+                    - disabled
+                    - locked
+                    - deleted
+                    example: active
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  user_id:
+                    example: "1"
+                    type: string
+                  username:
+                    example: beehive_user_01
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update user profile
+      tags:
+      - Studio Identity
   /api/v3/studio/users/{user_id}/role:
     patch:
       consumes:
@@ -3360,7 +3919,8 @@ paths:
   /readyz:
     get:
       description: 100401-gateway not ready<br>100601-auth service unavailable<br>100603-content
-        service unavailable<br>100602-upstream timeout<br>109901-internal error
+        service unavailable<br>100604-file service unavailable<br>100602-upstream
+        timeout<br>109901-internal error
       operationId: opsReadyz
       produces:
       - application/json
@@ -3409,7 +3969,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-28 02:36:23"
+x-date: "2026-04-28 16:26:32"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

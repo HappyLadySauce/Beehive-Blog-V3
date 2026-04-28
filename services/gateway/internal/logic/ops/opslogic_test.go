@@ -54,6 +54,7 @@ func TestReadyzReadyWhenProbeSucceeds(t *testing.T) {
 	logic := NewReadyzLogic(context.Background(), &svc.ServiceContext{
 		IdentityProbe: &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
 		ContentProbe:  &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
+		FileProbe:     &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
 	})
 	resp, err := logic.Readyz()
 	if err != nil {
@@ -76,6 +77,7 @@ func TestReadyzNotReadyWhenProbeFails(t *testing.T) {
 	logic := NewReadyzLogic(context.Background(), &svc.ServiceContext{
 		IdentityProbe: probe,
 		ContentProbe:  &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
+		FileProbe:     &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
 	})
 	resp, err := logic.Readyz()
 	if resp.Status != "not_ready" {
@@ -94,6 +96,7 @@ func TestReadyzNotReadyWhenContentProbeFails(t *testing.T) {
 		ContentProbe: &fakeProbe{checkFn: func(_ context.Context) error {
 			return errors.New("content unavailable")
 		}},
+		FileProbe: &fakeProbe{checkFn: func(_ context.Context) error { return nil }},
 	})
 	resp, err := logic.Readyz()
 	if resp.Status != "not_ready" {

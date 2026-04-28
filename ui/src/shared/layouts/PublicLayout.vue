@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, shallowRef } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
+import ChangePasswordDialog from '@/shared/components/ChangePasswordDialog.vue'
 import ThemeToggle from '@/shared/components/ThemeToggle.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const isPasswordDialogOpen = shallowRef(false)
 const isStudioForbidden = computed(() => {
   route.fullPath
   return window.history.state?.studio === 'forbidden' || window.history.state?.forbidden === true
@@ -35,7 +37,7 @@ async function handleLogout(): Promise<void> {
       <nav class="public-shell__nav" aria-label="Primary navigation">
         <RouterLink to="/">Home</RouterLink>
         <ThemeToggle />
-        <UserAccountMenu :user="authStore.currentUser" surface="public" @logout="handleLogout" />
+        <UserAccountMenu :user="authStore.currentUser" surface="public" @logout="handleLogout" @change-password="isPasswordDialogOpen = true" />
       </nav>
     </header>
     <StatusAlert v-if="isStudioForbidden" tone="warning" title="Studio access denied">
@@ -44,6 +46,7 @@ async function handleLogout(): Promise<void> {
     <main class="public-shell__main">
       <RouterView />
     </main>
+    <ChangePasswordDialog :open="isPasswordDialogOpen" @close="isPasswordDialogOpen = false" />
   </div>
 </template>
 

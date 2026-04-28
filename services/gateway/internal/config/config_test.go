@@ -19,6 +19,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
+			FileRPC: FileRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 			Security: GatewaySecurityConf{
 				TrustedProxyHeaders: []string{"X-Forwarded-For", "X-Real-IP"},
 				TrustedProxyCIDRs:   []string{"127.0.0.0/8", "10.0.0.0/8"},
@@ -38,6 +42,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalCallerName: "gateway",
 			},
 			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			FileRPC: FileRPCConf{
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
@@ -63,6 +71,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
+			FileRPC: FileRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
 			Security: GatewaySecurityConf{
 				TrustedProxyHeaders: []string{"X-Forwarded-For"},
 				TrustedProxyCIDRs:   []string{"bad-cidr"},
@@ -82,6 +94,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalCallerName: "gateway",
 			},
 			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			FileRPC: FileRPCConf{
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},
@@ -147,6 +163,10 @@ func TestConfigValidate(t *testing.T) {
 				InternalCallerName: "gateway",
 			},
 			ContentRPC: ContentRPCConf{
+				InternalAuthToken:  "secret",
+				InternalCallerName: "gateway",
+			},
+			FileRPC: FileRPCConf{
 				InternalAuthToken:  "secret",
 				InternalCallerName: "gateway",
 			},

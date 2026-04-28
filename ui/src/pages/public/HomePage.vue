@@ -1,47 +1,23 @@
 <script setup lang="ts">
-import { ArrowRight, CheckCircle2, Layers3, ShieldCheck, Sparkles } from 'lucide-vue-next'
+import { ArrowRight, FileText, LayoutDashboard, LogIn, UserPlus } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
+import { useAuthStore } from '@/features/auth/stores/authStore'
 import BaseBadge from '@/shared/components/BaseBadge.vue'
-import BaseButton from '@/shared/components/BaseButton.vue'
-import DataTable from '@/shared/components/DataTable.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
-import type { DataTableColumn } from '@/shared/components/DataTable.vue'
+import EmptyState from '@/shared/components/EmptyState.vue'
 
-const columns: DataTableColumn[] = [
-  { key: 'title', label: 'Title' },
-  { key: 'status', label: 'Status' },
-  { key: 'updatedAt', label: 'Updated' },
-]
-
-const rows = [
-  { title: 'Designing service boundaries for v3', status: 'Draft', updatedAt: '2026-04-25' },
-  { title: 'Gateway-first frontend integration', status: 'Review', updatedAt: '2026-04-24' },
-  { title: 'Operational notes for identity flows', status: 'Ready', updatedAt: '2026-04-22' },
-]
-
-const highlights = [
-  {
-    icon: Layers3,
-    tone: 'neutral',
-    label: 'Gateway first',
-    title: 'One coherent surface',
-    description: 'Public pages and Studio workflows share one Vue app while keeping the gateway as the only HTTP boundary.',
-  },
-  {
-    icon: CheckCircle2,
-    tone: 'success',
-    label: 'Accessible',
-    title: 'Interaction states included',
-    description: 'Forms, tables, alerts, empty states, and actions are built with keyboard and feedback states first.',
-  },
-  {
-    icon: ShieldCheck,
-    tone: 'warning',
-    label: 'Identity ready',
-    title: 'Operational by default',
-    description: 'Auth restoration and role checks are wired before sensitive Studio routes render.',
-  },
-] as const
+const authStore = useAuthStore()
+const isAdmin = computed(() => (authStore.currentUser?.role ?? '').toLowerCase().replace(/^role_/, '') === 'admin')
+const primaryTarget = computed(() => {
+  if (!authStore.isAuthenticated) {
+    return { to: '/login', label: 'Login', icon: LogIn }
+  }
+  if (isAdmin.value) {
+    return { to: '/studio', label: 'Open Studio', icon: LayoutDashboard }
+  }
+  return { to: '/account/profile', label: 'Open profile', icon: FileText }
+})
 </script>
 
 <template>
@@ -51,58 +27,31 @@ const highlights = [
         <BaseBadge>Public Web</BaseBadge>
         <h1 id="home-title">Beehive Blog</h1>
         <p>
-          A clean publishing and operations surface for technical notes, release context, and admin workflows.
+          A clean publishing and operations surface for authenticated content workflows.
         </p>
         <div class="home-page__actions">
-          <BaseButton>
-            Explore articles
-            <ArrowRight :size="17" aria-hidden="true" />
-          </BaseButton>
-          <BaseButton variant="secondary">View projects</BaseButton>
+          <RouterLink class="home-page__button home-page__button--primary" :to="primaryTarget.to">
+            {{ primaryTarget.label }}
+            <component :is="primaryTarget.icon" :size="17" aria-hidden="true" />
+          </RouterLink>
+          <RouterLink v-if="!authStore.isAuthenticated" class="home-page__button home-page__button--secondary" to="/register">
+            Register
+            <UserPlus :size="17" aria-hidden="true" />
+          </RouterLink>
         </div>
       </div>
-      <aside class="home-page__visual" aria-label="Product preview">
-        <div class="home-page__visual-toolbar">
-          <span />
-          <span />
-          <span />
-        </div>
-        <div class="home-page__visual-card home-page__visual-card--primary">
-          <Sparkles :size="20" aria-hidden="true" />
-          <strong>Ready for gateway integration</strong>
-          <span>Auth, Studio, and shared UI states are aligned.</span>
-        </div>
-        <div class="home-page__visual-grid">
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
+      <aside class="home-page__panel" aria-label="Current workspace status">
+        <EmptyState
+          title="No public content is published yet"
+          description="Public article and project views will appear here after content is published through Studio."
+        />
       </aside>
-    </section>
-
-    <section class="home-page__features" aria-label="Highlights">
-      <article v-for="item in highlights" :key="item.title" class="home-page__feature">
-        <component :is="item.icon" class="home-page__feature-icon" :size="22" aria-hidden="true" />
-        <BaseBadge :tone="item.tone">{{ item.label }}</BaseBadge>
-        <h2>{{ item.title }}</h2>
-        <p>{{ item.description }}</p>
-      </article>
-    </section>
-
-    <section class="home-page__section" aria-labelledby="featured-heading">
-      <div>
-        <h2 id="featured-heading">Featured drafts</h2>
-        <p>Representative content shown with the shared table primitive.</p>
-      </div>
-      <DataTable :columns="columns" :rows="rows" />
     </section>
   </section>
 </template>
 
 <style scoped>
-.home-page,
-.home-page__section {
+.home-page {
   display: grid;
   gap: 24px;
 }
@@ -110,7 +59,7 @@ const highlights = [
 .home-page__hero {
   min-height: 360px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
   gap: 24px;
   align-items: stretch;
   border: 1px solid var(--bb-color-line);
@@ -150,119 +99,70 @@ const highlights = [
   gap: 10px;
 }
 
-.home-page__visual {
+.home-page__button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--bb-shadow-soft);
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.home-page__button:hover {
+  transform: translateY(-1px);
+}
+
+.home-page__button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--bb-color-focus);
+}
+
+.home-page__button--primary {
+  color: #fff;
+  background: var(--bb-color-primary);
+}
+
+.home-page__button--primary:hover {
+  background: var(--bb-color-primary-strong);
+}
+
+.home-page__button--secondary {
+  color: var(--bb-color-text);
+  border-color: var(--bb-color-line);
+  background: var(--bb-color-surface-elevated);
+}
+
+.home-page__button--secondary:hover {
+  border-color: var(--bb-color-primary);
+}
+
+.home-page__panel {
   min-height: 310px;
   display: grid;
-  align-content: start;
-  gap: 18px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 18px;
-  background: var(--bb-color-surface-glass);
-  box-shadow: var(--bb-shadow-soft);
-  backdrop-filter: blur(14px);
+  align-content: center;
 }
 
-.home-page__visual-toolbar {
-  display: flex;
-  gap: 7px;
-}
-
-.home-page__visual-toolbar span {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--bb-color-subtle-strong);
-}
-
-.home-page__visual-card {
-  display: grid;
-  gap: 6px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 18px;
-  background: var(--bb-color-surface);
-}
-
-.home-page__visual-card--primary {
-  color: var(--bb-color-text);
-  background: linear-gradient(135deg, var(--bb-color-primary), var(--bb-color-accent));
-}
-
-.home-page__visual-card--primary,
-.home-page__visual-card--primary span {
-  color: #fff;
-}
-
-.home-page__visual-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.home-page__visual-grid span {
-  min-height: 72px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--bb-color-surface), var(--bb-color-subtle));
-}
-
-.home-page__features {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.home-page__feature {
-  display: grid;
-  gap: 10px;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 18px;
-  background: var(--bb-color-surface);
-  box-shadow: var(--bb-shadow-soft);
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.home-page__feature:hover {
-  transform: translateY(-2px);
-  border-color: var(--bb-color-primary);
-  box-shadow: var(--bb-shadow-panel);
-}
-
-.home-page__feature-icon {
-  color: var(--bb-color-primary);
-}
-
-.home-page__feature h2,
-.home-page__feature p,
-.home-page__section h2,
-.home-page__section p {
-  margin: 0;
-}
-
-.home-page__feature p,
-.home-page__section p {
-  color: var(--bb-color-muted);
-}
-
-@media (max-width: 860px) {
+@media (max-width: 840px) {
   .home-page__hero {
     grid-template-columns: 1fr;
   }
-
-  .home-page__features {
-    grid-template-columns: 1fr;
-  }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 520px) {
   .home-page__hero {
+    min-height: 0;
     padding: 18px;
   }
 
-  .home-page__visual {
-    min-height: 240px;
+  .home-page__actions,
+  .home-page__button {
+    width: 100%;
   }
 }
 </style>

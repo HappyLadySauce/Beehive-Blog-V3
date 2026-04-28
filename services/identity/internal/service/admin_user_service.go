@@ -37,6 +37,100 @@ func (s *UserManagementService) UpdateUserStatus(ctx context.Context, in UpdateU
 	}, map[string]any{"new_status": status})
 }
 
+// UpdateUserProfile updates a target user's basic profile by an active administrator.
+// UpdateUserProfile 由活跃管理员修改目标用户基础资料。
+func (s *UserManagementService) UpdateUserProfile(ctx context.Context, in UpdateUserProfileInput) (*AdminUserResult, error) {
+	var patch repo.UserProfileUpdate
+	changedFields := make([]string, 0, 4)
+	auditDetail := map[string]any{
+		"target_user_id": in.TargetUserID,
+	}
+	if in.Username != nil {
+		username, err := auth.NormalizeUsername(*in.Username)
+		if err != nil {
+			return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "username is invalid")
+		}
+		patch.UsernameSet = true
+		patch.Username = username
+		changedFields = append(changedFields, "username")
+		auditDetail["username"] = username
+	}
+	if in.Email != nil {
+		email, err := auth.NormalizeEmail(*in.Email)
+		if err != nil {
+			return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "email is invalid")
+		}
+		patch.EmailSet = true
+		patch.Email = optionalString(email)
+		changedFields = append(changedFields, "email")
+		auditDetail["email"] = email
+	}
+	if in.Nickname != nil {
+		nickname, err := auth.NormalizeNickname(*in.Nickname)
+		if err != nil {
+			return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "nickname is invalid")
+		}
+		patch.NicknameSet = true
+		patch.Nickname = optionalString(nickname)
+		changedFields = append(changedFields, "nickname")
+		auditDetail["nickname"] = nickname
+	}
+	if in.AvatarURL != nil {
+		avatarURL, err := normalizeAvatarURL(*in.AvatarURL)
+		if err != nil {
+			return nil, err
+		}
+		patch.AvatarURLSet = true
+		patch.AvatarURL = optionalString(avatarURL)
+		changedFields = append(changedFields, "avatar_url")
+		auditDetail["avatar_url"] = avatarURL
+	}
+	if len(changedFields) == 0 {
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "user profile patch must include at least one field")
+	}
+	auditDetail["changed_fields"] = changedFields
+
+	now := s.deps.Clock()
+	var updated *entity.User
+	if err := withTransaction(ctx, s.deps.Store, func(txStore *repo.Store) error {
+		if _, err := s.requireActiveAdminSetForUpdateWithStore(ctx, txStore, in.ActorUserID); err != nil {
+			return err
+		}
+		if _, err := txStore.Users.GetForUpdateByID(ctx, in.TargetUserID); err != nil {
+			if repo.IsNotFound(err) {
+				return errs.New(errs.CodeIdentityUserNotFound, "target user not found")
+			}
+			return errs.Wrap(err, errs.CodeIdentityInternal, "load target user failed")
+		}
+
+		updatedUser, err := txStore.Users.UpdateUserProfile(ctx, in.TargetUserID, patch, now)
+		if err != nil {
+			if conflictKind, ok := repo.ParseUniqueViolation(err); ok {
+				switch conflictKind {
+				case repo.UniqueViolationUsername:
+					return errs.Wrap(err, errs.CodeIdentityUsernameAlreadyExists, "username already exists")
+				case repo.UniqueViolationEmail:
+					return errs.Wrap(err, errs.CodeIdentityEmailAlreadyExists, "email already exists")
+				}
+			}
+			return errs.Wrap(err, errs.CodeIdentityInternal, "update user profile failed")
+		}
+		updated = updatedUser
+		writeAudit(ctx, txStore, auditInput{
+			UserID:    &in.ActorUserID,
+			EventType: auth.AuditEventAdminUpdateUserProfile,
+			Result:    auth.AuditResultSuccess,
+			ClientIP:  stringPtr(in.ClientIP),
+			Detail:    auth.MarshalAuditDetail(auditDetail),
+		})
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return &AdminUserResult{User: updated}, nil
+}
+
 // DeleteUser soft deletes a target user by an active administrator.
 // DeleteUser 由活跃管理员软删除目标用户。
 func (s *UserManagementService) DeleteUser(ctx context.Context, in DeleteUserInput) error {

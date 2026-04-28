@@ -55,6 +55,32 @@ func BuildSsoCallbackRequest(req *types.AuthSsoCallbackReq) *pb.FinishSsoLoginRe
 	}
 }
 
+// BuildEmailSsoStartRequest maps current-user email reauthentication start requests.
+// BuildEmailSsoStartRequest 转换当前用户邮箱重验发起请求。
+func BuildEmailSsoStartRequest(userID string, req *types.AuthEmailSsoStartReq) *pb.StartSsoReauthRequest {
+	return &pb.StartSsoReauthRequest{
+		UserId:      userID,
+		Provider:    req.Provider,
+		RedirectUri: req.RedirectUri,
+		State:       req.State,
+	}
+}
+
+// BuildUpdateEmailRequest maps current-user email update requests.
+// BuildUpdateEmailRequest 转换当前用户邮箱修改请求。
+func BuildUpdateEmailRequest(userID string, req *types.AuthUpdateEmailReq) *pb.UpdateOwnEmailRequest {
+	return &pb.UpdateOwnEmailRequest{
+		UserId:             userID,
+		Email:              req.Email,
+		VerificationMethod: req.VerificationMethod,
+		CurrentPassword:    req.CurrentPassword,
+		Provider:           req.Provider,
+		Code:               req.Code,
+		State:              req.State,
+		RedirectUri:        req.RedirectUri,
+	}
+}
+
 // BuildRefreshRequest maps HTTP refresh request.
 // BuildRefreshRequest 转换刷新 token 请求。
 

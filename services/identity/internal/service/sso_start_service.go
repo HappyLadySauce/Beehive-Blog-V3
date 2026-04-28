@@ -8,6 +8,12 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/auth"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/entity"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/internal/model/repo"
+)
+
+const (
+	oauthStatePurposeLogin       = "login"
+	oauthStatePurposeEmailUpdate = "email_update"
 )
 
 // SSOStartService handles outbound SSO authorize URL generation.
@@ -25,6 +31,55 @@ func NewSSOStartService(deps Dependencies) *SSOStartService {
 // Execute validates provider readiness and persists OAuth state.
 // Execute 校验 provider 就绪状态并持久化 OAuth state。
 func (s *SSOStartService) Execute(ctx context.Context, in StartSSOInput) (*StartSSOResult, error) {
+	return s.start(ctx, ssoStartParams{
+		Provider:    in.Provider,
+		RedirectURI: in.RedirectURI,
+		State:       in.State,
+		ClientIP:    in.ClientIP,
+		Purpose:     oauthStatePurposeLogin,
+		EventType:   auth.AuditEventStartSSO,
+	})
+}
+
+// ExecuteReauth starts an SSO reauthentication flow for sensitive account changes.
+// ExecuteReauth 为敏感账号变更发起 SSO 重验流程。
+func (s *SSOStartService) ExecuteReauth(ctx context.Context, in StartSSOReauthInput) (*StartSSOResult, error) {
+	if in.UserID <= 0 {
+		return nil, errs.New(errs.CodeIdentityInvalidArgument, "user_id is invalid")
+	}
+	user, err := s.deps.Store.Users.GetByID(ctx, in.UserID)
+	if err != nil {
+		if repo.IsNotFound(err) {
+			return nil, errs.New(errs.CodeIdentityUserNotFound, "user not found")
+		}
+		return nil, errs.Wrap(err, errs.CodeIdentityInternal, "load user failed")
+	}
+	if err := validateActiveUserStatus(user.Status); err != nil {
+		return nil, err
+	}
+
+	return s.start(ctx, ssoStartParams{
+		Provider:      in.Provider,
+		RedirectURI:   in.RedirectURI,
+		State:         in.State,
+		ClientIP:      in.ClientIP,
+		Purpose:       oauthStatePurposeEmailUpdate,
+		SubjectUserID: &in.UserID,
+		EventType:     auth.AuditEventStartSSOReauth,
+	})
+}
+
+type ssoStartParams struct {
+	Provider      string
+	RedirectURI   string
+	State         string
+	ClientIP      string
+	Purpose       string
+	SubjectUserID *int64
+	EventType     string
+}
+
+func (s *SSOStartService) start(ctx context.Context, in ssoStartParams) (*StartSSOResult, error) {
 	providerName, err := auth.NormalizeProvider(in.Provider)
 	if err != nil {
 		return nil, errs.Wrap(err, errs.CodeIdentityInvalidArgument, "unsupported provider")
@@ -48,7 +103,7 @@ func (s *SSOStartService) Execute(ctx context.Context, in StartSSOInput) (*Start
 	if !providerItem.LoginReady() {
 		writeAudit(ctx, s.deps.Store, auditInput{
 			Provider:  stringPtr(providerName),
-			EventType: auth.AuditEventStartSSO,
+			EventType: in.EventType,
 			Result:    auth.AuditResultFailure,
 			ClientIP:  stringPtr(in.ClientIP),
 			Detail: auth.MarshalAuditDetail(map[string]any{
@@ -66,10 +121,12 @@ func (s *SSOStartService) Execute(ctx context.Context, in StartSSOInput) (*Start
 
 	now := s.deps.Clock()
 	stateRow := &entity.OAuthLoginState{
-		Provider:    providerName,
-		State:       state,
-		RedirectURI: redirectURI,
-		ExpiresAt:   now.Add(time.Duration(s.deps.Config.Security.StateTTLSeconds) * time.Second),
+		Provider:      providerName,
+		State:         state,
+		RedirectURI:   redirectURI,
+		Purpose:       in.Purpose,
+		SubjectUserID: in.SubjectUserID,
+		ExpiresAt:     now.Add(time.Duration(s.deps.Config.Security.StateTTLSeconds) * time.Second),
 	}
 	if err := s.deps.Store.OAuthLoginStates.Create(ctx, stateRow); err != nil {
 		return nil, err
@@ -77,7 +134,7 @@ func (s *SSOStartService) Execute(ctx context.Context, in StartSSOInput) (*Start
 
 	writeAudit(ctx, s.deps.Store, auditInput{
 		Provider:  stringPtr(providerName),
-		EventType: auth.AuditEventStartSSO,
+		EventType: in.EventType,
 		Result:    auth.AuditResultSuccess,
 		ClientIP:  stringPtr(in.ClientIP),
 	})

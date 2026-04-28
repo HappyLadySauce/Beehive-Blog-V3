@@ -20,6 +20,7 @@ import type {
   StudioAuditListParams,
   StudioAuditsResponse,
   StudioMutationResponse,
+  StudioUpdateUserProfileRequest,
   StudioUserListParams,
   StudioUserResponse,
   StudioUsersResponse,
@@ -58,6 +59,13 @@ export function createLiveStudioApi(): StudioApi {
     deleteUser(userId, options) {
       return requestJson<StudioMutationResponse>(`${studioBasePath}/users/${encodeURIComponent(userId)}`, {
         method: 'DELETE',
+        accessToken: options?.accessToken,
+      })
+    },
+    updateUserProfile(userId, payload: StudioUpdateUserProfileRequest, options) {
+      return requestJson<StudioUserResponse>(`${studioBasePath}/users/${encodeURIComponent(userId)}/profile`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
         accessToken: options?.accessToken,
       })
     },
@@ -103,9 +111,11 @@ export function createLiveStudioApi(): StudioApi {
       })
     },
     createContent(payload: ContentWriteRequest, options) {
+      const createPayload = { ...payload }
+      delete createPayload.status
       return requestJson<ContentDetailResponse>(`${studioContentBasePath}/items`, {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(createPayload),
         accessToken: options?.accessToken,
       })
     },

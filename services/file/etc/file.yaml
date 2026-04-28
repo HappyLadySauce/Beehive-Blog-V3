@@ -1,0 +1,63 @@
+Name: file.rpc
+ListenOn: 0.0.0.0:8093
+Mode: dev
+
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: file.rpc
+
+Postgres:
+  Host: 127.0.0.1
+  Port: 5432
+  User: postgres
+  Password: postgres
+  DBName: beehive_blog_v3
+  SSLMode: disable
+  TimeZone: Asia/Shanghai
+  ConnectTimeoutSeconds: 5
+  MaxOpenConns: 20
+  MaxIdleConns: 10
+  ConnMaxLifetimeSeconds: 1800
+  ConnMaxIdleTimeSeconds: 600
+
+InternalAuthToken: "replace-me-with-a-shared-internal-secret"
+AllowedCallers:
+  - gateway
+
+ObjectStorage:
+  Enabled: false
+  Endpoint: "http://127.0.0.1:9000"
+  Region: "us-east-1"
+  Bucket: "beehive"
+  AccessKeyID: ""
+  SecretAccessKey: ""
+  PublicBaseURL: "http://127.0.0.1:9000/beehive"
+  PresignTTLSeconds: 300
+  MaxBytesByScope:
+    avatar: 2097152
+    content_cover: 5242880
+    content_image: 5242880
+    attachment: 20971520
+  AllowedContentTypesByScope:
+    avatar:
+      - image/png
+      - image/jpeg
+      - image/webp
+      - image/avif
+    content_cover:
+      - image/png
+      - image/jpeg
+      - image/webp
+      - image/avif
+    content_image:
+      - image/png
+      - image/jpeg
+      - image/webp
+      - image/avif
+    attachment:
+      - image/png
+      - image/jpeg
+      - image/webp
+      - image/avif
+      - application/pdf

@@ -45,6 +45,24 @@ type AuthUpdateProfileReq struct {
 	AvatarUrl     *string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
 }
 
+type AuthEmailSsoStartReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Provider      string `json:"provider,options=github|qq|wechat,example=github" validate:"required,min=1,max=64"`
+	RedirectUri   string `json:"redirect_uri,example=https://app.example.com/auth/sso/callback/github" validate:"required,url,max=2048"`
+	State         string `json:"state,optional,example=state_01J8SSOREAUTHEXAMPLE" validate:"omitempty,max=512"`
+}
+
+type AuthUpdateEmailReq struct {
+	Authorization      string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Email              string `json:"email,example=alice.new@example.com" validate:"required,email,max=320"`
+	VerificationMethod string `json:"verification_method,options=password|sso,example=password" validate:"required,oneof=password sso"`
+	CurrentPassword    string `json:"current_password,optional,example=Str0ngP@ssw0rd!" validate:"omitempty,max=128"`
+	Provider           string `json:"provider,optional,options=github|qq|wechat,example=github" validate:"omitempty,max=64"`
+	Code               string `json:"code,optional,example=gho_example_callback_code" validate:"omitempty,max=4096"`
+	State              string `json:"state,optional,example=state_01J8SSOREAUTHEXAMPLE" validate:"omitempty,max=512"`
+	RedirectUri        string `json:"redirect_uri,optional,example=https://app.example.com/auth/sso/callback/github" validate:"omitempty,url,max=2048"`
+}
+
 type AuthChangePasswordReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 	OldPassword   string `json:"old_password,example=OldStr0ngP@ssw0rd!" validate:"required,min=1,max=128"`
@@ -101,6 +119,15 @@ type AdminUpdateUserStatusReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 	UserId        string `path:"user_id,example=1" validate:"required"`
 	Status        string `json:"status,options=active|disabled|locked,example=disabled" validate:"required"`
+}
+
+type AdminUpdateUserProfileReq struct {
+	Authorization string  `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	UserId        string  `path:"user_id,example=1" validate:"required"`
+	Username      *string `json:"username,optional,example=beehive_user_01" validate:"omitempty,min=3,max=64"`
+	Email         *string `json:"email,optional,example=alice@example.com" validate:"omitempty,email,max=320"`
+	Nickname      *string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
+	AvatarUrl     *string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
 }
 
 type AdminResetUserPasswordReq struct {
@@ -237,6 +264,60 @@ type AuthUserProfile struct {
 	AvatarUrl string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png"`
 	Role      string `json:"role,example=user"`
 	Status    string `json:"status,example=active"`
+}
+
+type FileAssetView struct {
+	AssetId     string `json:"asset_id,example=asset_01J8FILEEXAMPLE"`
+	UploadId    string `json:"upload_id,example=upload_01J8FILEEXAMPLE"`
+	OwnerUserId string `json:"owner_user_id,example=1"`
+	Scope       string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar"`
+	Visibility  string `json:"visibility,options=public|private,example=public"`
+	Status      string `json:"status,options=pending|uploaded|deleted,example=pending"`
+	Bucket      string `json:"bucket,example=beehive"`
+	ObjectKey   string `json:"object_key,example=avatars/1/01J8AVATAR.png"`
+	PublicUrl   string `json:"public_url,example=https://cdn.example.com/avatars/1/01J8AVATAR.png"`
+	FileName    string `json:"file_name,example=avatar.png"`
+	ContentType string `json:"content_type,example=image/png"`
+	ByteSize    int64  `json:"byte_size,example=153600"`
+	CreatedAt   int64  `json:"created_at,example=1713772800"`
+	ExpiresAt   int64  `json:"expires_at,example=1713776400"`
+	UploadedAt  int64  `json:"uploaded_at,optional,example=1713773000"`
+	DeletedAt   int64  `json:"deleted_at,optional,example=0"`
+}
+
+type FileUploadCreateReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Scope         string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar" validate:"required"`
+	FileName      string `json:"file_name,example=avatar.png" validate:"required,min=1,max=255"`
+	ContentType   string `json:"content_type,example=image/png" validate:"required,max=128"`
+	ByteSize      int64  `json:"byte_size,example=153600" validate:"required,min=1"`
+	Visibility    string `json:"visibility,optional,options=public|private,default=public,example=public"`
+}
+
+type FileUploadCreateResp struct {
+	Asset     FileAssetView     `json:"asset"`
+	UploadUrl string            `json:"upload_url,example=https://storage.example.com/bucket/avatars/1/avatar.png?X-Amz-Signature=..."`
+	Headers   map[string]string `json:"headers"`
+	ExpiresAt int64             `json:"expires_at,example=1713776400"`
+	MaxBytes  int64             `json:"max_bytes,example=2097152"`
+}
+
+type FileUploadCompleteReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	UploadId      string `path:"upload_id,example=upload_01J8FILEEXAMPLE" validate:"required"`
+}
+
+type FileAssetIdReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	AssetId       string `path:"asset_id,example=asset_01J8FILEEXAMPLE" validate:"required"`
+}
+
+type FileAssetResp struct {
+	Asset FileAssetView `json:"asset"`
+}
+
+type FileAssetDeleteResp struct {
+	Ok bool `json:"ok,example=true"`
 }
 
 type ContentArchiveResp struct {

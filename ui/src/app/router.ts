@@ -11,7 +11,7 @@ export const router = createRouter({
       children: [
         { path: '', name: 'public-home', component: () => import('@/pages/public/HomePage.vue') },
         { path: 'account/profile', name: 'account-profile', component: () => import('@/pages/studio/StudioProfilePage.vue'), meta: { requiresAuth: true } },
-        { path: 'account/change-password', name: 'account-change-password', component: () => import('@/pages/studio/StudioChangePasswordPage.vue'), meta: { requiresAuth: true } },
+        { path: 'account/change-password', redirect: '/account/profile' },
       ],
     },
     {
@@ -20,6 +20,7 @@ export const router = createRouter({
       children: [
         { path: 'login', name: 'auth-login', component: () => import('@/pages/auth/LoginPage.vue') },
         { path: 'register', name: 'auth-register', component: () => import('@/pages/auth/RegisterPage.vue') },
+        { path: 'auth/sso/callback/:provider', name: 'auth-sso-callback', component: () => import('@/pages/auth/SsoCallbackPage.vue') },
         { path: 'studio/login', name: 'studio-login', component: () => import('@/pages/studio/StudioLoginPage.vue') },
       ],
     },
@@ -30,10 +31,12 @@ export const router = createRouter({
       children: [
         { path: '', name: 'studio-dashboard', component: () => import('@/pages/studio/StudioDashboardPage.vue') },
         { path: 'content', name: 'studio-content', component: () => import('@/pages/studio/StudioContentPage.vue') },
+        { path: 'content/new', name: 'studio-content-new', component: () => import('@/pages/studio/ContentEditorPage.vue') },
+        { path: 'content/:content_id/edit', name: 'studio-content-edit', component: () => import('@/pages/studio/ContentEditorPage.vue') },
         { path: 'users', name: 'studio-users', component: () => import('@/pages/studio/StudioUsersPage.vue') },
         { path: 'audits', name: 'studio-audits', component: () => import('@/pages/studio/StudioAuditsPage.vue') },
-        { path: 'profile', name: 'studio-profile', component: () => import('@/pages/studio/StudioProfilePage.vue') },
-        { path: 'change-password', name: 'studio-change-password', component: () => import('@/pages/studio/StudioChangePasswordPage.vue') },
+        { path: 'profile', redirect: '/account/profile' },
+        { path: 'change-password', redirect: '/studio' },
         { path: 'settings', name: 'studio-settings', component: () => import('@/pages/studio/StudioSettingsPage.vue') },
       ],
     },

@@ -12,10 +12,12 @@ import type {
   AuthRefreshResponse,
   AuthRegisterRequest,
   AuthRegisterResponse,
+  AuthEmailSsoStartRequest,
   AuthSsoCallbackRequest,
   AuthSsoCallbackResponse,
   AuthSsoStartRequest,
   AuthSsoStartResponse,
+  AuthUpdateEmailRequest,
 } from '../types'
 
 export interface AuthRequestOptions {
@@ -30,6 +32,8 @@ export interface AuthApi {
   logout(payload?: AuthLogoutRequest, options?: AuthRequestOptions): Promise<AuthLogoutResponse>
   startSso(payload: AuthSsoStartRequest): Promise<AuthSsoStartResponse>
   finishSso(payload: AuthSsoCallbackRequest): Promise<AuthSsoCallbackResponse>
+  startEmailSso(payload: AuthEmailSsoStartRequest, options?: AuthRequestOptions): Promise<AuthSsoStartResponse>
+  updateEmail(payload: AuthUpdateEmailRequest, options?: AuthRequestOptions): Promise<AuthMeResponse>
 }
 
 export function createAuthApi(mode: ApiMode = appConfig.apiMode): AuthApi {

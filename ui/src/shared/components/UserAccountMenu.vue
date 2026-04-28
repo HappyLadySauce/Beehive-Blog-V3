@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ChevronDown, KeyRound, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, UserPlus } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, shallowRef, useTemplateRef, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 
 import type { AuthUserProfile } from '@/features/auth/types'
 
@@ -14,21 +14,55 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   logout: []
+  changePassword: []
 }>()
 
-const menuRef = useTemplateRef<HTMLDetailsElement>('accountMenu')
+const route = useRoute()
+const triggerRef = useTemplateRef<HTMLButtonElement>('menuTrigger')
+const panelRef = useTemplateRef<HTMLElement>('menuPanel')
+const isOpen = shallowRef(false)
+const panelStyle = reactive({
+  top: '0px',
+  left: '0px',
+})
+
 const isAuthenticated = computed(() => props.user !== null)
 const isAdmin = computed(() => (props.user?.role ?? '').toLowerCase().replace(/^role_/, '') === 'admin')
 const showAdminLinks = computed(() => isAdmin.value && props.surface !== 'studio')
+const showProfileLink = computed(() => props.surface !== 'studio')
 const displayName = computed(() => props.user?.nickname || props.user?.username || 'Account')
 const email = computed(() => props.user?.email || 'Sign in to continue')
-const profilePath = computed(() => props.surface === 'studio' ? '/studio/profile' : '/account/profile')
-const passwordPath = computed(() => props.surface === 'studio' ? '/studio/change-password' : '/account/change-password')
+
+function updatePanelPosition(): void {
+  const trigger = triggerRef.value
+  if (!trigger) {
+    return
+  }
+
+  const rect = trigger.getBoundingClientRect()
+  const width = Math.min(220, Math.max(180, window.innerWidth - 24))
+  const left = Math.min(Math.max(12, rect.right - width), window.innerWidth - width - 12)
+  panelStyle.top = `${rect.bottom + 8}px`
+  panelStyle.left = `${left}px`
+}
+
+async function openMenu(): Promise<void> {
+  isOpen.value = true
+  await nextTick()
+  updatePanelPosition()
+  panelRef.value?.focus()
+}
 
 function closeMenu(): void {
-  if (menuRef.value) {
-    menuRef.value.open = false
+  isOpen.value = false
+}
+
+function toggleMenu(): void {
+  if (isOpen.value) {
+    closeMenu()
+    return
   }
+  void openMenu()
 }
 
 function handleLogout(): void {
@@ -36,11 +70,20 @@ function handleLogout(): void {
   emit('logout')
 }
 
+function handleChangePassword(): void {
+  closeMenu()
+  emit('changePassword')
+}
+
 function handleDocumentPointerDown(event: PointerEvent): void {
-  if (!menuRef.value?.open) {
+  if (!isOpen.value) {
     return
   }
-  if (event.target instanceof Node && menuRef.value.contains(event.target)) {
+  const target = event.target
+  if (!(target instanceof Node)) {
+    return
+  }
+  if (triggerRef.value?.contains(target) || panelRef.value?.contains(target)) {
     return
   }
   closeMenu()
@@ -52,62 +95,94 @@ function handleDocumentKeydown(event: KeyboardEvent): void {
   }
 }
 
+function handleWindowChange(): void {
+  if (isOpen.value) {
+    updatePanelPosition()
+  }
+}
+
+watch(() => route.fullPath, closeMenu)
+
 onMounted(() => {
   document.addEventListener('pointerdown', handleDocumentPointerDown)
   document.addEventListener('keydown', handleDocumentKeydown)
+  window.addEventListener('resize', handleWindowChange)
+  window.addEventListener('scroll', handleWindowChange, true)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', handleDocumentPointerDown)
   document.removeEventListener('keydown', handleDocumentKeydown)
+  window.removeEventListener('resize', handleWindowChange)
+  window.removeEventListener('scroll', handleWindowChange, true)
 })
 </script>
 
 <template>
-  <details ref="accountMenu" class="account-menu">
-    <summary class="account-menu__summary" aria-label="Open account menu">
+  <div class="account-menu">
+    <button
+      ref="menuTrigger"
+      class="account-menu__summary"
+      type="button"
+      aria-haspopup="menu"
+      :aria-expanded="isOpen"
+      aria-label="Open account menu"
+      @click="toggleMenu"
+    >
       <UserAvatar :name="displayName" :src="user?.avatar_url" size="md" />
       <span class="account-menu__identity">
         <strong>{{ displayName }}</strong>
         <span>{{ email }}</span>
       </span>
       <ChevronDown :size="16" aria-hidden="true" />
-    </summary>
-    <div class="account-menu__panel" role="menu">
-      <template v-if="isAuthenticated">
-      <RouterLink class="account-menu__item" :to="profilePath" role="menuitem" @click="closeMenu">
-        <User :size="16" aria-hidden="true" />
-        Profile
-      </RouterLink>
-      <RouterLink class="account-menu__item" :to="passwordPath" role="menuitem" @click="closeMenu">
-        <KeyRound :size="16" aria-hidden="true" />
-        Change password
-      </RouterLink>
-      <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
-        <LayoutDashboard :size="16" aria-hidden="true" />
-        Studio
-      </RouterLink>
-      <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio/users" role="menuitem" @click="closeMenu">
-        <ShieldCheck :size="16" aria-hidden="true" />
-        Users
-      </RouterLink>
-      <button class="account-menu__item account-menu__item--danger" type="button" role="menuitem" @click="handleLogout">
-        <LogOut :size="16" aria-hidden="true" />
-        Logout
-      </button>
-      </template>
-      <template v-else>
-      <RouterLink class="account-menu__item" to="/login" role="menuitem" @click="closeMenu">
-        <LogIn :size="16" aria-hidden="true" />
-        Login
-      </RouterLink>
-      <RouterLink class="account-menu__item" to="/register" role="menuitem" @click="closeMenu">
-        <UserPlus :size="16" aria-hidden="true" />
-        Register
-      </RouterLink>
-      </template>
-    </div>
-  </details>
+    </button>
+
+    <Teleport to="body">
+      <Transition name="account-menu-fade">
+        <div
+          v-if="isOpen"
+          ref="menuPanel"
+          class="account-menu__panel"
+          role="menu"
+          tabindex="-1"
+          :style="panelStyle"
+        >
+          <template v-if="isAuthenticated">
+            <RouterLink v-if="showProfileLink" class="account-menu__item" to="/account/profile" role="menuitem" @click="closeMenu">
+              <User :size="16" aria-hidden="true" />
+              Profile
+            </RouterLink>
+            <button class="account-menu__item" type="button" role="menuitem" @click="handleChangePassword">
+              <KeyRound :size="16" aria-hidden="true" />
+              Change password
+            </button>
+            <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
+              <LayoutDashboard :size="16" aria-hidden="true" />
+              Studio
+            </RouterLink>
+            <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio/users" role="menuitem" @click="closeMenu">
+              <ShieldCheck :size="16" aria-hidden="true" />
+              Users
+            </RouterLink>
+            <button class="account-menu__item account-menu__item--danger" type="button" role="menuitem" @click="handleLogout">
+              <LogOut :size="16" aria-hidden="true" />
+              Logout
+            </button>
+          </template>
+          <template v-else>
+            <RouterLink class="account-menu__item" to="/login" role="menuitem" @click="closeMenu">
+              <LogIn :size="16" aria-hidden="true" />
+              Login
+            </RouterLink>
+            <RouterLink class="account-menu__item" to="/register" role="menuitem" @click="closeMenu">
+              <UserPlus :size="16" aria-hidden="true" />
+              Register
+            </RouterLink>
+          </template>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
 </template>
 
 <style scoped>
@@ -121,15 +196,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 10px;
+  border: 0;
   border-radius: 8px;
   padding: 4px 8px 4px 4px;
-  list-style: none;
   color: var(--bb-color-text);
+  background: transparent;
   cursor: pointer;
-}
-
-.account-menu__summary::-webkit-details-marker {
-  display: none;
 }
 
 .account-menu__summary:focus-visible {
@@ -140,6 +212,7 @@ onBeforeUnmount(() => {
 .account-menu__identity {
   min-width: 0;
   display: grid;
+  text-align: left;
 }
 
 .account-menu__identity strong,
@@ -155,11 +228,9 @@ onBeforeUnmount(() => {
 }
 
 .account-menu__panel {
-  position: absolute;
-  z-index: 120;
-  top: calc(100% + 8px);
-  right: 0;
-  width: min(220px, calc(100vw - 32px));
+  position: fixed;
+  z-index: 1200;
+  width: min(220px, calc(100vw - 24px));
   display: grid;
   gap: 4px;
   border: 1px solid var(--bb-color-line);
@@ -167,6 +238,10 @@ onBeforeUnmount(() => {
   padding: 6px;
   background: var(--bb-color-surface);
   box-shadow: var(--bb-shadow-panel);
+}
+
+.account-menu__panel:focus {
+  outline: none;
 }
 
 .account-menu__item {
@@ -193,6 +268,17 @@ onBeforeUnmount(() => {
 
 .account-menu__item--danger {
   color: var(--bb-color-danger);
+}
+
+.account-menu-fade-enter-active,
+.account-menu-fade-leave-active {
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.account-menu-fade-enter-from,
+.account-menu-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 @media (max-width: 640px) {

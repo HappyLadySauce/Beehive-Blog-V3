@@ -28,7 +28,7 @@ func NewReadyzLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ReadyzLogi
 }
 
 func (l *ReadyzLogic) Readyz() (resp *types.ReadyzResp, err error) {
-	if l.svcCtx == nil || l.svcCtx.IdentityProbe == nil || l.svcCtx.ContentProbe == nil {
+	if l.svcCtx == nil || l.svcCtx.IdentityProbe == nil || l.svcCtx.ContentProbe == nil || l.svcCtx.FileProbe == nil {
 		l.logger.Error(
 			"readyz_check",
 			errs.New(errs.CodeGatewayNotReady, "service is not ready"),
@@ -54,6 +54,14 @@ func (l *ReadyzLogic) Readyz() (resp *types.ReadyzResp, err error) {
 			"readyz_check",
 			err,
 			logs.String("dependency", "content"),
+		)
+		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
+	}
+	if err := l.svcCtx.FileProbe.Check(probeCtx); err != nil {
+		l.logger.Error(
+			"readyz_check",
+			err,
+			logs.String("dependency", "file"),
 		)
 		return &types.ReadyzResp{Status: "not_ready"}, errs.Wrap(err, errs.CodeGatewayNotReady, "service is not ready")
 	}

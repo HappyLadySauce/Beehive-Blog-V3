@@ -43,6 +43,16 @@ func (s *IdentityServer) FinishSsoLogin(ctx context.Context, in *pb.FinishSsoLog
 	return l.FinishSsoLogin(in)
 }
 
+func (s *IdentityServer) StartSsoReauth(ctx context.Context, in *pb.StartSsoReauthRequest) (*pb.StartSsoLoginResponse, error) {
+	l := logic.NewStartSsoReauthLogic(ctx, s.svcCtx)
+	return l.StartSsoReauth(in)
+}
+
+func (s *IdentityServer) UpdateOwnEmail(ctx context.Context, in *pb.UpdateOwnEmailRequest) (*pb.UpdateOwnEmailResponse, error) {
+	l := logic.NewUpdateOwnEmailLogic(ctx, s.svcCtx)
+	return l.UpdateOwnEmail(in)
+}
+
 func (s *IdentityServer) RefreshSessionToken(ctx context.Context, in *pb.RefreshSessionTokenRequest) (*pb.RefreshSessionTokenResponse, error) {
 	l := logic.NewRefreshSessionTokenLogic(ctx, s.svcCtx)
 	return l.RefreshSessionToken(in)
@@ -81,6 +91,11 @@ func (s *IdentityServer) UpdateUserRole(ctx context.Context, in *pb.UpdateUserRo
 func (s *IdentityServer) UpdateUserStatus(ctx context.Context, in *pb.UpdateUserStatusRequest) (*pb.UpdateUserStatusResponse, error) {
 	l := logic.NewUpdateUserStatusLogic(ctx, s.svcCtx)
 	return l.UpdateUserStatus(in)
+}
+
+func (s *IdentityServer) UpdateUserProfile(ctx context.Context, in *pb.UpdateUserProfileRequest) (*pb.UpdateUserProfileResponse, error) {
+	l := logic.NewUpdateUserProfileLogic(ctx, s.svcCtx)
+	return l.UpdateUserProfile(in)
 }
 
 func (s *IdentityServer) ResetUserPassword(ctx context.Context, in *pb.ResetUserPasswordRequest) (*pb.ResetUserPasswordResponse, error) {

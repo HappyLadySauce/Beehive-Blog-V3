@@ -131,8 +131,65 @@ func TestUserManagementServiceAdminMutationsAndAudits(t *testing.T) {
 	deleteTarget := createUserWithRole(t, deps.Store, auth.UserRoleMember, auth.UserStatusActive)
 	deleteSession := testkit.CreateSession(t, deps.Store, deleteTarget.ID)
 	deleteRefreshToken := testkit.CreateRefreshToken(t, deps.Store, deleteSession.ID, auth.HashRefreshToken("delete-refresh-token"))
+	conflictUser := createUserWithRole(t, deps.Store, auth.UserRoleMember, auth.UserStatusActive)
 
 	svc := service.NewUserManagementService(deps)
+	username := "managed_user"
+	email := "managed@example.com"
+	nickname := "Managed User"
+	avatarURL := "https://cdn.example.com/managed.png"
+	profileResult, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: target.ID,
+		Username:     &username,
+		Email:        &email,
+		Nickname:     &nickname,
+		AvatarURL:    &avatarURL,
+	})
+	if err != nil {
+		t.Fatalf("expected profile update to succeed, got %v", err)
+	}
+	if profileResult.User.Username != username || profileResult.User.Email == nil || *profileResult.User.Email != email {
+		t.Fatalf("expected profile fields to update, got %+v", profileResult.User)
+	}
+	if profileResult.User.Nickname == nil || *profileResult.User.Nickname != nickname {
+		t.Fatalf("expected nickname to update, got %#v", profileResult.User.Nickname)
+	}
+	selfNickname := "Admin Owner"
+	selfResult, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: admin.ID,
+		Nickname:     &selfNickname,
+	})
+	if err != nil {
+		t.Fatalf("expected admin to update own basic profile, got %v", err)
+	}
+	if selfResult.User.Nickname == nil || *selfResult.User.Nickname != selfNickname {
+		t.Fatalf("expected admin self nickname to update, got %#v", selfResult.User.Nickname)
+	}
+	if _, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: target.ID,
+	}); !errors.Is(err, errs.E(errs.CodeIdentityInvalidArgument)) {
+		t.Fatalf("expected empty profile patch to be rejected, got %v", err)
+	}
+	duplicateUsername := conflictUser.Username
+	if _, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: target.ID,
+		Username:     &duplicateUsername,
+	}); !errors.Is(err, errs.E(errs.CodeIdentityUsernameAlreadyExists)) {
+		t.Fatalf("expected username conflict, got %v", err)
+	}
+	duplicateEmail := *conflictUser.Email
+	if _, err := svc.UpdateUserProfile(context.Background(), service.UpdateUserProfileInput{
+		ActorUserID:  admin.ID,
+		TargetUserID: target.ID,
+		Email:        &duplicateEmail,
+	}); !errors.Is(err, errs.E(errs.CodeIdentityEmailAlreadyExists)) {
+		t.Fatalf("expected email conflict, got %v", err)
+	}
+
 	roleResult, err := svc.UpdateUserRole(context.Background(), service.UpdateUserRoleInput{
 		ActorUserID:  admin.ID,
 		TargetUserID: target.ID,

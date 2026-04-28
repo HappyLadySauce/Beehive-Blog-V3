@@ -36,10 +36,15 @@ type IdentityRPCConf = InternalRPCConf
 // ContentRPCConf 定义 gateway 访问 content RPC 服务的配置。
 type ContentRPCConf = InternalRPCConf
 
+// FileRPCConf defines gateway access to the file RPC service.
+// FileRPCConf 定义 gateway 访问 file RPC 服务的配置。
+type FileRPCConf = InternalRPCConf
+
 type Config struct {
 	rest.RestConf
 	IdentityRPC IdentityRPCConf
 	ContentRPC  ContentRPCConf
+	FileRPC     FileRPCConf
 	Security    GatewaySecurityConf
 }
 
@@ -84,6 +89,12 @@ func (c Config) Validate() error {
 	}
 	if strings.TrimSpace(c.ContentRPC.InternalCallerName) == "" {
 		return fmt.Errorf("ContentRPC.InternalCallerName is required")
+	}
+	if strings.TrimSpace(c.FileRPC.InternalAuthToken) == "" {
+		return fmt.Errorf("FileRPC.InternalAuthToken is required")
+	}
+	if strings.TrimSpace(c.FileRPC.InternalCallerName) == "" {
+		return fmt.Errorf("FileRPC.InternalCallerName is required")
 	}
 
 	return nil

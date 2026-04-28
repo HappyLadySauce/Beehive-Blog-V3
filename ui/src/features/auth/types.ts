@@ -101,3 +101,15 @@ export interface AuthSsoCallbackRequest {
 }
 
 export type AuthSsoCallbackResponse = AuthRegisterResponse
+
+export interface AuthEmailSsoStartRequest extends AuthSsoStartRequest {}
+
+export interface AuthUpdateEmailRequest {
+  email: string
+  verification_method: 'password' | 'sso'
+  current_password?: string
+  provider?: AuthProvider
+  code?: string
+  state?: string
+  redirect_uri?: string
+}

@@ -90,6 +90,14 @@ func ToUpdateProfileResponse(resp *pb.UpdateOwnProfileResponse) *types.AuthMeRes
 	}
 }
 
+// ToUpdateEmailResponse maps identity email update response.
+// ToUpdateEmailResponse 转换 identity 邮箱修改响应。
+func ToUpdateEmailResponse(resp *pb.UpdateOwnEmailResponse) *types.AuthMeResp {
+	return &types.AuthMeResp{
+		User: toUserProfile(resp.GetCurrentUser()),
+	}
+}
+
 // ToChangePasswordResponse maps identity password change response.
 // ToChangePasswordResponse 转换 identity 密码修改响应。
 

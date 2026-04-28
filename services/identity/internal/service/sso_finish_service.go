@@ -129,6 +129,9 @@ func (s *SSOFinishService) Execute(ctx context.Context, in FinishSSOInput) (*Aut
 		if lockedState.RedirectURI != redirectURI {
 			return newSSOStateFailure("state_redirect_mismatch", errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
 		}
+		if lockedState.Purpose != "" && lockedState.Purpose != oauthStatePurposeLogin {
+			return newSSOStateFailure("state_purpose_mismatch", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
+		}
 
 		fed, err := store.FederatedIdentities.GetByProviderIdentity(ctx, providerName, profile.Subject, profile.OpenID, profile.UnionID)
 		if err != nil && !repo.IsNotFound(err) {
@@ -311,6 +314,9 @@ func (s *SSOFinishService) validateOAuthState(ctx context.Context, providerName,
 		}
 		if stateRow.RedirectURI != redirectURI {
 			return newSSOStateFailure("state_redirect_mismatch", errs.CodeIdentityInvalidArgument, "redirect_uri mismatch")
+		}
+		if stateRow.Purpose != "" && stateRow.Purpose != oauthStatePurposeLogin {
+			return newSSOStateFailure("state_purpose_mismatch", errs.CodeIdentitySSOStateInvalid, "sso state is invalid")
 		}
 
 		result.ID = stateRow.ID

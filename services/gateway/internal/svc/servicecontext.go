@@ -7,8 +7,10 @@ import (
 	"fmt"
 
 	contentpb "github.com/HappyLadySauce/Beehive-Blog-V3/services/content/pb"
+	filepb "github.com/HappyLadySauce/Beehive-Blog-V3/services/file/pb"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/config"
 	contentadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/content"
+	fileadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/file"
 	identityadapter "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/identity"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/middleware"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/identity/pb"
@@ -22,6 +24,8 @@ type ServiceContext struct {
 	IdentityProbe         identityadapter.ReadinessChecker
 	ContentClient         contentpb.ContentClient
 	ContentProbe          contentadapter.ReadinessChecker
+	FileClient            filepb.FileServiceClient
+	FileProbe             fileadapter.ReadinessChecker
 	AuthMiddleware        rest.Middleware
 	RequestMetaMiddleware rest.Middleware
 }
@@ -45,6 +49,13 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	contentClient := contentpb.NewContentClient(contentRPC.Conn())
 	contentProbe := contentadapter.NewProbe(contentClient, c.ContentRPC)
 
+	fileRPC, err := zrpc.NewClient(c.FileRPC.RpcClientConf)
+	if err != nil {
+		return nil, fmt.Errorf("create file rpc client: %w", err)
+	}
+	fileClient := filepb.NewFileServiceClient(fileRPC.Conn())
+	fileProbe := fileadapter.NewProbe(fileClient, c.FileRPC)
+
 	authMiddleware := middleware.NewAuthMiddleware(identityClient, c.Security, c.IdentityRPC)
 	requestMetaMiddleware, err := middleware.NewRequestMetaMiddleware(c.Security)
 	if err != nil {
@@ -57,6 +68,8 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		IdentityProbe:         identityProbe,
 		ContentClient:         contentClient,
 		ContentProbe:          contentProbe,
+		FileClient:            fileClient,
+		FileProbe:             fileProbe,
 		AuthMiddleware:        authMiddleware.Handle,
 		RequestMetaMiddleware: requestMetaMiddleware.Handle,
 	}, nil

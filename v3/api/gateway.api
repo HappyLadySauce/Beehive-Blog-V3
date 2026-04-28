@@ -133,6 +133,22 @@ type (
 		Nickname      *string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
 		AvatarUrl     *string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
 	}
+	AuthEmailSsoStartReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		Provider      string `json:"provider,options=github|qq|wechat,example=github" validate:"required,min=1,max=64"`
+		RedirectUri   string `json:"redirect_uri,example=https://app.example.com/auth/sso/callback/github" validate:"required,url,max=2048"`
+		State         string `json:"state,optional,example=state_01J8SSOREAUTHEXAMPLE" validate:"omitempty,max=512"`
+	}
+	AuthUpdateEmailReq {
+		Authorization      string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		Email              string `json:"email,example=alice.new@example.com" validate:"required,email,max=320"`
+		VerificationMethod string `json:"verification_method,options=password|sso,example=password" validate:"required,oneof=password sso"`
+		CurrentPassword    string `json:"current_password,optional,example=Str0ngP@ssw0rd!" validate:"omitempty,max=128"`
+		Provider           string `json:"provider,optional,options=github|qq|wechat,example=github" validate:"omitempty,max=64"`
+		Code               string `json:"code,optional,example=gho_example_callback_code" validate:"omitempty,max=4096"`
+		State              string `json:"state,optional,example=state_01J8SSOREAUTHEXAMPLE" validate:"omitempty,max=512"`
+		RedirectUri        string `json:"redirect_uri,optional,example=https://app.example.com/auth/sso/callback/github" validate:"omitempty,url,max=2048"`
+	}
 	AuthChangePasswordReq {
 		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 		OldPassword   string `json:"old_password,example=OldStr0ngP@ssw0rd!" validate:"required,min=1,max=128"`
@@ -183,6 +199,14 @@ type (
 		UserId        string `path:"user_id,example=1" validate:"required"`
 		Status        string `json:"status,options=active|disabled|locked,example=disabled" validate:"required"`
 	}
+	AdminUpdateUserProfileReq {
+		Authorization string  `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		UserId        string  `path:"user_id,example=1" validate:"required"`
+		Username      *string `json:"username,optional,example=beehive_user_01" validate:"omitempty,min=3,max=64"`
+		Email         *string `json:"email,optional,example=alice@example.com" validate:"omitempty,email,max=320"`
+		Nickname      *string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
+		AvatarUrl     *string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
+	}
 	AdminResetUserPasswordReq {
 		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 		UserId        string `path:"user_id,example=1" validate:"required"`
@@ -228,6 +252,53 @@ type (
 	}
 	HealthzResp {
 		Status string `json:"status,example=ok"`
+	}
+	FileAssetView {
+		AssetId     string `json:"asset_id,example=asset_01J8FILEEXAMPLE"`
+		UploadId    string `json:"upload_id,example=upload_01J8FILEEXAMPLE"`
+		OwnerUserId string `json:"owner_user_id,example=1"`
+		Scope       string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar"`
+		Visibility  string `json:"visibility,options=public|private,example=public"`
+		Status      string `json:"status,options=pending|uploaded|deleted,example=pending"`
+		Bucket      string `json:"bucket,example=beehive"`
+		ObjectKey   string `json:"object_key,example=avatars/1/01J8AVATAR.png"`
+		PublicUrl   string `json:"public_url,example=https://cdn.example.com/avatars/1/01J8AVATAR.png"`
+		FileName    string `json:"file_name,example=avatar.png"`
+		ContentType string `json:"content_type,example=image/png"`
+		ByteSize    int64  `json:"byte_size,example=153600"`
+		CreatedAt   int64  `json:"created_at,example=1713772800"`
+		ExpiresAt   int64  `json:"expires_at,example=1713776400"`
+		UploadedAt  int64  `json:"uploaded_at,optional,example=1713773000"`
+		DeletedAt   int64  `json:"deleted_at,optional,example=0"`
+	}
+	FileUploadCreateReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		Scope         string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar" validate:"required"`
+		FileName      string `json:"file_name,example=avatar.png" validate:"required,min=1,max=255"`
+		ContentType   string `json:"content_type,example=image/png" validate:"required,max=128"`
+		ByteSize      int64  `json:"byte_size,example=153600" validate:"required,min=1"`
+		Visibility    string `json:"visibility,optional,options=public|private,default=public,example=public"`
+	}
+	FileUploadCreateResp {
+		Asset     FileAssetView     `json:"asset"`
+		UploadUrl string            `json:"upload_url,example=https://storage.example.com/bucket/avatars/1/avatar.png?X-Amz-Signature=..."`
+		Headers   map[string]string `json:"headers"`
+		ExpiresAt int64             `json:"expires_at,example=1713776400"`
+		MaxBytes  int64             `json:"max_bytes,example=2097152"`
+	}
+	FileUploadCompleteReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		UploadId      string `path:"upload_id,example=upload_01J8FILEEXAMPLE" validate:"required"`
+	}
+	FileAssetIdReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		AssetId       string `path:"asset_id,example=asset_01J8FILEEXAMPLE" validate:"required"`
+	}
+	FileAssetResp {
+		Asset FileAssetView `json:"asset"`
+	}
+	FileAssetDeleteResp {
+		Ok bool `json:"ok,example=true"`
 	}
 	ReadyzResp {
 		Status string `json:"status,example=ready"`
@@ -546,10 +617,51 @@ service gateway {
 	patch /me/profile (AuthUpdateProfileReq) returns (AuthMeResp)
 
 	@doc (
+		description: "100201-authorization required<br>100203-access token invalid<br>110101-invalid argument<br>110401-sso provider disabled<br>110402-sso provider not ready<br>119901-internal error"
+	)
+	@handler AuthEmailSsoStart
+	post /me/email/sso/start (AuthEmailSsoStartReq) returns (AuthSsoStartResp)
+
+	@doc (
+		description: "100201-authorization required<br>100203-access token invalid<br>110101-invalid argument<br>110201-invalid credentials<br>110405-sso state invalid<br>110501-user not found<br>110503-email already exists<br>119901-internal error"
+	)
+	@handler AuthUpdateEmail
+	patch /me/email (AuthUpdateEmailReq) returns (AuthMeResp)
+
+	@doc (
 		description: "100201-authorization required<br>100203-access token invalid<br>110101-invalid argument<br>110201-invalid credentials<br>110501-user not found<br>119901-internal error"
 	)
 	@handler AuthChangePassword
 	post /me/password (AuthChangePasswordReq) returns (AuthChangePasswordResp)
+}
+
+@server (
+	prefix:   /api/v3/files
+	group:    file
+	tags:     "Files"
+	authType: bearerAuth
+)
+service gateway {
+	@doc (
+		summary:                "Create direct file upload"
+		description: "100201-authorization required<br>100203-access token invalid<br>130101-invalid argument<br>130102-invalid scope<br>130103-invalid content type<br>130104-file too large<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileUploadCreate
+	post /uploads (FileUploadCreateReq) returns (FileUploadCreateResp)
+
+	@doc (
+		summary:                "Complete direct file upload"
+		description: "100201-authorization required<br>100203-access token invalid<br>130401-invalid state<br>130502-upload not found<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileUploadComplete
+	post /uploads/:upload_id/complete (FileUploadCompleteReq) returns (FileAssetResp)
+
+	@doc (
+		summary:                "Delete file asset"
+		description: "100201-authorization required<br>100203-access token invalid<br>130301-access forbidden<br>130501-asset not found<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileAssetDelete
+	delete /assets/:asset_id (FileAssetIdReq) returns (FileAssetDeleteResp)
 }
 
 @server (
@@ -579,6 +691,13 @@ service gateway {
 	)
 	@handler IdentityUserStatusUpdate
 	patch /users/:user_id/status (AdminUpdateUserStatusReq) returns (AdminUserResp)
+
+	@doc (
+		summary:                "Update user profile"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>110101-invalid argument<br>110501-user not found<br>110502-username already exists<br>110503-email already exists<br>119901-internal error"
+	)
+	@handler IdentityUserProfileUpdate
+	patch /users/:user_id/profile (AdminUpdateUserProfileReq) returns (AdminUserResp)
 
 	@doc (
 		summary:                "Reset user password"
@@ -742,7 +861,7 @@ service gateway {
 	get /healthz returns (HealthzResp)
 
 	@doc (
-		description: "100401-gateway not ready<br>100601-auth service unavailable<br>100603-content service unavailable<br>100602-upstream timeout<br>109901-internal error"
+		description: "100401-gateway not ready<br>100601-auth service unavailable<br>100603-content service unavailable<br>100604-file service unavailable<br>100602-upstream timeout<br>109901-internal error"
 	)
 	@handler Readyz
 	get /readyz returns (ReadyzResp)

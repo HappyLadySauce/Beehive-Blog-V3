@@ -174,6 +174,49 @@ export function createMockStudioApi(): StudioApi {
       user.updated_at = Math.floor(Date.now() / 1000)
       return { user: { ...user } }
     },
+    async updateUserProfile(userId, payload) {
+      const user = mockUsers.find((item) => item.user_id === userId)
+      if (!user) {
+        throw new Error('User not found.')
+      }
+      if (payload.username !== undefined) {
+        const username = payload.username.trim()
+        if (!/^[a-zA-Z0-9_]{3,32}$/.test(username)) {
+          throw new Error('Username must be 3-32 characters and contain only letters, digits, or underscores.')
+        }
+        if (mockUsers.some((item) => item.user_id !== userId && item.username === username)) {
+          throw new Error('Username already exists.')
+        }
+        user.username = username
+      }
+      if (payload.email !== undefined) {
+        const email = payload.email.trim().toLowerCase()
+        if (email.length > 0 && !email.includes('@')) {
+          throw new Error('Email is invalid.')
+        }
+        if (email.length > 0 && mockUsers.some((item) => item.user_id !== userId && item.email.toLowerCase() === email)) {
+          throw new Error('Email already exists.')
+        }
+        user.email = email
+      }
+      if (payload.nickname !== undefined) {
+        user.nickname = payload.nickname.trim()
+      }
+      if (payload.avatar_url !== undefined) {
+        user.avatar_url = payload.avatar_url.trim()
+      }
+      user.updated_at = Math.floor(Date.now() / 1000)
+      if (user.user_id === mockProfile.user_id) {
+        mockProfile = {
+          ...mockProfile,
+          username: user.username,
+          email: user.email,
+          nickname: user.nickname,
+          avatar_url: user.avatar_url ?? '',
+        }
+      }
+      return { user: { ...user } }
+    },
     async updateUserStatus(userId, payload) {
       const user = mockUsers.find((item) => item.user_id === userId)
       if (!user) {

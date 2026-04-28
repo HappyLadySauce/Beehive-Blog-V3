@@ -103,15 +103,31 @@ export function createMockAuthApi(): AuthApi {
       return { ok: true }
     },
     async startSso(payload) {
+      const state = payload.state ?? 'mock_state'
       return {
         provider: payload.provider,
-        auth_url: `https://example.com/oauth/${payload.provider}?state=${encodeURIComponent(payload.state ?? 'mock_state')}`,
-        state: payload.state ?? 'mock_state',
+        auth_url: `${payload.redirect_uri}?code=mock_code&state=${encodeURIComponent(state)}`,
+        state,
       }
     },
     async finishSso(payload) {
       currentUser = buildMockUser(`${payload.provider}_user@beehive.local`, 'member')
       return buildAuthResponse(currentUser)
+    },
+    async startEmailSso(payload) {
+      const state = payload.state ?? 'mock_reauth_state'
+      return {
+        provider: payload.provider,
+        auth_url: `${payload.redirect_uri}?code=mock_reauth_code&state=${encodeURIComponent(state)}`,
+        state,
+      }
+    },
+    async updateEmail(payload) {
+      currentUser = {
+        ...currentUser,
+        email: payload.email,
+      }
+      return { user: currentUser }
     },
   }
 }

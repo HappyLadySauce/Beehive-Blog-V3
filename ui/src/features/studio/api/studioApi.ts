@@ -22,6 +22,7 @@ import type {
   StudioAuditsResponse,
   StudioAuditListParams,
   StudioMutationResponse,
+  StudioUpdateUserProfileRequest,
   StudioResetPasswordRequest,
   StudioUpdateUserRoleRequest,
   StudioUpdateUserStatusRequest,
@@ -40,6 +41,7 @@ export interface StudioApi {
   listUsers(params?: StudioUserListParams, options?: StudioRequestOptions): Promise<StudioUsersResponse>
   listAudits(params?: StudioAuditListParams, options?: StudioRequestOptions): Promise<StudioAuditsResponse>
   deleteUser(userId: string, options?: StudioRequestOptions): Promise<StudioMutationResponse>
+  updateUserProfile(userId: string, payload: StudioUpdateUserProfileRequest, options?: StudioRequestOptions): Promise<StudioUserResponse>
   updateUserRole(userId: string, payload: StudioUpdateUserRoleRequest, options?: StudioRequestOptions): Promise<StudioUserResponse>
   updateUserStatus(userId: string, payload: StudioUpdateUserStatusRequest, options?: StudioRequestOptions): Promise<StudioUserResponse>
   resetUserPassword(userId: string, payload: StudioResetPasswordRequest, options?: StudioRequestOptions): Promise<StudioMutationResponse>

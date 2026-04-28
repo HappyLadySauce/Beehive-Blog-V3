@@ -8,6 +8,7 @@ import (
 
 	auth "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/auth"
 	content "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/content"
+	file "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/file"
 	identity "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/identity"
 	ops "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/ops"
 	publiccontent "github.com/HappyLadySauce/Beehive-Blog-V3/services/gateway/internal/handler/publiccontent"
@@ -63,8 +64,36 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 		{
 			Method:  http.MethodPost,
+			Path:    "/me/email/sso/start",
+			Handler: auth.AuthEmailSsoStartHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPatch,
+			Path:    "/me/email",
+			Handler: auth.AuthUpdateEmailHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
 			Path:    "/me/password",
 			Handler: auth.AuthChangePasswordHandler(serverCtx),
+		},
+	}
+
+	fileRoutes := []rest.Route{
+		{
+			Method:  http.MethodPost,
+			Path:    "/uploads",
+			Handler: file.FileUploadCreateHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/uploads/:upload_id/complete",
+			Handler: file.FileUploadCompleteHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodDelete,
+			Path:    "/assets/:asset_id",
+			Handler: file.FileAssetDeleteHandler(serverCtx),
 		},
 	}
 
@@ -86,6 +115,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			Method:  http.MethodPatch,
 			Path:    "/users/:user_id/status",
 			Handler: identity.IdentityUserStatusUpdateHandler(serverCtx),
+		},
+		{
+			// Update user profile
+			Method:  http.MethodPatch,
+			Path:    "/users/:user_id/profile",
+			Handler: identity.IdentityUserProfileUpdateHandler(serverCtx),
 		},
 		{
 			// Reset user password
@@ -238,6 +273,14 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			serverCtx.AuthMiddleware,
 		}, authProtectedRoutes...),
 		rest.WithPrefix("/api/v3/auth"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares([]rest.Middleware{
+			serverCtx.RequestMetaMiddleware,
+			serverCtx.AuthMiddleware,
+		}, fileRoutes...),
+		rest.WithPrefix("/api/v3/files"),
 	)
 
 	server.AddRoutes(

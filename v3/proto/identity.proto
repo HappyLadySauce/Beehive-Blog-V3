@@ -148,6 +148,28 @@ message FinishSsoLoginResponse {
   SessionInfo session_info = 3;
 }
 
+message StartSsoReauthRequest {
+  string user_id = 1;
+  string provider = 2;
+  string redirect_uri = 3;
+  string state = 4;
+}
+
+message UpdateOwnEmailRequest {
+  string user_id = 1;
+  string email = 2;
+  string verification_method = 3;
+  string current_password = 4;
+  string provider = 5;
+  string code = 6;
+  string state = 7;
+  string redirect_uri = 8;
+}
+
+message UpdateOwnEmailResponse {
+  CurrentUser current_user = 1;
+}
+
 message RefreshSessionTokenRequest {
   string refresh_token = 1;
   reserved 2;
@@ -265,6 +287,19 @@ message UpdateUserStatusResponse {
   AdminUserView user = 1;
 }
 
+message UpdateUserProfileRequest {
+  string actor_user_id = 1;
+  string target_user_id = 2;
+  optional string username = 3;
+  optional string email = 4;
+  optional string nickname = 5;
+  optional string avatar_url = 6;
+}
+
+message UpdateUserProfileResponse {
+  AdminUserView user = 1;
+}
+
 message ResetUserPasswordRequest {
   string actor_user_id = 1;
   string target_user_id = 2;
@@ -334,6 +369,8 @@ service Identity {
   rpc LoginLocalUser(LoginLocalUserRequest) returns (LoginLocalUserResponse);
   rpc StartSsoLogin(StartSsoLoginRequest) returns (StartSsoLoginResponse);
   rpc FinishSsoLogin(FinishSsoLoginRequest) returns (FinishSsoLoginResponse);
+  rpc StartSsoReauth(StartSsoReauthRequest) returns (StartSsoLoginResponse);
+  rpc UpdateOwnEmail(UpdateOwnEmailRequest) returns (UpdateOwnEmailResponse);
   rpc RefreshSessionToken(RefreshSessionTokenRequest) returns (RefreshSessionTokenResponse);
   rpc LogoutSession(LogoutSessionRequest) returns (LogoutSessionResponse);
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
@@ -342,6 +379,7 @@ service Identity {
   rpc ChangeOwnPassword(ChangeOwnPasswordRequest) returns (ChangeOwnPasswordResponse);
   rpc UpdateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
   rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
   rpc ResetUserPassword(ResetUserPasswordRequest) returns (ResetUserPasswordResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc ListIdentityAudits(ListIdentityAuditsRequest) returns (ListIdentityAuditsResponse);

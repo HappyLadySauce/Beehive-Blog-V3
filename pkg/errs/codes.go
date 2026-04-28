@@ -35,6 +35,9 @@ const (
 	// CodeGatewayContentServiceUnavailable identifies content dependency failures.
 	// CodeGatewayContentServiceUnavailable 标识 content 依赖不可用。
 	CodeGatewayContentServiceUnavailable Code = 100603
+	// CodeGatewayFileServiceUnavailable identifies file dependency failures.
+	// CodeGatewayFileServiceUnavailable 标识 file 依赖不可用。
+	CodeGatewayFileServiceUnavailable Code = 100604
 	// CodeGatewayInternal identifies gateway internal failures.
 	// CodeGatewayInternal 标识 gateway 内部错误。
 	CodeGatewayInternal Code = 109901
@@ -151,6 +154,40 @@ const (
 	// CodeContentInternal identifies content internal failures.
 	// CodeContentInternal 标识 content 内部错误。
 	CodeContentInternal Code = 129901
+
+	// CodeFileInvalidArgument identifies file validation failures.
+	// CodeFileInvalidArgument 标识 file 参数校验失败。
+	CodeFileInvalidArgument Code = 130101
+	// CodeFileInvalidScope identifies invalid upload scopes.
+	// CodeFileInvalidScope 标识非法上传作用域。
+	CodeFileInvalidScope Code = 130102
+	// CodeFileInvalidContentType identifies disallowed content types.
+	// CodeFileInvalidContentType 标识不允许的文件内容类型。
+	CodeFileInvalidContentType Code = 130103
+	// CodeFileTooLarge identifies uploads exceeding configured size limits.
+	// CodeFileTooLarge 标识超过配置大小限制的上传。
+	CodeFileTooLarge Code = 130104
+	// CodeFileInternalCallerUnauthorized identifies unauthorized internal callers.
+	// CodeFileInternalCallerUnauthorized 标识未通过认证的内部调用方。
+	CodeFileInternalCallerUnauthorized Code = 130201
+	// CodeFileAccessForbidden identifies forbidden file access.
+	// CodeFileAccessForbidden 标识文件访问被拒绝。
+	CodeFileAccessForbidden Code = 130301
+	// CodeFileInvalidState identifies invalid upload or asset state.
+	// CodeFileInvalidState 标识非法上传或资产状态。
+	CodeFileInvalidState Code = 130401
+	// CodeFileAssetNotFound identifies missing assets.
+	// CodeFileAssetNotFound 标识资产不存在。
+	CodeFileAssetNotFound Code = 130501
+	// CodeFileUploadNotFound identifies missing upload sessions.
+	// CodeFileUploadNotFound 标识上传会话不存在。
+	CodeFileUploadNotFound Code = 130502
+	// CodeFileDependencyUnavailable identifies object storage readiness failures.
+	// CodeFileDependencyUnavailable 标识对象存储依赖不可用。
+	CodeFileDependencyUnavailable Code = 130601
+	// CodeFileInternal identifies file internal failures.
+	// CodeFileInternal 标识 file 内部错误。
+	CodeFileInternal Code = 139901
 )
 
 // String returns the decimal business code string.
