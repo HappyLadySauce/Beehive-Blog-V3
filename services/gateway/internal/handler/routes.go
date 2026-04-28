@@ -88,6 +88,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			Handler: identity.IdentityUserStatusUpdateHandler(serverCtx),
 		},
 		{
+			// Update user profile
+			Method:  http.MethodPatch,
+			Path:    "/users/:user_id/profile",
+			Handler: identity.IdentityUserProfileUpdateHandler(serverCtx),
+		},
+		{
 			// Reset user password
 			Method:  http.MethodPost,
 			Path:    "/users/:user_id/password/reset",

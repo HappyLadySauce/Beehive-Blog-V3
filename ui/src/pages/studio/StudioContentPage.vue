@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
 import type {
   ContentDetail,
   ContentRelation,
-  ContentRelationType,
   ContentRevisionSummary,
   ContentStatus,
   ContentSummary,
@@ -21,20 +21,18 @@ import FormField from '@/shared/components/FormField.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
-import RichContentEditor from '@/shared/components/RichContentEditor.vue'
 import SideDrawer from '@/shared/components/SideDrawer.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
 import { useConfirm, useToast } from '@/shared/composables'
 
-type ContentMode = 'view' | 'edit' | 'create'
 type StudioTab = 'content' | 'tags'
 
 const contentTypes: ContentType[] = ['article', 'note', 'project', 'experience', 'timeline_event', 'insight', 'portfolio', 'page']
 const statuses: ContentStatus[] = ['draft', 'review', 'published', 'archived']
 const visibilities: ContentVisibility[] = ['public', 'member', 'private']
-const relationTypes: ContentRelationType[] = ['belongs_to', 'related_to', 'derived_from', 'references', 'part_of', 'depends_on', 'timeline_of']
 
+const router = useRouter()
 const authStore = useAuthStore()
 const { confirm } = useConfirm()
 const { pushToast } = useToast()
@@ -46,7 +44,6 @@ const relations = shallowRef<ContentRelation[]>([])
 const revisions = shallowRef<ContentRevisionSummary[]>([])
 const selectedContent = shallowRef<ContentDetail | null>(null)
 const selectedTag = shallowRef<ContentTag | null>(null)
-const contentMode = shallowRef<ContentMode>('view')
 const isLoading = shallowRef(true)
 const isTagsLoading = shallowRef(false)
 const isDetailLoading = shallowRef(false)
@@ -62,44 +59,11 @@ const filters = reactive({
   visibility: '',
 })
 
-const contentForm = reactive({
-  type: 'article' as ContentType,
-  title: '',
-  slug: '',
-  summary: '',
-  body_markdown: '',
-  body_json: '',
-  cover_image_url: '',
-  status: 'draft' as ContentStatus,
-  visibility: 'private' as ContentVisibility,
-  ai_access: 'denied' as 'allowed' | 'denied',
-  comment_enabled: true,
-  is_featured: false,
-  sort_order: 0,
-  change_summary: '',
-  tag_ids: [] as string[],
-})
-
 const tagForm = reactive({
   name: '',
   slug: '',
   description: '',
   color: '',
-})
-
-const relationForm = reactive({
-  to_content_id: '',
-  relation_type: 'related_to' as ContentRelationType,
-})
-
-const drawerTitle = computed(() => {
-  if (contentMode.value === 'create') {
-    return 'New draft'
-  }
-  if (contentMode.value === 'edit') {
-    return 'Edit content'
-  }
-  return 'Content details'
 })
 
 async function loadContents(): Promise<void> {
@@ -147,18 +111,18 @@ function scheduleLoadContents(): void {
 }
 
 function openNewDraft(): void {
-  contentMode.value = 'create'
-  selectedContent.value = null
-  resetContentForm()
+  void router.push('/studio/content/new')
 }
 
-async function openContent(content: ContentSummary, mode: ContentMode): Promise<void> {
-  contentMode.value = mode
+function editContent(content: ContentSummary): void {
+  void router.push(`/studio/content/${encodeURIComponent(content.content_id)}/edit`)
+}
+
+async function viewContent(content: ContentSummary): Promise<void> {
   isDetailLoading.value = true
   try {
     const response = await studioApi.getContent(content.content_id, { accessToken: authStore.accessToken })
     selectedContent.value = response.content
-    hydrateContentForm(response.content)
     await Promise.all([loadRelations(response.content.content_id), loadRevisions(response.content.content_id)])
   } catch (error) {
     pushToast({ tone: 'danger', title: 'Content unavailable', message: error instanceof Error ? error.message : 'Unable to load content.' })
@@ -169,40 +133,8 @@ async function openContent(content: ContentSummary, mode: ContentMode): Promise<
 
 function closeContentDrawer(): void {
   selectedContent.value = null
-  contentMode.value = 'view'
   relations.value = []
   revisions.value = []
-}
-
-async function saveContent(): Promise<void> {
-  await runMutation(async () => {
-    const payload = {
-      type: contentForm.type,
-      title: contentForm.title,
-      slug: contentForm.slug,
-      summary: contentForm.summary,
-      body_markdown: contentForm.body_markdown,
-      body_json: contentForm.body_json,
-      cover_image_url: contentForm.cover_image_url,
-      status: contentForm.status,
-      visibility: contentForm.visibility,
-      ai_access: contentForm.ai_access,
-      source_type: 'manual',
-      comment_enabled: contentForm.comment_enabled,
-      is_featured: contentForm.is_featured,
-      sort_order: Number(contentForm.sort_order) || 0,
-      tag_ids: contentForm.tag_ids,
-      change_summary: contentForm.change_summary,
-    }
-    const response = contentMode.value === 'create'
-      ? await studioApi.createContent(payload, { accessToken: authStore.accessToken })
-      : await studioApi.updateContent(selectedContent.value!.content_id, payload, { accessToken: authStore.accessToken })
-    selectedContent.value = response.content
-    contentMode.value = 'edit'
-    hydrateContentForm(response.content)
-    await loadContents()
-    pushToast({ tone: 'success', title: 'Content saved', message: `${response.content.title} has been saved.` })
-  })
 }
 
 async function archiveContent(content: ContentSummary): Promise<void> {
@@ -260,33 +192,6 @@ async function deleteTag(tag: ContentTag): Promise<void> {
   })
 }
 
-async function createRelation(): Promise<void> {
-  if (!selectedContent.value || relationForm.to_content_id.trim() === '') {
-    return
-  }
-  await runMutation(async () => {
-    await studioApi.createRelation(
-      selectedContent.value!.content_id,
-      { to_content_id: relationForm.to_content_id.trim(), relation_type: relationForm.relation_type },
-      { accessToken: authStore.accessToken },
-    )
-    relationForm.to_content_id = ''
-    await loadRelations(selectedContent.value!.content_id)
-    pushToast({ tone: 'success', title: 'Relation created' })
-  })
-}
-
-async function deleteRelation(relation: ContentRelation): Promise<void> {
-  if (!selectedContent.value) {
-    return
-  }
-  await runMutation(async () => {
-    await studioApi.deleteRelation(selectedContent.value!.content_id, relation.relation_id, { accessToken: authStore.accessToken })
-    await loadRelations(selectedContent.value!.content_id)
-    pushToast({ tone: 'success', title: 'Relation deleted' })
-  })
-}
-
 async function loadRelations(contentId: string): Promise<void> {
   const response = await studioApi.listRelations(contentId, { page: 1, page_size: 50 }, { accessToken: authStore.accessToken })
   relations.value = response.items
@@ -306,46 +211,6 @@ async function runMutation(action: () => Promise<void>): Promise<void> {
   } finally {
     isMutating.value = false
   }
-}
-
-function resetContentForm(): void {
-  Object.assign(contentForm, {
-    type: 'article',
-    title: '',
-    slug: '',
-    summary: '',
-    body_markdown: '',
-    body_json: '{"type":"doc","content":[{"type":"paragraph"}]}',
-    cover_image_url: '',
-    status: 'draft',
-    visibility: 'private',
-    ai_access: 'denied',
-    comment_enabled: true,
-    is_featured: false,
-    sort_order: 0,
-    change_summary: 'Initial draft',
-    tag_ids: [],
-  })
-}
-
-function hydrateContentForm(content: ContentDetail): void {
-  Object.assign(contentForm, {
-    type: content.type,
-    title: content.title,
-    slug: content.slug,
-    summary: content.summary ?? '',
-    body_markdown: content.body_markdown,
-    body_json: content.body_json || '{"type":"doc","content":[{"type":"paragraph"}]}',
-    cover_image_url: content.cover_image_url ?? '',
-    status: content.status,
-    visibility: content.visibility,
-    ai_access: content.ai_access,
-    comment_enabled: content.comment_enabled,
-    is_featured: content.is_featured,
-    sort_order: content.sort_order,
-    change_summary: '',
-    tag_ids: content.tags.map((tag) => tag.tag_id),
-  })
 }
 
 function formatUnixTime(value?: number): string {
@@ -439,8 +304,8 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
               <td>{{ formatUnixTime(content.updated_at) }}</td>
               <td>
                 <div class="content-page__actions">
-                  <ActionTagButton @click="openContent(content, 'view')">View</ActionTagButton>
-                  <ActionTagButton tone="primary" @click="openContent(content, 'edit')">Edit</ActionTagButton>
+                  <ActionTagButton @click="viewContent(content)">View</ActionTagButton>
+                  <ActionTagButton tone="primary" @click="editContent(content)">Edit</ActionTagButton>
                   <ActionTagButton tone="danger" :disabled="content.status === 'archived' || isMutating" @click="archiveContent(content)">Archive</ActionTagButton>
                 </div>
               </td>
@@ -482,95 +347,29 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       </div>
     </template>
 
-    <SideDrawer :open="contentMode === 'create' || selectedContent !== null" :title="drawerTitle" :description="selectedContent?.slug" size="lg" @close="closeContentDrawer">
+    <SideDrawer :open="selectedContent !== null" title="Content details" :description="selectedContent?.slug" size="lg" @close="closeContentDrawer">
       <PageLoadingState v-if="isDetailLoading" title="Loading content detail" :rows="4" />
-      <div v-else class="content-page__drawer">
-        <template v-if="contentMode === 'view' && selectedContent">
-          <div class="content-page__detail-grid">
-            <ReadonlyField label="Title" :value="selectedContent.title" />
-            <ReadonlyField label="Slug" :value="selectedContent.slug" />
-            <ReadonlyField label="Type" :value="selectedContent.type" />
-            <ReadonlyField label="Status" :value="selectedContent.status" />
-            <ReadonlyField label="Visibility" :value="selectedContent.visibility" />
-            <ReadonlyField label="Updated" :value="formatUnixTime(selectedContent.updated_at)" />
-          </div>
-        </template>
-        <template v-else>
-          <div class="content-page__form-grid">
-            <label class="content-page__select">
-              <span>Type</span>
-              <select v-model="contentForm.type">
-                <option v-for="type in contentTypes" :key="type" :value="type">{{ type }}</option>
-              </select>
-            </label>
-            <label class="content-page__select">
-              <span>Status</span>
-              <select v-model="contentForm.status">
-                <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
-              </select>
-            </label>
-            <FormField label="Title" for-id="content-title">
-              <BaseInput id="content-title" v-model="contentForm.title" />
-            </FormField>
-            <FormField label="Slug" for-id="content-slug">
-              <BaseInput id="content-slug" v-model="contentForm.slug" />
-            </FormField>
-            <FormField label="Summary" for-id="content-summary">
-              <BaseInput id="content-summary" v-model="contentForm.summary" />
-            </FormField>
-            <FormField label="Cover URL" for-id="content-cover">
-              <BaseInput id="content-cover" v-model="contentForm.cover_image_url" />
-            </FormField>
-            <label class="content-page__select">
-              <span>Visibility</span>
-              <select v-model="contentForm.visibility">
-                <option v-for="visibility in visibilities" :key="visibility" :value="visibility">{{ visibility }}</option>
-              </select>
-            </label>
-            <label class="content-page__select">
-              <span>AI access</span>
-              <select v-model="contentForm.ai_access">
-                <option value="denied">Denied</option>
-                <option value="allowed">Allowed</option>
-              </select>
-            </label>
-          </div>
-          <div class="content-page__checks">
-            <label><input v-model="contentForm.comment_enabled" type="checkbox" /> Comments</label>
-            <label><input v-model="contentForm.is_featured" type="checkbox" /> Featured</label>
-          </div>
-          <div class="content-page__tag-picker">
-            <span>Tags</span>
-            <label v-for="tag in tags" :key="tag.tag_id">
-              <input v-model="contentForm.tag_ids" type="checkbox" :value="tag.tag_id" />
-              {{ tag.name }}
-            </label>
-          </div>
-          <FormField label="Change summary" for-id="content-change-summary">
-            <BaseInput id="content-change-summary" v-model="contentForm.change_summary" />
-          </FormField>
-          <RichContentEditor v-model="contentForm.body_json" v-model:plain-text="contentForm.body_markdown" />
-        </template>
+      <div v-else-if="selectedContent" class="content-page__drawer">
+        <div class="content-page__detail-grid">
+          <ReadonlyField label="Title" :value="selectedContent.title" />
+          <ReadonlyField label="Slug" :value="selectedContent.slug" />
+          <ReadonlyField label="Type" :value="selectedContent.type" />
+          <ReadonlyField label="Status" :value="selectedContent.status" />
+          <ReadonlyField label="Visibility" :value="selectedContent.visibility" />
+          <ReadonlyField label="Updated" :value="formatUnixTime(selectedContent.updated_at)" />
+        </div>
 
-        <section v-if="selectedContent" class="content-page__subsection">
+        <section class="content-page__subsection">
           <h3>Relations</h3>
-          <form v-if="contentMode !== 'view'" class="content-page__relation-form" @submit.prevent="createRelation">
-            <BaseInput v-model="relationForm.to_content_id" placeholder="Target content ID" />
-            <select v-model="relationForm.relation_type">
-              <option v-for="type in relationTypes" :key="type" :value="type">{{ type }}</option>
-            </select>
-            <BaseButton type="submit" variant="secondary" :busy="isMutating">Add</BaseButton>
-          </form>
           <div class="content-page__mini-list">
             <article v-for="relation in relations" :key="relation.relation_id">
               <span>{{ relation.relation_type }} -> {{ relation.to_content_id }}</span>
-              <ActionTagButton v-if="contentMode !== 'view'" tone="danger" @click="deleteRelation(relation)">Delete</ActionTagButton>
             </article>
             <p v-if="relations.length === 0">No relations.</p>
           </div>
         </section>
 
-        <section v-if="selectedContent" class="content-page__subsection">
+        <section class="content-page__subsection">
           <h3>Revisions</h3>
           <div class="content-page__mini-list">
             <article v-for="revision in revisions" :key="revision.revision_id">
@@ -582,7 +381,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
         </section>
       </div>
       <template #footer>
-        <BaseButton v-if="contentMode !== 'view'" :busy="isMutating" @click="saveContent">Save content</BaseButton>
         <BaseButton variant="ghost" @click="closeContentDrawer">Close</BaseButton>
       </template>
     </SideDrawer>
@@ -621,8 +419,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   background: var(--bb-color-primary-soft);
 }
 
-.content-page__filters,
-.content-page__form-grid {
+.content-page__filters {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(140px, 170px));
   align-items: end;
@@ -637,7 +434,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   font-weight: 650;
 }
 
-select {
+.content-page__select select {
   min-height: 44px;
   border: 1px solid var(--bb-color-line);
   border-radius: 8px;
@@ -646,7 +443,7 @@ select {
   background: var(--bb-color-surface);
 }
 
-select:focus-visible,
+.content-page__select select:focus-visible,
 .content-page__table:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--bb-color-focus);
@@ -660,41 +457,39 @@ select:focus-visible,
   box-shadow: var(--bb-shadow-soft);
 }
 
-table {
+.content-page__table table {
   width: 100%;
   min-width: 920px;
   border-collapse: collapse;
 }
 
-th,
-td {
+.content-page__table th,
+.content-page__table td {
   border-bottom: 1px solid var(--bb-color-line);
   padding: 12px;
   text-align: left;
   vertical-align: middle;
 }
 
-th {
+.content-page__table th {
   color: var(--bb-color-muted);
   font-size: 0.8rem;
   text-transform: uppercase;
   background: var(--bb-color-subtle);
 }
 
-td:first-child {
+.content-page__table td:first-child {
   display: grid;
   gap: 3px;
 }
 
-td:first-child span,
+.content-page__table td:first-child span,
 .content-page__count,
 .content-page__tag-card span {
   color: var(--bb-color-muted);
 }
 
-.content-page__actions,
-.content-page__checks,
-.content-page__relation-form {
+.content-page__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -715,8 +510,7 @@ td:first-child span,
 }
 
 .content-page__tag-list,
-.content-page__mini-list,
-.content-page__tag-picker {
+.content-page__mini-list {
   display: grid;
   gap: 10px;
 }
@@ -732,27 +526,8 @@ td:first-child span,
   background: var(--bb-color-surface);
 }
 
-.content-page__tag-card div:first-child {
-  display: grid;
-}
-
-.content-page__tag-picker {
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 12px;
-  background: var(--bb-color-subtle);
-}
-
-.content-page__tag-picker span,
-.content-page__subsection h3 {
-  margin: 0;
-  color: var(--bb-color-text);
-  font-weight: 760;
-}
-
 @media (max-width: 900px) {
   .content-page__filters,
-  .content-page__form-grid,
   .content-page__tag-form,
   .content-page__detail-grid {
     grid-template-columns: 1fr;

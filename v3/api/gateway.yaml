@@ -3136,6 +3136,110 @@ paths:
       summary: Reset user password
       tags:
       - Studio Identity
+  /api/v3/studio/users/{user_id}/profile:
+    patch:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>110101-invalid argument<br>110501-user not found<br>110502-username
+        already exists<br>110503-email already exists<br>119901-internal error
+      operationId: identityIdentityUserProfileUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: "1"
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            avatar_url:
+              example: https://cdn.example.com/avatar/alice.png
+              type: string
+            email:
+              example: alice@example.com
+              type: string
+            nickname:
+              example: Alice
+              type: string
+            username:
+              example: beehive_user_01
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              user:
+                properties:
+                  avatar_url:
+                    example: https://cdn.example.com/avatar/alice.png
+                    type: string
+                  created_at:
+                    example: 1713772000
+                    type: integer
+                  deleted_at:
+                    example: 0
+                    type: integer
+                  email:
+                    example: alice@example.com
+                    type: string
+                  last_login_at:
+                    example: 1713772800
+                    type: integer
+                  nickname:
+                    example: Alice
+                    type: string
+                  role:
+                    enum:
+                    - member
+                    - admin
+                    example: member
+                    type: string
+                  status:
+                    enum:
+                    - pending
+                    - active
+                    - disabled
+                    - locked
+                    - deleted
+                    example: active
+                    type: string
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                  user_id:
+                    example: "1"
+                    type: string
+                  username:
+                    example: beehive_user_01
+                    type: string
+                required:
+                - user_id
+                - username
+                - email
+                - role
+                - status
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update user profile
+      tags:
+      - Studio Identity
   /api/v3/studio/users/{user_id}/role:
     patch:
       consumes:
@@ -3409,7 +3513,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-28 02:36:23"
+x-date: "2026-04-28 14:40:42"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

@@ -1,5 +1,7 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
@@ -9,7 +11,28 @@ import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 import UserAvatar from '@/shared/components/UserAvatar.vue'
 
+async function mountWithRouter(component: typeof UserAccountMenu, options: Parameters<typeof mount>[1]) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/', component: { template: '<div />' } }],
+  })
+  router.push('/')
+  await router.isReady()
+  return mount(component, {
+    ...options,
+    attachTo: document.body,
+    global: {
+      ...(options?.global ?? {}),
+      plugins: [router],
+    },
+  })
+}
+
 describe('shared components', () => {
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
   it('disables busy buttons and exposes aria busy', () => {
     const wrapper = mount(BaseButton, {
       props: { busy: true },
@@ -69,7 +92,7 @@ describe('shared components', () => {
   })
 
   it('emits logout from the account menu', async () => {
-    const wrapper = mount(UserAccountMenu, {
+    const wrapper = await mountWithRouter(UserAccountMenu, {
       props: {
         user: {
           user_id: 'user_mock_admin',
@@ -81,22 +104,16 @@ describe('shared components', () => {
           status: 'active',
         },
       },
-      global: {
-        stubs: {
-          RouterLink: {
-            props: ['to'],
-            template: '<a><slot /></a>',
-          },
-        },
-      },
     })
 
-    await wrapper.get('button.account-menu__item--danger').trigger('click')
+    await wrapper.get('.account-menu__summary').trigger('click')
+    await nextTick()
+    document.body.querySelector<HTMLButtonElement>('.account-menu__item--danger')?.click()
     expect(wrapper.emitted('logout')).toHaveLength(1)
   })
 
-  it('omits Studio shortcuts from the Studio account menu', () => {
-    const wrapper = mount(UserAccountMenu, {
+  it('omits Studio shortcuts from the Studio account menu', async () => {
+    const wrapper = await mountWithRouter(UserAccountMenu, {
       props: {
         surface: 'studio',
         user: {
@@ -109,19 +126,29 @@ describe('shared components', () => {
           status: 'active',
         },
       },
-      global: {
-        stubs: {
-          RouterLink: {
-            props: ['to'],
-            template: '<a><slot /></a>',
-          },
-        },
+    })
+
+    await wrapper.get('.account-menu__summary').trigger('click')
+    await nextTick()
+
+    expect(document.body.textContent).not.toContain('Studio')
+    expect(document.body.textContent).not.toContain('Users')
+    expect(document.body.textContent).toContain('Profile')
+    expect(document.body.textContent).toContain('Change password')
+  })
+
+  it('renders login and register actions in the public account menu', async () => {
+    const wrapper = await mountWithRouter(UserAccountMenu, {
+      props: {
+        surface: 'public',
+        user: null,
       },
     })
 
-    expect(wrapper.text()).not.toContain('Studio')
-    expect(wrapper.text()).not.toContain('Users')
-    expect(wrapper.text()).toContain('Profile')
-    expect(wrapper.text()).toContain('Change password')
+    await wrapper.get('.account-menu__summary').trigger('click')
+    await nextTick()
+
+    expect(document.body.textContent).toContain('Login')
+    expect(document.body.textContent).toContain('Register')
   })
 })

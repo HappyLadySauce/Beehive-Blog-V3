@@ -4,6 +4,7 @@ export type {
   StudioAuditEvent,
   StudioAuditsResponse,
   StudioMutationResponse,
+  StudioUpdateUserProfileRequest,
   StudioUser,
   StudioUsersResponse,
   UserProfileResponse,

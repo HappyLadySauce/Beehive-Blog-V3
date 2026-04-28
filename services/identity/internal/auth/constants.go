@@ -94,6 +94,9 @@ const (
 	// AuditEventAdminUpdateUserStatus marks admin status changes.
 	// AuditEventAdminUpdateUserStatus 标记管理员修改用户状态事件。
 	AuditEventAdminUpdateUserStatus = "admin_update_user_status"
+	// AuditEventAdminUpdateUserProfile marks admin profile changes.
+	// AuditEventAdminUpdateUserProfile 标记管理员修改用户基本资料事件。
+	AuditEventAdminUpdateUserProfile = "admin_update_user_profile"
 	// AuditEventAdminResetUserPassword marks admin password resets.
 	// AuditEventAdminResetUserPassword 标记管理员重置用户密码事件。
 	AuditEventAdminResetUserPassword = "admin_reset_user_password"

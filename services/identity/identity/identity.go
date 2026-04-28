@@ -50,6 +50,8 @@ type (
 	TokenPair                     = pb.TokenPair
 	UpdateOwnProfileRequest       = pb.UpdateOwnProfileRequest
 	UpdateOwnProfileResponse      = pb.UpdateOwnProfileResponse
+	UpdateUserProfileRequest      = pb.UpdateUserProfileRequest
+	UpdateUserProfileResponse     = pb.UpdateUserProfileResponse
 	UpdateUserRoleRequest         = pb.UpdateUserRoleRequest
 	UpdateUserRoleResponse        = pb.UpdateUserRoleResponse
 	UpdateUserStatusRequest       = pb.UpdateUserStatusRequest
@@ -68,6 +70,7 @@ type (
 		ChangeOwnPassword(ctx context.Context, in *ChangeOwnPasswordRequest, opts ...grpc.CallOption) (*ChangeOwnPasswordResponse, error)
 		UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error)
 		UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error)
+		UpdateUserProfile(ctx context.Context, in *UpdateUserProfileRequest, opts ...grpc.CallOption) (*UpdateUserProfileResponse, error)
 		ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error)
 		DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 		ListIdentityAudits(ctx context.Context, in *ListIdentityAuditsRequest, opts ...grpc.CallOption) (*ListIdentityAuditsResponse, error)
@@ -144,6 +147,11 @@ func (m *defaultIdentity) UpdateUserRole(ctx context.Context, in *UpdateUserRole
 func (m *defaultIdentity) UpdateUserStatus(ctx context.Context, in *UpdateUserStatusRequest, opts ...grpc.CallOption) (*UpdateUserStatusResponse, error) {
 	client := pb.NewIdentityClient(m.cli.Conn())
 	return client.UpdateUserStatus(ctx, in, opts...)
+}
+
+func (m *defaultIdentity) UpdateUserProfile(ctx context.Context, in *UpdateUserProfileRequest, opts ...grpc.CallOption) (*UpdateUserProfileResponse, error) {
+	client := pb.NewIdentityClient(m.cli.Conn())
+	return client.UpdateUserProfile(ctx, in, opts...)
 }
 
 func (m *defaultIdentity) ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*ResetUserPasswordResponse, error) {

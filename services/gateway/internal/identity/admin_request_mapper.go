@@ -52,6 +52,19 @@ func BuildUpdateUserStatusRequest(actorUserID string, req *types.AdminUpdateUser
 	}
 }
 
+// BuildUpdateUserProfileRequest maps studio user profile patch requests.
+// BuildUpdateUserProfileRequest 转换 Studio 用户基础资料 PATCH 请求。
+func BuildUpdateUserProfileRequest(actorUserID string, req *types.AdminUpdateUserProfileReq) *pb.UpdateUserProfileRequest {
+	return &pb.UpdateUserProfileRequest{
+		ActorUserId:  actorUserID,
+		TargetUserId: req.UserId,
+		Username:     req.Username,
+		Email:        req.Email,
+		Nickname:     req.Nickname,
+		AvatarUrl:    req.AvatarUrl,
+	}
+}
+
 // BuildResetUserPasswordRequest maps studio password reset requests.
 // BuildResetUserPasswordRequest 转换 Studio 用户密码重置请求。
 

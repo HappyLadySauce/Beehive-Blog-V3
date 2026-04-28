@@ -85,6 +85,10 @@ func (f *fakeIdentityClient) UpdateUserStatus(context.Context, *pb.UpdateUserSta
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeIdentityClient) UpdateUserProfile(context.Context, *pb.UpdateUserProfileRequest, ...grpc.CallOption) (*pb.UpdateUserProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func (f *fakeIdentityClient) ResetUserPassword(context.Context, *pb.ResetUserPasswordRequest, ...grpc.CallOption) (*pb.ResetUserPasswordResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

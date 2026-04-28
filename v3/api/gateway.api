@@ -183,6 +183,14 @@ type (
 		UserId        string `path:"user_id,example=1" validate:"required"`
 		Status        string `json:"status,options=active|disabled|locked,example=disabled" validate:"required"`
 	}
+	AdminUpdateUserProfileReq {
+		Authorization string  `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		UserId        string  `path:"user_id,example=1" validate:"required"`
+		Username      *string `json:"username,optional,example=beehive_user_01" validate:"omitempty,min=3,max=64"`
+		Email         *string `json:"email,optional,example=alice@example.com" validate:"omitempty,email,max=320"`
+		Nickname      *string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
+		AvatarUrl     *string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
+	}
 	AdminResetUserPasswordReq {
 		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 		UserId        string `path:"user_id,example=1" validate:"required"`
@@ -579,6 +587,13 @@ service gateway {
 	)
 	@handler IdentityUserStatusUpdate
 	patch /users/:user_id/status (AdminUpdateUserStatusReq) returns (AdminUserResp)
+
+	@doc (
+		summary:                "Update user profile"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>110101-invalid argument<br>110501-user not found<br>110502-username already exists<br>110503-email already exists<br>119901-internal error"
+	)
+	@handler IdentityUserProfileUpdate
+	patch /users/:user_id/profile (AdminUpdateUserProfileReq) returns (AdminUserResp)
 
 	@doc (
 		summary:                "Reset user password"

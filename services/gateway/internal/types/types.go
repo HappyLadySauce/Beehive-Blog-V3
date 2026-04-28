@@ -103,6 +103,15 @@ type AdminUpdateUserStatusReq struct {
 	Status        string `json:"status,options=active|disabled|locked,example=disabled" validate:"required"`
 }
 
+type AdminUpdateUserProfileReq struct {
+	Authorization string  `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	UserId        string  `path:"user_id,example=1" validate:"required"`
+	Username      *string `json:"username,optional,example=beehive_user_01" validate:"omitempty,min=3,max=64"`
+	Email         *string `json:"email,optional,example=alice@example.com" validate:"omitempty,email,max=320"`
+	Nickname      *string `json:"nickname,optional,example=Alice" validate:"omitempty,max=128"`
+	AvatarUrl     *string `json:"avatar_url,optional,example=https://cdn.example.com/avatar/alice.png" validate:"omitempty,url,max=2048"`
+}
+
 type AdminResetUserPasswordReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 	UserId        string `path:"user_id,example=1" validate:"required"`

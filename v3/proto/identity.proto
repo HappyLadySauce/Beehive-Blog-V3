@@ -265,6 +265,19 @@ message UpdateUserStatusResponse {
   AdminUserView user = 1;
 }
 
+message UpdateUserProfileRequest {
+  string actor_user_id = 1;
+  string target_user_id = 2;
+  optional string username = 3;
+  optional string email = 4;
+  optional string nickname = 5;
+  optional string avatar_url = 6;
+}
+
+message UpdateUserProfileResponse {
+  AdminUserView user = 1;
+}
+
 message ResetUserPasswordRequest {
   string actor_user_id = 1;
   string target_user_id = 2;
@@ -342,6 +355,7 @@ service Identity {
   rpc ChangeOwnPassword(ChangeOwnPasswordRequest) returns (ChangeOwnPasswordResponse);
   rpc UpdateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
   rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
   rpc ResetUserPassword(ResetUserPasswordRequest) returns (ResetUserPasswordResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc ListIdentityAudits(ListIdentityAuditsRequest) returns (ListIdentityAuditsResponse);

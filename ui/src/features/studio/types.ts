@@ -66,6 +66,13 @@ export interface UserProfileUpdateRequest {
   avatar_url?: string
 }
 
+export interface StudioUpdateUserProfileRequest {
+  username?: string
+  email?: string
+  nickname?: string
+  avatar_url?: string
+}
+
 export interface UserProfileResponse {
   user: AuthUserProfile
 }

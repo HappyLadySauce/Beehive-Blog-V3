@@ -126,6 +126,19 @@ type ProfileUpdate struct {
 	AvatarURL    *string
 }
 
+// UserProfileUpdate describes admin-managed basic profile fields present in a patch.
+// UserProfileUpdate 描述管理员资料 PATCH 中实际出现的基础资料字段。
+type UserProfileUpdate struct {
+	UsernameSet  bool
+	Username     string
+	EmailSet     bool
+	Email        *string
+	NicknameSet  bool
+	Nickname     *string
+	AvatarURLSet bool
+	AvatarURL    *string
+}
+
 // List returns users matching the filter and the total count.
 // List 返回符合过滤条件的用户列表与总数。
 func (r *UserRepository) List(ctx context.Context, filter ListFilter) ([]entity.User, int64, error) {
@@ -167,6 +180,34 @@ func (r *UserRepository) List(ctx context.Context, filter ListFilter) ([]entity.
 func (r *UserRepository) UpdateProfile(ctx context.Context, id int64, patch ProfileUpdate, at time.Time) (*entity.User, error) {
 	updates := map[string]any{
 		"updated_at": at,
+	}
+	if patch.NicknameSet {
+		updates["nickname"] = patch.Nickname
+	}
+	if patch.AvatarURLSet {
+		updates["avatar_url"] = patch.AvatarURL
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&entity.User{}).
+		Where("id = ?", id).
+		Updates(updates).Error; err != nil {
+		return nil, err
+	}
+
+	return r.GetByID(ctx, id)
+}
+
+// UpdateUserProfile updates admin-managed profile fields explicitly present in the patch.
+// UpdateUserProfile 更新管理员资料 PATCH 请求中明确出现的基础资料字段。
+func (r *UserRepository) UpdateUserProfile(ctx context.Context, id int64, patch UserProfileUpdate, at time.Time) (*entity.User, error) {
+	updates := map[string]any{
+		"updated_at": at,
+	}
+	if patch.UsernameSet {
+		updates["username"] = patch.Username
+	}
+	if patch.EmailSet {
+		updates["email"] = patch.Email
 	}
 	if patch.NicknameSet {
 		updates["nickname"] = patch.Nickname

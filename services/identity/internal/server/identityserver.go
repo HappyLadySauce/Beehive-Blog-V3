@@ -83,6 +83,11 @@ func (s *IdentityServer) UpdateUserStatus(ctx context.Context, in *pb.UpdateUser
 	return l.UpdateUserStatus(in)
 }
 
+func (s *IdentityServer) UpdateUserProfile(ctx context.Context, in *pb.UpdateUserProfileRequest) (*pb.UpdateUserProfileResponse, error) {
+	l := logic.NewUpdateUserProfileLogic(ctx, s.svcCtx)
+	return l.UpdateUserProfile(in)
+}
+
 func (s *IdentityServer) ResetUserPassword(ctx context.Context, in *pb.ResetUserPasswordRequest) (*pb.ResetUserPasswordResponse, error) {
 	l := logic.NewResetUserPasswordLogic(ctx, s.svcCtx)
 	return l.ResetUserPassword(in)

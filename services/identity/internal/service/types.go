@@ -162,6 +162,18 @@ type UpdateUserStatusInput struct {
 	ClientIP     string
 }
 
+// UpdateUserProfileInput describes admin profile updates for a target user.
+// UpdateUserProfileInput 描述管理员修改目标用户基本资料。
+type UpdateUserProfileInput struct {
+	ActorUserID  int64
+	TargetUserID int64
+	Username     *string
+	Email        *string
+	Nickname     *string
+	AvatarURL    *string
+	ClientIP     string
+}
+
 // ResetUserPasswordInput describes admin password resets.
 // ResetUserPasswordInput 描述管理员重置用户密码。
 type ResetUserPasswordInput struct {

@@ -13,18 +13,27 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@tiptap/extension-character-count": "^3.22.4",
+    "@tiptap/extension-highlight": "^3.22.4",
+    "@tiptap/extension-link": "^3.22.4",
+    "@tiptap/extension-placeholder": "^3.22.4",
+    "@tiptap/extension-text-align": "^3.22.4",
+    "@tiptap/extension-underline": "^3.22.4",
     "@tiptap/pm": "^3.22.4",
     "@tiptap/starter-kit": "^3.22.4",
     "@tiptap/vue-3": "^3.22.4",
     "@vueuse/core": "^14.1.0",
     "lucide-vue-next": "^0.561.0",
+    "marked": "^18.0.2",
     "pinia": "^3.0.4",
+    "turndown": "^7.2.4",
     "vue": "^3.5.32",
     "vue-router": "^5.0.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^24.12.2",
+    "@types/turndown": "^5.0.6",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/test-utils": "^2.4.8",
     "@vue/tsconfig": "^0.9.1",

@@ -20,6 +20,7 @@ type fakeIdentityClient struct {
 	listUsersFn          func(context.Context, *pb.ListUsersRequest, ...grpc.CallOption) (*pb.ListUsersResponse, error)
 	updateRoleFn         func(context.Context, *pb.UpdateUserRoleRequest, ...grpc.CallOption) (*pb.UpdateUserRoleResponse, error)
 	updateStatusFn       func(context.Context, *pb.UpdateUserStatusRequest, ...grpc.CallOption) (*pb.UpdateUserStatusResponse, error)
+	updateProfileFn      func(context.Context, *pb.UpdateUserProfileRequest, ...grpc.CallOption) (*pb.UpdateUserProfileResponse, error)
 	resetPasswordFn      func(context.Context, *pb.ResetUserPasswordRequest, ...grpc.CallOption) (*pb.ResetUserPasswordResponse, error)
 	deleteUserFn         func(context.Context, *pb.DeleteUserRequest, ...grpc.CallOption) (*pb.DeleteUserResponse, error)
 	listIdentityAuditsFn func(context.Context, *pb.ListIdentityAuditsRequest, ...grpc.CallOption) (*pb.ListIdentityAuditsResponse, error)
@@ -71,6 +72,10 @@ func (f *fakeIdentityClient) UpdateUserRole(ctx context.Context, in *pb.UpdateUs
 
 func (f *fakeIdentityClient) UpdateUserStatus(ctx context.Context, in *pb.UpdateUserStatusRequest, opts ...grpc.CallOption) (*pb.UpdateUserStatusResponse, error) {
 	return f.updateStatusFn(ctx, in, opts...)
+}
+
+func (f *fakeIdentityClient) UpdateUserProfile(ctx context.Context, in *pb.UpdateUserProfileRequest, opts ...grpc.CallOption) (*pb.UpdateUserProfileResponse, error) {
+	return f.updateProfileFn(ctx, in, opts...)
 }
 
 func (f *fakeIdentityClient) ResetUserPassword(ctx context.Context, in *pb.ResetUserPasswordRequest, opts ...grpc.CallOption) (*pb.ResetUserPasswordResponse, error) {
@@ -157,6 +162,12 @@ func TestIdentityLogicMapsAdminRPCs(t *testing.T) {
 			}
 			return &pb.UpdateUserStatusResponse{User: &pb.AdminUserView{UserId: "2", Role: pb.Role_ROLE_MEMBER, Status: pb.AccountStatus_ACCOUNT_STATUS_DISABLED}}, nil
 		},
+		updateProfileFn: func(_ context.Context, in *pb.UpdateUserProfileRequest, _ ...grpc.CallOption) (*pb.UpdateUserProfileResponse, error) {
+			if in.GetActorUserId() != "1" || in.GetTargetUserId() != "2" || in.GetUsername() != "bob" || in.GetEmail() != "bob@example.com" {
+				t.Fatalf("unexpected update profile request: %+v", in)
+			}
+			return &pb.UpdateUserProfileResponse{User: &pb.AdminUserView{UserId: "2", Username: "bob", Email: "bob@example.com", Role: pb.Role_ROLE_MEMBER, Status: pb.AccountStatus_ACCOUNT_STATUS_ACTIVE}}, nil
+		},
 		resetPasswordFn: func(_ context.Context, in *pb.ResetUserPasswordRequest, _ ...grpc.CallOption) (*pb.ResetUserPasswordResponse, error) {
 			if in.GetTargetUserId() != "2" || in.GetNewPassword() != "new-password" {
 				t.Fatalf("unexpected reset password request: %+v", in)
@@ -190,6 +201,11 @@ func TestIdentityLogicMapsAdminRPCs(t *testing.T) {
 	}
 	if resp, err := NewIdentityUserStatusUpdateLogic(ctx, svcCtx).IdentityUserStatusUpdate(&types.AdminUpdateUserStatusReq{UserId: "2", Status: "disabled"}); err != nil || resp.User.Status != "disabled" {
 		t.Fatalf("status update failed: resp=%+v err=%v", resp, err)
+	}
+	username := "bob"
+	email := "bob@example.com"
+	if resp, err := NewIdentityUserProfileUpdateLogic(ctx, svcCtx).IdentityUserProfileUpdate(&types.AdminUpdateUserProfileReq{UserId: "2", Username: &username, Email: &email}); err != nil || resp.User.Username != "bob" {
+		t.Fatalf("profile update failed: resp=%+v err=%v", resp, err)
 	}
 	if resp, err := NewIdentityUserPasswordResetLogic(ctx, svcCtx).IdentityUserPasswordReset(&types.AdminResetUserPasswordReq{UserId: "2", NewPassword: "new-password"}); err != nil || !resp.Ok {
 		t.Fatalf("password reset failed: resp=%+v err=%v", resp, err)
