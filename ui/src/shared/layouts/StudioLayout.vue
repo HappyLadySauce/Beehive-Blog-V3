@@ -50,6 +50,9 @@ async function handleLogout() {
           </a>
         </RouterLink>
       </nav>
+      <div class="studio-shell__sidebar-account">
+        <UserAccountMenu :user="authStore.currentUser" surface="studio" placement="top" @logout="handleLogout" />
+      </div>
     </aside>
     <div class="studio-shell__workspace">
       <header class="studio-shell__topbar">
@@ -57,7 +60,6 @@ async function handleLogout() {
         <div class="studio-shell__topbar-actions">
           <LocaleToggle />
           <ThemeToggle />
-          <UserAccountMenu :user="authStore.currentUser" surface="studio" @logout="handleLogout" />
         </div>
       </header>
       <main class="studio-shell__main">
@@ -76,13 +78,20 @@ async function handleLogout() {
 }
 
 .studio-shell__sidebar {
-  display: grid;
-  align-content: start;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   border-right: 1px solid var(--bb-color-line);
   padding: 20px;
   background: var(--bb-color-surface-glass);
   backdrop-filter: blur(16px);
+}
+
+.studio-shell__sidebar-account {
+  margin-top: auto;
+  border-top: 1px solid var(--bb-color-line);
+  padding-top: 16px;
 }
 
 .studio-shell__brand {
@@ -168,8 +177,13 @@ async function handleLogout() {
 
   .studio-shell__sidebar {
     position: static;
+    min-height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--bb-color-line);
+  }
+
+  .studio-shell__sidebar-account {
+    margin-top: 0;
   }
 
   .studio-shell__nav {

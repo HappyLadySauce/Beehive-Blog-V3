@@ -39,7 +39,7 @@ async function handleLogout(): Promise<void> {
         <RouterLink to="/">{{ t('nav.home') }}</RouterLink>
         <LocaleToggle />
         <ThemeToggle />
-        <UserAccountMenu :user="authStore.currentUser" surface="public" @logout="handleLogout" />
+        <UserAccountMenu :user="authStore.currentUser" surface="public" compact @logout="handleLogout" />
       </nav>
     </header>
     <StatusAlert v-if="isStudioForbidden" tone="warning" title="Studio access denied">
@@ -104,15 +104,16 @@ async function handleLogout(): Promise<void> {
 .public-shell__nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .public-shell__nav a {
   border-radius: 6px;
-  padding: 8px;
+  padding: 8px 10px;
   color: var(--bb-color-muted);
   text-decoration: none;
   transition: color 160ms ease, background-color 160ms ease;
+  white-space: nowrap;
 }
 
 .public-shell__nav a:hover {
@@ -142,6 +143,7 @@ async function handleLogout(): Promise<void> {
   .public-shell__nav {
     width: 100%;
     justify-content: space-between;
+    gap: 6px;
   }
 }
 </style>

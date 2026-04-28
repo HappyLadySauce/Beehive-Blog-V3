@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, UserPlus } from 'lucide-vue-next'
+import { ChevronDown, LayoutDashboard, LogIn, LogOut, User, UserPlus } from 'lucide-vue-next'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -11,6 +11,8 @@ import UserAvatar from './UserAvatar.vue'
 const props = defineProps<{
   user: AuthUserProfile | null
   surface?: 'public' | 'studio'
+  compact?: boolean
+  placement?: 'auto' | 'top' | 'bottom'
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +24,7 @@ const route = useRoute()
 const triggerRef = useTemplateRef<HTMLButtonElement>('menuTrigger')
 const panelRef = useTemplateRef<HTMLElement>('menuPanel')
 const isOpen = shallowRef(false)
+const panelPlacement = shallowRef<'top' | 'bottom'>('bottom')
 const panelStyle = reactive({
   top: '0px',
   left: '0px',
@@ -33,6 +36,13 @@ const showAdminLinks = computed(() => isAdmin.value && props.surface !== 'studio
 const showProfileLink = computed(() => props.surface !== 'studio')
 const displayName = computed(() => props.user?.nickname || props.user?.username || t('account.account'))
 const email = computed(() => props.user?.email || t('account.signInHint'))
+const chevronClass = computed(() => {
+  if (!isOpen.value) {
+    return 'account-menu__chevron--closed'
+  }
+  const opensUp = props.placement === 'top' || panelPlacement.value === 'top'
+  return opensUp ? 'account-menu__chevron--open-top' : 'account-menu__chevron--open-bottom'
+})
 
 function updatePanelPosition(): void {
   const trigger = triggerRef.value
@@ -41,9 +51,18 @@ function updatePanelPosition(): void {
   }
 
   const rect = trigger.getBoundingClientRect()
+  const panelHeight = panelRef.value?.offsetHeight ?? 160
   const width = Math.min(220, Math.max(180, window.innerWidth - 24))
   const left = Math.min(Math.max(12, rect.right - width), window.innerWidth - width - 12)
-  panelStyle.top = `${rect.bottom + 8}px`
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+  const shouldOpenUp = props.placement === 'top'
+    || (props.placement !== 'bottom' && spaceBelow < panelHeight + 16 && spaceAbove > spaceBelow)
+
+  panelPlacement.value = shouldOpenUp ? 'top' : 'bottom'
+  panelStyle.top = shouldOpenUp
+    ? `${Math.max(12, rect.top - panelHeight - 8)}px`
+    : `${rect.bottom + 8}px`
   panelStyle.left = `${left}px`
 }
 
@@ -126,11 +145,11 @@ onBeforeUnmount(() => {
       @click="toggleMenu"
     >
       <UserAvatar :name="displayName" :src="user?.avatar_url" size="md" />
-      <span class="account-menu__identity">
+      <span v-if="!compact" class="account-menu__identity">
         <strong>{{ displayName }}</strong>
         <span>{{ email }}</span>
       </span>
-      <ChevronDown :size="16" aria-hidden="true" />
+      <ChevronDown class="account-menu__chevron" :class="chevronClass" :size="16" aria-hidden="true" />
     </button>
 
     <Teleport to="body">
@@ -151,10 +170,6 @@ onBeforeUnmount(() => {
             <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
               <LayoutDashboard :size="16" aria-hidden="true" />
               {{ t('account.studio') }}
-            </RouterLink>
-            <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio/users" role="menuitem" @click="closeMenu">
-              <ShieldCheck :size="16" aria-hidden="true" />
-              {{ t('account.users') }}
             </RouterLink>
             <button class="account-menu__item account-menu__item--danger" type="button" role="menuitem" @click="handleLogout">
               <LogOut :size="16" aria-hidden="true" />
@@ -217,6 +232,23 @@ onBeforeUnmount(() => {
 .account-menu__identity span {
   color: var(--bb-color-muted);
   font-size: 0.82rem;
+}
+
+.account-menu__chevron {
+  color: var(--bb-color-muted);
+  transition: transform 140ms ease;
+}
+
+.account-menu__chevron--closed {
+  transform: rotate(90deg);
+}
+
+.account-menu__chevron--open-top {
+  transform: rotate(180deg);
+}
+
+.account-menu__chevron--open-bottom {
+  transform: rotate(0deg);
 }
 
 .account-menu__panel {
