@@ -1,5 +1,5 @@
 Name: file.rpc
-ListenOn: 0.0.0.0:8093
+ListenOn: 0.0.0.0:8083
 Mode: dev
 
 Etcd:
@@ -10,9 +10,9 @@ Etcd:
 Postgres:
   Host: 127.0.0.1
   Port: 5432
-  User: postgres
-  Password: postgres
-  DBName: beehive_blog_v3
+  User: Beehive-Blog-V3
+  Password: Beehive-Blog-V3
+  DBName: Beehive-Blog-V3
   SSLMode: disable
   TimeZone: Asia/Shanghai
   ConnectTimeoutSeconds: 5
@@ -20,7 +20,6 @@ Postgres:
   MaxIdleConns: 10
   ConnMaxLifetimeSeconds: 1800
   ConnMaxIdleTimeSeconds: 600
-
 InternalAuthToken: "replace-me-with-a-shared-internal-secret"
 AllowedCallers:
   - gateway
