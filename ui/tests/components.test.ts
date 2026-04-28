@@ -134,7 +134,8 @@ describe('shared components', () => {
     expect(document.body.textContent).not.toContain('Studio')
     expect(document.body.textContent).not.toContain('Users')
     expect(document.body.textContent).not.toContain('Profile')
-    expect(document.body.textContent).toContain('Change password')
+    expect(document.body.textContent).not.toContain('Change password')
+    expect(document.body.textContent).toContain('Logout')
   })
 
   it('renders login and register actions in the public account menu', async () => {

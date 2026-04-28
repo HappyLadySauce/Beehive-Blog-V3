@@ -19,10 +19,7 @@ type S3Storage struct {
 	bucket  string
 }
 
-func NewS3Storage(ctx context.Context, conf config.ObjectStorageConf) (*S3Storage, error) {
-	if !conf.Enabled {
-		return &S3Storage{}, nil
-	}
+func NewS3Storage(ctx context.Context, conf config.S3StorageConf) (*S3Storage, error) {
 	awsCfg, err := awsconfig.LoadDefaultConfig(
 		ctx,
 		awsconfig.WithRegion(conf.Region),
@@ -78,6 +75,13 @@ func (s *S3Storage) Head(ctx context.Context, bucket string, objectKey string) (
 		ByteSize:    aws.ToInt64(result.ContentLength),
 		ContentType: aws.ToString(result.ContentType),
 	}, nil
+}
+
+func (s *S3Storage) Commit(ctx context.Context, bucket string, objectKey string) error {
+	if s == nil || !s.enabled || s.client == nil {
+		return ErrStorageDisabled
+	}
+	return nil
 }
 
 func (s *S3Storage) Delete(ctx context.Context, bucket string, objectKey string) error {

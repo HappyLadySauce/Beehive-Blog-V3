@@ -62,14 +62,14 @@ func normalizeContentType(contentType string) string {
 	return strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
 }
 
-func maxBytesForScope(conf config.ObjectStorageConf, scope string) int64 {
+func maxBytesForScope(conf config.StorageConf, scope string) int64 {
 	if conf.MaxBytesByScope != nil && conf.MaxBytesByScope[scope] > 0 {
 		return conf.MaxBytesByScope[scope]
 	}
 	return defaultMaxBytesByScope[scope]
 }
 
-func allowedContentTypesForScope(conf config.ObjectStorageConf, scope string) map[string]struct{} {
+func allowedContentTypesForScope(conf config.StorageConf, scope string) map[string]struct{} {
 	values := defaultContentTypesByScope[scope]
 	if conf.AllowedContentTypesByScope != nil && len(conf.AllowedContentTypesByScope[scope]) > 0 {
 		values = conf.AllowedContentTypesByScope[scope]
@@ -84,7 +84,7 @@ func allowedContentTypesForScope(conf config.ObjectStorageConf, scope string) ma
 	return allowlist
 }
 
-func validateUploadFile(conf config.ObjectStorageConf, scope string, fileName string, contentType string, byteSize int64) (string, int64, error) {
+func validateUploadFile(conf config.StorageConf, scope string, fileName string, contentType string, byteSize int64) (string, int64, error) {
 	fileName = strings.TrimSpace(fileName)
 	if fileName == "" || len(fileName) > 255 {
 		return "", 0, invalidArgument("file_name is invalid")

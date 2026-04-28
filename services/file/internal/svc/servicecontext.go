@@ -17,12 +17,13 @@ import (
 )
 
 type ServiceContext struct {
-	Config        config.Config
-	DB            *gorm.DB
-	SQLDB         *sql.DB
-	Store         *repo.Store
-	Services      *fileservice.Manager
-	ObjectStorage storage.ObjectStorage
+	Config       config.Config
+	DB           *gorm.DB
+	SQLDB        *sql.DB
+	Store        *repo.Store
+	Services     *fileservice.Manager
+	Storage      storage.ObjectStorage
+	LocalStorage storage.LocalObjectStorage
 }
 
 func NewServiceContext(c config.Config) (*ServiceContext, error) {
@@ -34,10 +35,10 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize PostgreSQL failed: %w", err)
 	}
-	objectStorage, err := storage.NewS3Storage(context.Background(), c.ObjectStorage)
+	objectStorage, localStorage, err := newObjectStorage(c.Storage, c.InternalAuthToken)
 	if err != nil {
 		_ = sqlDB.Close()
-		return nil, fmt.Errorf("initialize object storage failed: %w", err)
+		return nil, fmt.Errorf("initialize file storage failed: %w", err)
 	}
 	store := repo.NewStore(db)
 	readinessChecker := func(ctx context.Context) error {
@@ -52,7 +53,7 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	services := fileservice.NewManager(fileservice.Dependencies{
 		Config:         c,
 		Store:          store,
-		ObjectStorage:  objectStorage,
+		Storage:        objectStorage,
 		CheckReadiness: readinessChecker,
 	})
 
@@ -60,16 +61,18 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		"file_infrastructure_initialized",
 		logs.String("postgres_host", c.Postgres.Host),
 		logs.Int("postgres_port", withPostgresDefaults(c.Postgres).Port),
-		logs.String("object_storage_bucket", c.ObjectStorage.Bucket),
+		logs.String("storage_driver", storageDriver(c.Storage)),
+		logs.String("storage_bucket", storageBucket(c.Storage)),
 	)
 
 	return &ServiceContext{
-		Config:        c,
-		DB:            db,
-		SQLDB:         sqlDB,
-		Store:         store,
-		Services:      services,
-		ObjectStorage: objectStorage,
+		Config:       c,
+		DB:           db,
+		SQLDB:        sqlDB,
+		Store:        store,
+		Services:     services,
+		Storage:      objectStorage,
+		LocalStorage: localStorage,
 	}, nil
 }
 
@@ -141,4 +144,37 @@ func withPostgresDefaults(c config.PostgresConf) config.PostgresConf {
 		c.ConnMaxIdleTimeSeconds = 600
 	}
 	return c
+}
+
+func newObjectStorage(c config.StorageConf, fallbackSecret string) (storage.ObjectStorage, storage.LocalObjectStorage, error) {
+	switch storageDriver(c) {
+	case "s3":
+		objectStorage, err := storage.NewS3Storage(context.Background(), c.S3)
+		return objectStorage, nil, err
+	default:
+		localConf := c.Local
+		if strings.TrimSpace(localConf.UploadSecret) == "" {
+			localConf.UploadSecret = fallbackSecret
+		}
+		localStorage, err := storage.NewLocalStorage(localConf)
+		if err != nil {
+			return nil, nil, err
+		}
+		return localStorage, localStorage, nil
+	}
+}
+
+func storageDriver(c config.StorageConf) string {
+	driver := strings.ToLower(strings.TrimSpace(c.Driver))
+	if driver == "" {
+		return "local"
+	}
+	return driver
+}
+
+func storageBucket(c config.StorageConf) string {
+	if storageDriver(c) == "s3" {
+		return strings.TrimSpace(c.S3.Bucket)
+	}
+	return strings.TrimSpace(c.Local.Bucket)
 }

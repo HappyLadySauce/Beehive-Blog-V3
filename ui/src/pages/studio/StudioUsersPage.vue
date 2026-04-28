@@ -10,6 +10,7 @@ import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import ChangePasswordDialog from '@/shared/components/ChangePasswordDialog.vue'
 import FormField from '@/shared/components/FormField.vue'
+import IconActionButton from '@/shared/components/IconActionButton.vue'
 import ModalDialog from '@/shared/components/ModalDialog.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
@@ -347,45 +348,35 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <td class="users-page__cell">{{ user.lastLogin }}</td>
             <td class="users-page__cell users-page__cell--actions">
               <div class="users-page__actions">
-                <button
-                  class="users-page__icon-action"
-                  type="button"
-                  :aria-label="`View ${user.email}`"
-                  :title="`View ${user.email}`"
-                  @click="openUser(user, 'view')"
-                >
+                <IconActionButton :aria-label="`View ${user.email}`" :title="`View ${user.email}`" @click="openUser(user, 'view')">
                   <Eye :size="17" aria-hidden="true" />
-                </button>
-                <button
-                  class="users-page__icon-action users-page__icon-action--primary"
-                  type="button"
+                </IconActionButton>
+                <IconActionButton
+                  tone="primary"
                   :disabled="isMutating"
                   :aria-label="`Edit ${user.email}`"
                   :title="`Edit ${user.email}`"
                   @click="openUser(user, 'edit')"
                 >
                   <Pencil :size="17" aria-hidden="true" />
-                </button>
-                <button
-                  class="users-page__icon-action"
-                  type="button"
+                </IconActionButton>
+                <IconActionButton
                   :disabled="isMutating"
                   :aria-label="user.isSelf ? `Change password for ${user.email}` : `Reset password for ${user.email}`"
                   :title="user.isSelf ? `Change password for ${user.email}` : `Reset password for ${user.email}`"
                   @click="openPasswordReset(user)"
                 >
                   <KeyRound :size="17" aria-hidden="true" />
-                </button>
-                <button
-                  class="users-page__icon-action users-page__icon-action--danger"
-                  type="button"
+                </IconActionButton>
+                <IconActionButton
+                  tone="danger"
                   :disabled="isMutating"
                   :aria-label="`Delete ${user.email}`"
                   :title="`Delete ${user.email}`"
                   @click="deleteUser(user)"
                 >
                   <Trash2 :size="17" aria-hidden="true" />
-                </button>
+                </IconActionButton>
               </div>
             </td>
           </tr>
@@ -590,42 +581,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   justify-content: flex-end;
   gap: 8px;
   align-items: center;
-}
-
-.users-page__icon-action {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--bb-color-muted);
-  background: transparent;
-  text-decoration: none;
-  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
-}
-
-.users-page__icon-action:hover,
-.users-page__icon-action:focus-visible {
-  outline: none;
-  color: var(--bb-color-text-strong);
-  border-color: var(--bb-color-line);
-  background: var(--bb-color-surface-elevated);
-  box-shadow: 0 0 0 3px var(--bb-color-focus);
-}
-
-.users-page__icon-action--primary {
-  color: var(--bb-color-text);
-}
-
-.users-page__icon-action--danger {
-  color: var(--bb-color-danger);
-}
-
-.users-page__icon-action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .users-page__modal,

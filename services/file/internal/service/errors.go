@@ -9,7 +9,7 @@ func serviceNotInitialized() error {
 }
 
 func dependencyUnavailable(err error) error {
-	return errs.Wrap(err, errs.CodeFileDependencyUnavailable, "file dependency is unavailable")
+	return errs.Wrap(err, errs.CodeFileDependencyUnavailable, "file storage is unavailable")
 }
 
 func invalidArgument(message string) error {

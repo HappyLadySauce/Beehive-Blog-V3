@@ -33,7 +33,7 @@ test('studio navigation uses exact active state and exposes management pages', a
   await expect(activeLinks.first()).toHaveText(/Audits/)
 })
 
-test('studio account menu opens password dialog and omits profile shortcut', async ({ page }) => {
+test('studio account menu only exposes logout action', async ({ page }) => {
   await page.goto('/studio/login')
   await page.getByLabel('Admin email or username').fill('admin@beehive.local')
   await page.locator('#studio-login-password').fill('Admin@123456')
@@ -41,8 +41,8 @@ test('studio account menu opens password dialog and omits profile shortcut', asy
 
   await page.getByLabel('Open account menu').click()
   await expect(page.getByRole('menuitem', { name: 'Profile' })).toHaveCount(0)
-  await page.getByRole('menuitem', { name: 'Change password' }).click()
-  await expect(page.getByRole('heading', { name: 'Change password' })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Change password' })).toHaveCount(0)
+  await expect(page.getByRole('menuitem', { name: 'Logout' })).toBeVisible()
 })
 
 test('public page has no horizontal overflow on mobile', async ({ page }) => {

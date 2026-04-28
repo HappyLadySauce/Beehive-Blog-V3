@@ -24,15 +24,23 @@ InternalAuthToken: "replace-me-with-a-shared-internal-secret"
 AllowedCallers:
   - gateway
 
-ObjectStorage:
-  Enabled: false
-  Endpoint: "http://127.0.0.1:9000"
-  Region: "us-east-1"
-  Bucket: "beehive"
-  AccessKeyID: ""
-  SecretAccessKey: ""
-  PublicBaseURL: "http://127.0.0.1:9000/beehive"
+Storage:
+  Driver: local
+  PublicBaseURL: "http://127.0.0.1:8084/files/assets"
   PresignTTLSeconds: 300
+  Local:
+    ListenOn: "0.0.0.0:8084"
+    RootDir: "var/file/assets"
+    TempDir: "var/file/pending"
+    Bucket: "beehive-local"
+    UploadBaseURL: "http://127.0.0.1:8084/files/uploads"
+    UploadSecret: "replace-me-with-a-local-upload-signing-secret"
+  S3:
+    Endpoint: "http://127.0.0.1:9000"
+    Region: "us-east-1"
+    Bucket: "beehive"
+    AccessKeyID: ""
+    SecretAccessKey: ""
   MaxBytesByScope:
     avatar: 2097152
     content_cover: 5242880

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Archive, Eye, Pencil, Trash2 } from 'lucide-vue-next'
 import { onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -14,10 +15,10 @@ import type {
   ContentType,
   ContentVisibility,
 } from '@/features/studio'
-import ActionTagButton from '@/shared/components/ActionTagButton.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import FormField from '@/shared/components/FormField.vue'
+import IconActionButton from '@/shared/components/IconActionButton.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
@@ -304,9 +305,21 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
               <td>{{ formatUnixTime(content.updated_at) }}</td>
               <td>
                 <div class="content-page__actions">
-                  <ActionTagButton @click="viewContent(content)">View</ActionTagButton>
-                  <ActionTagButton tone="primary" @click="editContent(content)">Edit</ActionTagButton>
-                  <ActionTagButton tone="danger" :disabled="content.status === 'archived' || isMutating" @click="archiveContent(content)">Archive</ActionTagButton>
+                  <IconActionButton :aria-label="`View ${content.title}`" :title="`View ${content.title}`" @click="viewContent(content)">
+                    <Eye :size="17" aria-hidden="true" />
+                  </IconActionButton>
+                  <IconActionButton tone="primary" :aria-label="`Edit ${content.title}`" :title="`Edit ${content.title}`" @click="editContent(content)">
+                    <Pencil :size="17" aria-hidden="true" />
+                  </IconActionButton>
+                  <IconActionButton
+                    tone="danger"
+                    :disabled="content.status === 'archived' || isMutating"
+                    :aria-label="`Archive ${content.title}`"
+                    :title="`Archive ${content.title}`"
+                    @click="archiveContent(content)"
+                  >
+                    <Archive :size="17" aria-hidden="true" />
+                  </IconActionButton>
                 </div>
               </td>
             </tr>
@@ -340,8 +353,12 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <span>{{ tag.slug }}</span>
           </div>
           <div class="content-page__actions">
-            <ActionTagButton @click="editTag(tag)">Edit</ActionTagButton>
-            <ActionTagButton tone="danger" @click="deleteTag(tag)">Delete</ActionTagButton>
+            <IconActionButton :aria-label="`Edit ${tag.name}`" :title="`Edit ${tag.name}`" @click="editTag(tag)">
+              <Pencil :size="17" aria-hidden="true" />
+            </IconActionButton>
+            <IconActionButton tone="danger" :aria-label="`Delete ${tag.name}`" :title="`Delete ${tag.name}`" @click="deleteTag(tag)">
+              <Trash2 :size="17" aria-hidden="true" />
+            </IconActionButton>
           </div>
         </article>
       </div>
@@ -452,7 +469,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 .content-page__table {
   overflow-x: auto;
   border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--bb-color-surface);
   box-shadow: var(--bb-shadow-soft);
 }
@@ -475,7 +492,19 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   color: var(--bb-color-muted);
   font-size: 0.8rem;
   text-transform: uppercase;
+  background: var(--bb-color-surface);
+}
+
+.content-page__table tbody tr:nth-child(even) {
   background: var(--bb-color-subtle);
+}
+
+.content-page__table tbody tr:hover {
+  background: var(--bb-color-primary-soft);
+}
+
+.content-page__table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .content-page__table td:first-child {
@@ -490,10 +519,16 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 }
 
 .content-page__actions {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   align-items: center;
+}
+
+.content-page__table td:last-child,
+.content-page__table th:last-child {
+  text-align: right;
 }
 
 .content-page__detail-grid {

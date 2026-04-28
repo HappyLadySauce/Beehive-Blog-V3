@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, KeyRound, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, UserPlus } from 'lucide-vue-next'
+import { ChevronDown, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, UserPlus } from 'lucide-vue-next'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
@@ -14,7 +14,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   logout: []
-  changePassword: []
 }>()
 
 const route = useRoute()
@@ -68,11 +67,6 @@ function toggleMenu(): void {
 function handleLogout(): void {
   closeMenu()
   emit('logout')
-}
-
-function handleChangePassword(): void {
-  closeMenu()
-  emit('changePassword')
 }
 
 function handleDocumentPointerDown(event: PointerEvent): void {
@@ -152,10 +146,6 @@ onBeforeUnmount(() => {
               <User :size="16" aria-hidden="true" />
               Profile
             </RouterLink>
-            <button class="account-menu__item" type="button" role="menuitem" @click="handleChangePassword">
-              <KeyRound :size="16" aria-hidden="true" />
-              Change password
-            </button>
             <RouterLink v-if="showAdminLinks" class="account-menu__item" to="/studio" role="menuitem" @click="closeMenu">
               <LayoutDashboard :size="16" aria-hidden="true" />
               Studio

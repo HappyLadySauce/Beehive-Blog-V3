@@ -95,6 +95,10 @@ describe('studio UX flows', () => {
     const { wrapper, router } = await mountWithApp(StudioContentPage)
     await flushPromises()
 
+    expect(wrapper.find('[aria-label="View v3 frontend integration notes"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Edit v3 frontend integration notes"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Archive v3 frontend integration notes"]').exists()).toBe(true)
+
     await wrapper.findAll('button').find((button) => button.text().includes('New draft'))!.trigger('click')
     await flushPromises()
 

@@ -28,7 +28,7 @@ func TestNormalizeScope(t *testing.T) {
 func TestValidateUploadFile(t *testing.T) {
 	t.Parallel()
 
-	conf := config.ObjectStorageConf{
+	conf := config.StorageConf{
 		MaxBytesByScope: map[string]int64{
 			ScopeAvatar: 128,
 		},
@@ -68,13 +68,27 @@ func TestObjectKeyUsesScopePrefix(t *testing.T) {
 func TestPublicURLForVisibility(t *testing.T) {
 	t.Parallel()
 
-	publicURL := publicURLForVisibility("https://cdn.example.com/files/", VisibilityPublic, "/avatars/42/avatar.png")
+	publicURL := publicURLForVisibility(config.StorageConf{
+		Driver:        "s3",
+		PublicBaseURL: "https://cdn.example.com/files/",
+	}, VisibilityPublic, "asset_1", "/avatars/42/avatar.png")
 	if publicURL != "https://cdn.example.com/files/avatars/42/avatar.png" {
 		t.Fatalf("unexpected public URL: %s", publicURL)
 	}
 
-	privateURL := publicURLForVisibility("https://cdn.example.com/files/", VisibilityPrivate, "avatars/42/avatar.png")
+	privateURL := publicURLForVisibility(config.StorageConf{
+		Driver:        "s3",
+		PublicBaseURL: "https://cdn.example.com/files/",
+	}, VisibilityPrivate, "asset_1", "avatars/42/avatar.png")
 	if privateURL != "" {
 		t.Fatalf("expected private asset public URL to be empty, got %s", privateURL)
+	}
+
+	localURL := publicURLForVisibility(config.StorageConf{
+		Driver:        "local",
+		PublicBaseURL: "https://files.example.com/assets",
+	}, VisibilityPublic, "asset_1", "avatars/42/avatar.png")
+	if localURL != "https://files.example.com/assets/asset_1" {
+		t.Fatalf("unexpected local public URL: %s", localURL)
 	}
 }
