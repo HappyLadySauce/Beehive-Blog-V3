@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import ContentEditorCanvas from '@/features/studio/content-editor/ContentEditorCanvas.vue'
@@ -13,6 +14,7 @@ import { useToast } from '@/shared/composables'
 const route = useRoute()
 const router = useRouter()
 const { pushToast } = useToast()
+const { t } = useI18n()
 const routeContentId = computed(() => {
   const value = route.params.content_id
   return typeof value === 'string' ? value : undefined
@@ -32,12 +34,20 @@ onMounted(() => {
 async function saveContent(): Promise<void> {
   try {
     const result = await editorState.save()
-    pushToast({ tone: 'success', title: result.wasCreated ? 'Draft created' : 'Content saved', message: result.content.title })
+    pushToast({
+      tone: 'success',
+      title: result.wasCreated ? t('editor.toast.created') : t('editor.toast.saved'),
+      message: result.content.title,
+    })
     if (result.wasCreated) {
       await router.replace(`/studio/content/${encodeURIComponent(result.content.content_id)}/edit`)
     }
   } catch (error) {
-    pushToast({ tone: 'danger', title: 'Save failed', message: error instanceof Error ? error.message : 'Unable to save content.' })
+    pushToast({
+      tone: 'danger',
+      title: t('editor.toast.saveFailed'),
+      message: error instanceof Error ? error.message : t('editor.toast.unableToSave'),
+    })
   }
 }
 
@@ -47,7 +57,7 @@ function backToContent(): void {
 </script>
 
 <template>
-  <main class="content-editor-page" :class="pageClasses" aria-label="Content editor">
+  <main class="content-editor-page" :class="pageClasses" :aria-label="t('editor.ariaLabel')">
     <ContentEditorHeader
       v-model:title="editorState.form.title"
       :mode="editorState.mode.value"
@@ -60,7 +70,7 @@ function backToContent(): void {
       @toggle-sidebar="editorState.toggleSidebar"
       @toggle-focus="editorState.toggleFocusMode"
     />
-    <StatusAlert v-if="editorState.errorMessage.value" class="content-editor-page__alert" tone="danger" title="Editor unavailable">
+    <StatusAlert v-if="editorState.errorMessage.value" class="content-editor-page__alert" tone="danger" :title="t('editor.unavailable')">
       {{ editorState.errorMessage.value }}
     </StatusAlert>
     <ContentEditorToolbar

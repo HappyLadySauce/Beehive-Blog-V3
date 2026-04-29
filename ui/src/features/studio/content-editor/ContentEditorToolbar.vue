@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Editor } from '@tiptap/vue-3'
+import { computed } from 'vue'
 import {
   AlignCenter,
   AlignLeft,
@@ -19,11 +20,12 @@ import {
   Underline,
   Undo2,
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 import type { ContentEditorSourceMode } from './useContentEditor'
 
 const props = defineProps<{
-  editor: Editor | null
+  editor: Editor | null | undefined
   sourceMode: ContentEditorSourceMode
 }>()
 
@@ -31,18 +33,20 @@ const emit = defineEmits<{
   sourceMode: [mode: ContentEditorSourceMode]
 }>()
 
-const sourceModes: Array<{ value: ContentEditorSourceMode; label: string }> = [
-  { value: 'visual', label: 'Visual' },
-  { value: 'html', label: 'HTML' },
-  { value: 'markdown', label: 'Markdown' },
-]
+const { t } = useI18n()
+
+const sourceModes = computed<Array<{ value: ContentEditorSourceMode; label: string }>>(() => [
+  { value: 'visual', label: t('editor.modes.visual') },
+  { value: 'html', label: t('editor.modes.html') },
+  { value: 'markdown', label: t('editor.modes.markdown') },
+])
 
 function updateLink(): void {
   if (!props.editor) {
     return
   }
   const current = props.editor.getAttributes('link').href as string | undefined
-  const next = window.prompt('Link URL', current ?? '')
+  const next = window.prompt(t('editor.linkUrl'), current ?? '')
   if (next === null) {
     return
   }
@@ -55,8 +59,8 @@ function updateLink(): void {
 </script>
 
 <template>
-  <div class="content-editor-toolbar" aria-label="Editor toolbar">
-    <div class="content-editor-toolbar__modes" role="group" aria-label="Editor mode">
+  <div class="content-editor-toolbar" :aria-label="t('accessibility.editorToolbar')">
+    <div class="content-editor-toolbar__modes" role="group" :aria-label="t('editor.mode')">
       <button
         v-for="mode in sourceModes"
         :key="mode.value"
@@ -69,60 +73,60 @@ function updateLink(): void {
       </button>
     </div>
 
-    <div class="content-editor-toolbar__tools" role="group" aria-label="Format tools">
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('paragraph') }" aria-label="Paragraph" @click="editor?.chain().focus().setParagraph().run()">
+    <div class="content-editor-toolbar__tools" role="group" :aria-label="t('editor.selectionTools')">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('paragraph') }" :aria-label="t('editor.tools.paragraph')" @click="editor?.chain().focus().setParagraph().run()">
         <Pilcrow :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('heading', { level: 1 }) }" aria-label="Heading 1" @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('heading', { level: 1 }) }" :aria-label="t('editor.tools.heading1')" @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()">
         <Heading1 :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('heading', { level: 2 }) }" aria-label="Heading 2" @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('heading', { level: 2 }) }" :aria-label="t('editor.tools.heading2')" @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()">
         <Heading2 :size="16" aria-hidden="true" />
       </button>
       <span class="content-editor-toolbar__divider" aria-hidden="true" />
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('bold') }" aria-label="Bold" @click="editor?.chain().focus().toggleBold().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('bold') }" :aria-label="t('editor.tools.bold')" @click="editor?.chain().focus().toggleBold().run()">
         <Bold :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('italic') }" aria-label="Italic" @click="editor?.chain().focus().toggleItalic().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('italic') }" :aria-label="t('editor.tools.italic')" @click="editor?.chain().focus().toggleItalic().run()">
         <Italic :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('underline') }" aria-label="Underline" @click="editor?.chain().focus().toggleUnderline().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('underline') }" :aria-label="t('editor.tools.underline')" @click="editor?.chain().focus().toggleUnderline().run()">
         <Underline :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('highlight') }" aria-label="Highlight" @click="editor?.chain().focus().toggleHighlight().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('highlight') }" :aria-label="t('editor.tools.highlight')" @click="editor?.chain().focus().toggleHighlight().run()">
         <Highlighter :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('link') }" aria-label="Link" @click="updateLink">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('link') }" :aria-label="t('editor.tools.link')" @click="updateLink">
         <Link2 :size="16" aria-hidden="true" />
       </button>
       <span class="content-editor-toolbar__divider" aria-hidden="true" />
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive({ textAlign: 'left' }) }" aria-label="Align left" @click="editor?.chain().focus().setTextAlign('left').run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive({ textAlign: 'left' }) }" :aria-label="t('editor.tools.alignLeft')" @click="editor?.chain().focus().setTextAlign('left').run()">
         <AlignLeft :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive({ textAlign: 'center' }) }" aria-label="Align center" @click="editor?.chain().focus().setTextAlign('center').run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive({ textAlign: 'center' }) }" :aria-label="t('editor.tools.alignCenter')" @click="editor?.chain().focus().setTextAlign('center').run()">
         <AlignCenter :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive({ textAlign: 'right' }) }" aria-label="Align right" @click="editor?.chain().focus().setTextAlign('right').run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive({ textAlign: 'right' }) }" :aria-label="t('editor.tools.alignRight')" @click="editor?.chain().focus().setTextAlign('right').run()">
         <AlignRight :size="16" aria-hidden="true" />
       </button>
       <span class="content-editor-toolbar__divider" aria-hidden="true" />
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('bulletList') }" aria-label="Bullet list" @click="editor?.chain().focus().toggleBulletList().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('bulletList') }" :aria-label="t('editor.tools.bulletList')" @click="editor?.chain().focus().toggleBulletList().run()">
         <List :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('orderedList') }" aria-label="Ordered list" @click="editor?.chain().focus().toggleOrderedList().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('orderedList') }" :aria-label="t('editor.tools.orderedList')" @click="editor?.chain().focus().toggleOrderedList().run()">
         <ListOrdered :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('blockquote') }" aria-label="Quote" @click="editor?.chain().focus().toggleBlockquote().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('blockquote') }" :aria-label="t('editor.tools.quote')" @click="editor?.chain().focus().toggleBlockquote().run()">
         <Quote :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('codeBlock') }" aria-label="Code block" @click="editor?.chain().focus().toggleCodeBlock().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual'" :class="{ active: editor?.isActive('codeBlock') }" :aria-label="t('editor.tools.codeBlock')" @click="editor?.chain().focus().toggleCodeBlock().run()">
         <Code2 :size="16" aria-hidden="true" />
       </button>
       <span class="content-editor-toolbar__divider" aria-hidden="true" />
-      <button type="button" :disabled="!editor || sourceMode !== 'visual' || !editor.can().undo()" aria-label="Undo" @click="editor?.chain().focus().undo().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual' || !editor.can().undo()" :aria-label="t('editor.tools.undo')" @click="editor?.chain().focus().undo().run()">
         <Undo2 :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :disabled="!editor || sourceMode !== 'visual' || !editor.can().redo()" aria-label="Redo" @click="editor?.chain().focus().redo().run()">
+      <button type="button" :disabled="!editor || sourceMode !== 'visual' || !editor.can().redo()" :aria-label="t('editor.tools.redo')" @click="editor?.chain().focus().redo().run()">
         <Redo2 :size="16" aria-hidden="true" />
       </button>
     </div>

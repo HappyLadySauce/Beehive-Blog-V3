@@ -120,4 +120,17 @@ describe('studio UX flows', () => {
 
     expect(router.currentRoute.value.fullPath).toMatch(/^\/studio\/content\/.+\/edit$/)
   })
+
+  it('does not mark the editor dirty when switching to markdown without edits', async () => {
+    const { wrapper } = await mountWithApp(ContentEditorPage, '/studio/content/new')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Idle')
+
+    await wrapper.findAll('button').find((button) => button.text().includes('Markdown'))!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Idle')
+    expect(wrapper.text()).not.toContain('Unsaved')
+  })
 })

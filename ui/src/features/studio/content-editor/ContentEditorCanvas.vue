@@ -2,12 +2,13 @@
 import { computed } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
 import type { Editor } from '@tiptap/vue-3'
+import { useI18n } from 'vue-i18n'
 
 import ContentEditorBubbleMenu from './ContentEditorBubbleMenu.vue'
 import type { ContentEditorSourceMode } from './useContentEditor'
 
 const props = defineProps<{
-  editor: Editor | null
+  editor: Editor | null | undefined
   loading?: boolean
   sourceMode: ContentEditorSourceMode
   sourceContent: string
@@ -18,12 +19,16 @@ const emit = defineEmits<{
   sourceContent: [value: string]
 }>()
 
-const sourceLabel = computed(() => (props.sourceMode === 'html' ? 'HTML source editor' : 'Markdown source editor'))
+const { t } = useI18n()
+
+const sourceLabel = computed(() => (props.sourceMode === 'html' ? t('editor.htmlSource') : t('editor.markdownSource')))
+const sourceModeLabel = computed(() => t(`editor.modes.${props.sourceMode}`))
+const wordCountLabel = computed(() => t('editor.wordCount', { count: props.wordCount }))
 </script>
 
 <template>
-  <section class="content-editor-canvas" aria-label="Writing canvas">
-    <div v-if="loading || !editor" class="content-editor-canvas__loading">Loading editor...</div>
+  <section class="content-editor-canvas" :aria-label="t('editor.writingCanvas')">
+    <div v-if="loading || !editor" class="content-editor-canvas__loading">{{ t('editor.loadingEditor') }}</div>
     <template v-else-if="sourceMode === 'visual'">
       <ContentEditorBubbleMenu :editor="editor" />
       <EditorContent :editor="editor" />
@@ -37,8 +42,8 @@ const sourceLabel = computed(() => (props.sourceMode === 'html' ? 'HTML source e
       @input="emit('sourceContent', ($event.target as HTMLTextAreaElement).value)"
     />
     <footer class="content-editor-canvas__footer">
-      <span>{{ wordCount }} words</span>
-      <span>{{ sourceMode }}</span>
+      <span>{{ wordCountLabel }}</span>
+      <span>{{ sourceModeLabel }}</span>
     </footer>
   </section>
 </template>

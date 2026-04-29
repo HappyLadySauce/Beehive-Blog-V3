@@ -2,6 +2,7 @@
 import type { Editor } from '@tiptap/vue-3'
 import { Bold, Highlighter, Italic, Link2, Underline } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   editor: Editor
@@ -9,6 +10,7 @@ const props = defineProps<{
 
 const visible = shallowRef(false)
 const position = shallowRef({ left: 0, top: 0 })
+const { t } = useI18n()
 
 const bubbleStyle = computed(() => ({
   left: `${position.value.left}px`,
@@ -41,7 +43,7 @@ function hideLater(): void {
 
 function updateLink(): void {
   const current = props.editor.getAttributes('link').href as string | undefined
-  const next = window.prompt('Link URL', current ?? '')
+  const next = window.prompt(t('editor.linkUrl'), current ?? '')
   if (next === null) {
     return
   }
@@ -66,20 +68,20 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-show="visible" class="content-editor-bubble" :style="bubbleStyle" role="toolbar" aria-label="Selection tools">
-    <button type="button" :class="{ active: editor.isActive('bold') }" aria-label="Bold" @click="editor.chain().focus().toggleBold().run()">
+  <div v-show="visible" class="content-editor-bubble" :style="bubbleStyle" role="toolbar" :aria-label="t('editor.selectionTools')">
+    <button type="button" :class="{ active: editor.isActive('bold') }" :aria-label="t('editor.tools.bold')" @click="editor.chain().focus().toggleBold().run()">
       <Bold :size="15" aria-hidden="true" />
     </button>
-    <button type="button" :class="{ active: editor.isActive('italic') }" aria-label="Italic" @click="editor.chain().focus().toggleItalic().run()">
+    <button type="button" :class="{ active: editor.isActive('italic') }" :aria-label="t('editor.tools.italic')" @click="editor.chain().focus().toggleItalic().run()">
       <Italic :size="15" aria-hidden="true" />
     </button>
-    <button type="button" :class="{ active: editor.isActive('underline') }" aria-label="Underline" @click="editor.chain().focus().toggleUnderline().run()">
+    <button type="button" :class="{ active: editor.isActive('underline') }" :aria-label="t('editor.tools.underline')" @click="editor.chain().focus().toggleUnderline().run()">
       <Underline :size="15" aria-hidden="true" />
     </button>
-    <button type="button" :class="{ active: editor.isActive('highlight') }" aria-label="Highlight" @click="editor.chain().focus().toggleHighlight().run()">
+    <button type="button" :class="{ active: editor.isActive('highlight') }" :aria-label="t('editor.tools.highlight')" @click="editor.chain().focus().toggleHighlight().run()">
       <Highlighter :size="15" aria-hidden="true" />
     </button>
-    <button type="button" :class="{ active: editor.isActive('link') }" aria-label="Link" @click="updateLink">
+    <button type="button" :class="{ active: editor.isActive('link') }" :aria-label="t('editor.tools.link')" @click="updateLink">
       <Link2 :size="15" aria-hidden="true" />
     </button>
   </div>

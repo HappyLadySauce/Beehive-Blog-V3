@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, CheckCircle2, Columns3, EyeOff, Loader2, Save } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import BaseButton from '@/shared/components/BaseButton.vue'
 
@@ -22,17 +24,21 @@ const emit = defineEmits<{
   toggleFocus: []
 }>()
 
+const { t } = useI18n()
+
+const saveStateLabel = computed(() => t(`editor.saveState.${props.saveState}`))
+
 function saveLabel(): string {
   if (props.saving) {
-    return 'Saving'
+    return t('editor.saveState.saving')
   }
-  return props.mode === 'create' ? 'Create draft' : 'Save content'
+  return props.mode === 'create' ? t('editor.createDraft') : t('editor.saveContent')
 }
 </script>
 
 <template>
   <header class="content-editor-header">
-    <button class="content-editor-header__icon" type="button" aria-label="Back to content list" @click="emit('back')">
+    <button class="content-editor-header__icon" type="button" :aria-label="t('editor.backToList')" @click="emit('back')">
       <ArrowLeft :size="18" aria-hidden="true" />
     </button>
     <div class="content-editor-header__title">
@@ -41,22 +47,22 @@ function saveLabel(): string {
         v-model="title"
         class="content-editor-header__input"
         type="text"
-        placeholder="Untitled"
+        :placeholder="t('editor.untitled')"
         autocomplete="off"
-        aria-label="Content title"
+        :aria-label="t('editor.title')"
       />
       <span class="content-editor-header__status" :class="`content-editor-header__status--${saveState}`">
         <Loader2 v-if="saveState === 'saving'" :size="14" aria-hidden="true" />
         <CheckCircle2 v-else-if="saveState === 'saved'" :size="14" aria-hidden="true" />
-        {{ saveState }}
+        {{ saveStateLabel }}
       </span>
     </div>
     <div class="content-editor-header__actions">
       <button
         class="content-editor-header__icon"
         type="button"
-        :aria-label="focusMode ? 'Exit focus mode' : 'Enter focus mode'"
-        :title="focusMode ? 'Exit focus mode' : 'Focus mode'"
+        :aria-label="focusMode ? t('editor.exitFocus') : t('editor.focusMode')"
+        :title="focusMode ? t('editor.exitFocus') : t('editor.focusMode')"
         :class="{ active: focusMode }"
         @click="emit('toggleFocus')"
       >
@@ -65,8 +71,8 @@ function saveLabel(): string {
       <button
         class="content-editor-header__icon"
         type="button"
-        :aria-label="sidebarOpen ? 'Hide settings panel' : 'Show settings panel'"
-        :title="sidebarOpen ? 'Hide settings panel' : 'Show settings panel'"
+        :aria-label="sidebarOpen ? t('editor.hideSettings') : t('editor.showSettings')"
+        :title="sidebarOpen ? t('editor.hideSettings') : t('editor.showSettings')"
         :class="{ active: sidebarOpen }"
         @click="emit('toggleSidebar')"
       >

@@ -13,6 +13,7 @@ import { computed, onBeforeUnmount, reactive, shallowRef, watch } from 'vue'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio/api/studioApi'
+import { i18n } from '@/shared/i18n'
 import type {
   ContentAIAccess,
   ContentDetail,
@@ -68,7 +69,7 @@ export function createEmptyContentEditorForm(): ContentEditorForm {
     comment_enabled: true,
     is_featured: false,
     sort_order: 0,
-    change_summary: 'Initial draft',
+    change_summary: '',
     tag_ids: [],
   }
 }
@@ -85,11 +86,14 @@ export function useContentEditor(contentId?: string) {
   const isFocusMode = shallowRef(false)
   const errorMessage = shallowRef('')
   const saveState = shallowRef<ContentEditorSaveState>('idle')
+  const cleanSaveState = shallowRef<Extract<ContentEditorSaveState, 'idle' | 'saved'>>('idle')
+  const cleanSnapshot = shallowRef('')
   const currentContentId = shallowRef(contentId ?? '')
   const tags = shallowRef<ContentTag[]>([])
   const canEditStatus = computed(() => mode.value !== 'create')
   const form = reactive(createEmptyContentEditorForm())
   let isHydrating = false
+  let isSyncingSourceContent = false
 
   const editor = useEditor({
     extensions: [
@@ -102,14 +106,14 @@ export function useContentEditor(contentId?: string) {
       Underline,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Placeholder.configure({ placeholder: 'Start writing...' }),
+      Placeholder.configure({ placeholder: String(i18n.global.t('editor.placeholder')) }),
       CharacterCount,
     ],
     content: safeParseDocument(form.body_json),
     editorProps: {
       attributes: {
         class: 'content-editor-canvas__surface',
-        'aria-label': 'Content body editor',
+        'aria-label': String(i18n.global.t('editor.ariaLabel')),
       },
       handlePaste: (view, event) => {
         const files = getImageFiles(event.clipboardData)
@@ -151,17 +155,21 @@ export function useContentEditor(contentId?: string) {
       if (isHydrating || saveState.value === 'saving') {
         return
       }
-      saveState.value = 'dirty'
+      refreshSaveState()
     },
     { deep: true },
   )
 
   watch(sourceContent, () => {
-    if (isHydrating || sourceMode.value === 'visual') {
+    if (isHydrating || isSyncingSourceContent || sourceMode.value === 'visual') {
       return
     }
-    form.body_markdown = sourceMode.value === 'markdown' ? sourceContent.value : htmlToMarkdown(sourceContent.value)
-    saveState.value = 'dirty'
+    const nextMarkdown = sourceMode.value === 'markdown' ? sourceContent.value : htmlToMarkdown(sourceContent.value)
+    if (nextMarkdown === form.body_markdown) {
+      return
+    }
+    form.body_markdown = nextMarkdown
+    refreshSaveState()
   })
 
   async function initialize(): Promise<void> {
@@ -176,9 +184,9 @@ export function useContentEditor(contentId?: string) {
       } else {
         hydrate(createBlankContent())
       }
-      saveState.value = 'idle'
+      commitCleanSnapshot('idle')
     } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : 'Unable to load the editor.'
+      errorMessage.value = error instanceof Error ? error.message : String(i18n.global.t('editor.toast.unableToLoad'))
       saveState.value = 'error'
     } finally {
       isLoading.value = false
@@ -199,10 +207,10 @@ export function useContentEditor(contentId?: string) {
       currentContentId.value = response.content.content_id
       mode.value = 'edit'
       hydrate(response.content)
-      saveState.value = 'saved'
+      commitCleanSnapshot('saved')
       return { content: response.content, wasCreated }
     } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : 'Unable to save content.'
+      errorMessage.value = error instanceof Error ? error.message : String(i18n.global.t('editor.toast.unableToSave'))
       saveState.value = 'error'
       throw error
     } finally {
@@ -244,12 +252,18 @@ export function useContentEditor(contentId?: string) {
     if (sourceMode.value !== 'visual') {
       syncSourceToVisual()
     }
+    sourceMode.value = nextMode
+    isSyncingSourceContent = true
     if (nextMode === 'html') {
       sourceContent.value = editor.value?.getHTML() ?? markdownToHtml(form.body_markdown)
     } else if (nextMode === 'markdown') {
       sourceContent.value = editor.value ? htmlToMarkdown(editor.value.getHTML()) : form.body_markdown
+    } else {
+      sourceContent.value = ''
     }
-    sourceMode.value = nextMode
+    queueMicrotask(() => {
+      isSyncingSourceContent = false
+    })
   }
 
   function setSourceContent(value: string): void {
@@ -284,7 +298,7 @@ export function useContentEditor(contentId?: string) {
   function buildPayload(): ContentWriteRequest {
     const title = form.title.trim()
     if (!title) {
-      throw new Error('Title is required.')
+      throw new Error(String(i18n.global.t('editor.validation.titleRequired')))
     }
     const payload: ContentWriteRequest = {
       type: form.type,
@@ -301,7 +315,10 @@ export function useContentEditor(contentId?: string) {
       is_featured: form.is_featured,
       sort_order: Number(form.sort_order) || 0,
       tag_ids: [...form.tag_ids],
-      change_summary: form.change_summary.trim() || (mode.value === 'create' ? 'Initial draft' : 'Content update'),
+      change_summary: form.change_summary.trim()
+        || (mode.value === 'create'
+          ? String(i18n.global.t('editor.changeSummaryDefaultCreate'))
+          : String(i18n.global.t('editor.changeSummaryDefaultUpdate'))),
     }
     if (canEditStatus.value) {
       payload.status = form.status
@@ -335,6 +352,16 @@ export function useContentEditor(contentId?: string) {
     setSourceContent,
     toggleSidebar,
     toggleFocusMode,
+  }
+
+  function commitCleanSnapshot(nextState: Extract<ContentEditorSaveState, 'idle' | 'saved'>): void {
+    cleanSnapshot.value = snapshotForm(form)
+    cleanSaveState.value = nextState
+    saveState.value = nextState
+  }
+
+  function refreshSaveState(): void {
+    saveState.value = snapshotForm(form) === cleanSnapshot.value ? cleanSaveState.value : 'dirty'
   }
 }
 
@@ -391,6 +418,26 @@ function slugFromTitle(title: string): string {
     .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
     .replace(/^-+|-+$/g, '')
     || `content-${Date.now()}`
+}
+
+function snapshotForm(form: ContentEditorForm): string {
+  return JSON.stringify({
+    type: form.type,
+    title: form.title,
+    slug: form.slug,
+    summary: form.summary,
+    body_markdown: form.body_markdown,
+    body_json: form.body_json,
+    cover_image_url: form.cover_image_url,
+    status: form.status,
+    visibility: form.visibility,
+    ai_access: form.ai_access,
+    comment_enabled: form.comment_enabled,
+    is_featured: form.is_featured,
+    sort_order: form.sort_order,
+    change_summary: form.change_summary,
+    tag_ids: form.tag_ids,
+  })
 }
 
 function getImageFiles(dataTransfer: DataTransfer | null): File[] {
