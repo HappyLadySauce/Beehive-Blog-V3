@@ -31,8 +31,8 @@ export const router = createRouter({
       children: [
         { path: '', name: 'studio-dashboard', component: () => import('@/pages/studio/StudioDashboardPage.vue') },
         { path: 'content', name: 'studio-content', component: () => import('@/pages/studio/StudioContentPage.vue') },
-        { path: 'content/new', redirect: '/studio/content' },
-        { path: 'content/:content_id/edit', redirect: '/studio/content' },
+        { path: 'content/new', name: 'studio-content-new', component: () => import('@/pages/studio/ContentEditorPage.vue') },
+        { path: 'content/:content_id/edit', name: 'studio-content-edit', component: () => import('@/pages/studio/ContentEditorPage.vue') },
         { path: 'users', name: 'studio-users', component: () => import('@/pages/studio/StudioUsersPage.vue') },
         { path: 'audits', name: 'studio-audits', component: () => import('@/pages/studio/StudioAuditsPage.vue') },
         { path: 'profile', redirect: '/account/profile' },
