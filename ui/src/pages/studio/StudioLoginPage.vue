@@ -77,7 +77,7 @@ async function handleSubmit() {
         id="studio-login-identifier"
         v-model="form.loginIdentifier"
         autocomplete="username"
-        :placeholder="t('studioLogin.identifierPlaceholder')"
+        :placeholder="t('studioLogin.identifierPlaceholder', { exampleIdentifier: 'admin@beehive.local' })"
         required
         :invalid="Boolean(errorMessage)"
       />

@@ -285,7 +285,7 @@ export const zhCN = {
     description: '使用管理员账户访问运维工具。',
     blockedTitle: '工作台登录被拒绝',
     identifierLabel: '管理员邮箱或用户名',
-    identifierPlaceholder: 'admin@beehive.local',
+    identifierPlaceholder: '{exampleIdentifier}',
     submit: '进入工作台',
     validation: {
       credentialsRequired: '请输入管理员标识和至少 8 个字符的密码。',
@@ -784,7 +784,7 @@ export const enUS: typeof zhCN = {
     description: 'Use an administrator account to access operational tools.',
     blockedTitle: 'Studio sign in blocked',
     identifierLabel: 'Admin email or username',
-    identifierPlaceholder: 'admin@beehive.local',
+    identifierPlaceholder: '{exampleIdentifier}',
     submit: 'Enter Studio',
     validation: {
       credentialsRequired: 'Enter an admin identifier and a password with at least 8 characters.',
