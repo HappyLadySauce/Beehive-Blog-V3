@@ -1,5 +1,6 @@
 import CharacterCount from '@tiptap/extension-character-count'
 import Highlight from '@tiptap/extension-highlight'
+import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
@@ -21,6 +22,7 @@ import type {
   ContentVisibility,
   ContentWriteRequest,
 } from '@/features/studio/types'
+import { useAvatarUpload } from '@/features/uploads/useAvatarUpload'
 
 export type ContentEditorMode = 'create' | 'edit'
 export type ContentEditorSaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error'
@@ -73,6 +75,7 @@ export function createEmptyContentEditorForm(): ContentEditorForm {
 
 export function useContentEditor(contentId?: string) {
   const authStore = useAuthStore()
+  const { uploadImage } = useAvatarUpload()
   const mode = shallowRef<ContentEditorMode>(contentId ? 'edit' : 'create')
   const sourceMode = shallowRef<ContentEditorSourceMode>('visual')
   const sourceContent = shallowRef('')
@@ -95,6 +98,7 @@ export function useContentEditor(contentId?: string) {
         openOnClick: false,
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
+      Image,
       Underline,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -106,6 +110,24 @@ export function useContentEditor(contentId?: string) {
       attributes: {
         class: 'content-editor-canvas__surface',
         'aria-label': 'Content body editor',
+      },
+      handlePaste: (view, event) => {
+        const files = getImageFiles(event.clipboardData)
+        if (files.length === 0) {
+          return false
+        }
+        event.preventDefault()
+        void uploadAndInsertImages(editor.value, files, authStore.accessToken, uploadImage)
+        return true
+      },
+      handleDrop: (view, event) => {
+        const files = getImageFiles(event.dataTransfer)
+        if (files.length === 0) {
+          return false
+        }
+        event.preventDefault()
+        void uploadAndInsertImages(editor.value, files, authStore.accessToken, uploadImage)
+        return true
       },
     },
     onUpdate({ editor }) {
@@ -369,4 +391,32 @@ function slugFromTitle(title: string): string {
     .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
     .replace(/^-+|-+$/g, '')
     || `content-${Date.now()}`
+}
+
+function getImageFiles(dataTransfer: DataTransfer | null): File[] {
+  if (!dataTransfer) return []
+  return Array.from(dataTransfer.files).filter((file) => file.type.startsWith('image/'))
+}
+
+async function uploadAndInsertImages(
+  editor: Editor | null,
+  files: File[],
+  accessToken: string | undefined,
+  uploader: (file: File, accessToken: string | undefined, scope: 'content_image') => Promise<string>,
+): Promise<void> {
+  if (!editor || editor.isDestroyed) return
+
+  for (const file of files) {
+    const blobUrl = URL.createObjectURL(file)
+    editor.chain().focus().setImage({ src: blobUrl, alt: file.name }).run()
+    try {
+      const remoteUrl = await uploader(file, accessToken, 'content_image')
+      const html = editor.getHTML()
+      if (html.includes(blobUrl)) {
+        editor.commands.setContent(html.replaceAll(blobUrl, remoteUrl), false)
+      }
+    } finally {
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1_500)
+    }
+  }
 }
