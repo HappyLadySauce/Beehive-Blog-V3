@@ -48,14 +48,14 @@ const rows = computed(() =>
     eventType: event.event_type,
     result: event.result,
     userId: event.user_id || t('common.system'),
-    clientIp: event.client_ip || '-',
-    detail: event.detail_json || '-',
+    clientIp: event.client_ip || t('common.none'),
+    detail: event.detail_json || t('common.none'),
   })),
 )
 
 function formatUnixTime(value?: number): string {
   if (!value) {
-    return '-'
+    return t('common.none')
   }
   return new Intl.DateTimeFormat(locale.value, {
     dateStyle: 'medium',
@@ -101,10 +101,10 @@ onMounted(loadAudits)
 
     <form class="audits-page__filters" @submit.prevent="loadAudits">
       <FormField :label="t('audits.eventType')" for-id="audit-event-type">
-        <BaseInput id="audit-event-type" v-model="filters.eventType" placeholder="admin_update_user_status" />
+        <BaseInput id="audit-event-type" v-model="filters.eventType" :placeholder="t('audits.placeholders.eventType')" />
       </FormField>
       <FormField :label="t('audits.userId')" for-id="audit-user-id">
-        <BaseInput id="audit-user-id" v-model="filters.userId" placeholder="1" />
+        <BaseInput id="audit-user-id" v-model="filters.userId" :placeholder="t('audits.placeholders.userId')" />
       </FormField>
       <FormField :label="t('audits.result')" for-id="audit-result">
         <BaseSelect id="audit-result" v-model="filters.result" :options="resultOptions" :aria-label="t('audits.result')" />

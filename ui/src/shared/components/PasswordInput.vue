@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Eye, EyeOff } from 'lucide-vue-next'
 import { shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import BaseInput from './BaseInput.vue'
 
@@ -15,6 +16,7 @@ defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+const { t } = useI18n()
 const isVisible = shallowRef(false)
 </script>
 
@@ -31,7 +33,7 @@ const isVisible = shallowRef(false)
     <button
       type="button"
       class="password-input__toggle"
-      :aria-label="isVisible ? 'Hide password' : 'Show password'"
+      :aria-label="isVisible ? t('accessibility.hidePassword') : t('accessibility.showPassword')"
       @click="isVisible = !isVisible"
     >
       <EyeOff v-if="isVisible" :size="18" aria-hidden="true" />

@@ -50,6 +50,7 @@ const filters = reactive({
   keyword: '',
   role: '',
   status: '',
+  includeDeleted: false,
 })
 
 const editForm = reactive({
@@ -69,7 +70,9 @@ const displayUsers = computed(() =>
     ...user,
     displayName: user.nickname || user.username,
     lastLogin: formatUnixTime(user.last_login_at),
+    deletedAt: formatUnixTime(user.deleted_at),
     isSelf: user.user_id === authStore.currentUser?.user_id,
+    isDeleted: user.status === 'deleted',
   })),
 )
 
@@ -85,6 +88,7 @@ const statusOptions = computed<BaseSelectOption[]>(() => [
   { value: 'active', label: t('userStatus.active') },
   { value: 'disabled', label: t('userStatus.disabled') },
   { value: 'locked', label: t('userStatus.locked') },
+  { value: 'deleted', label: t('userStatus.deleted'), disabled: !filters.includeDeleted },
 ])
 const editableStatusOptions = computed<BaseSelectOption[]>(() => [
   ...(editForm.status === 'pending' ? [{ value: 'pending', label: t('userStatus.pending'), disabled: true }] : []),
@@ -95,6 +99,7 @@ const editableStatusOptions = computed<BaseSelectOption[]>(() => [
 ])
 const dialogTitle = computed(() => (userMode.value === 'edit' ? t('users.editDialog.title') : t('users.viewDialog.title')))
 const selectedUserIsSelf = computed(() => selectedUser.value?.user_id === authStore.currentUser?.user_id)
+const selectedUserIsDeleted = computed(() => selectedUser.value?.status === 'deleted')
 
 function formatUnixTime(value?: number): string {
   if (!value) {
@@ -115,6 +120,7 @@ async function loadUsers(): Promise<void> {
         keyword: filters.keyword.trim(),
         role: filters.role,
         status: filters.status,
+        include_deleted: filters.includeDeleted,
         page: 1,
         page_size: 50,
       },
@@ -141,7 +147,7 @@ function scheduleLoadUsers(): void {
 
 function openUser(user: StudioUser, mode: UserMode): void {
   selectedUser.value = user
-  userMode.value = mode
+  userMode.value = user.status === 'deleted' ? 'view' : mode
   editForm.role = normalizeRole(user.role)
   editForm.status = normalizeFormStatus(user.status)
   profileForm.username = user.username
@@ -171,7 +177,7 @@ function closePasswordReset(): void {
 }
 
 async function saveUserEdits(): Promise<void> {
-  if (!selectedUser.value) {
+  if (!selectedUser.value || selectedUser.value.status === 'deleted') {
     return
   }
   const target = selectedUser.value
@@ -195,7 +201,7 @@ async function saveUserEdits(): Promise<void> {
 }
 
 async function submitPasswordReset(): Promise<void> {
-  if (!passwordTarget.value || resetPassword.value.trim() === '') {
+  if (!passwordTarget.value || passwordTarget.value.status === 'deleted' || resetPassword.value.trim() === '') {
     return
   }
   const approved = await confirm({
@@ -219,6 +225,9 @@ async function submitPasswordReset(): Promise<void> {
 }
 
 async function deleteUser(user: StudioUser): Promise<void> {
+  if (user.status === 'deleted') {
+    return
+  }
   const approved = await confirm({
     title: t('users.confirm.deleteTitle'),
     message: t('users.confirm.deleteMessage', { email: user.email }),
@@ -230,11 +239,13 @@ async function deleteUser(user: StudioUser): Promise<void> {
   }
   await runUserMutation(async () => {
     await studioApi.deleteUser(user.user_id, { accessToken: authStore.accessToken })
-    users.value = users.value.filter((item) => item.user_id !== user.user_id)
-    total.value = Math.max(0, total.value - 1)
     if (selectedUser.value?.user_id === user.user_id) {
       closeDialog()
     }
+    if (passwordTarget.value?.user_id === user.user_id) {
+      closePasswordReset()
+    }
+    await loadUsers()
     pushToast({ tone: 'success', title: t('users.toast.deletedTitle'), message: t('users.toast.deletedMessage', { email: user.email }) })
   })
 }
@@ -311,7 +322,13 @@ function isEditableStatus(status: UserFormStatus): status is EditableStatus {
   return status === 'active' || status === 'disabled' || status === 'locked'
 }
 
-watch(() => [filters.keyword, filters.role, filters.status], scheduleLoadUsers)
+watch(() => filters.includeDeleted, (includeDeleted) => {
+  if (!includeDeleted && filters.status === 'deleted') {
+    filters.status = ''
+  }
+})
+
+watch(() => [filters.keyword, filters.role, filters.status, filters.includeDeleted], scheduleLoadUsers)
 
 onMounted(loadUsers)
 onBeforeUnmount(() => window.clearTimeout(filterTimer))
@@ -335,12 +352,17 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       <FormField :label="t('users.columns.status')" for-id="user-status-filter">
         <BaseSelect id="user-status-filter" v-model="filters.status" :options="statusOptions" :aria-label="t('users.columns.status')" />
       </FormField>
+      <label class="users-page__deleted-toggle">
+        <input v-model="filters.includeDeleted" class="users-page__deleted-checkbox" type="checkbox">
+        <span>{{ t('users.filters.includeDeleted') }}</span>
+      </label>
     </div>
+    <p class="users-page__filter-hint">{{ t('users.filters.includeDeletedHint') }}</p>
 
     <StatusAlert v-if="errorMessage" tone="danger" :title="t('users.unavailableTitle')">{{ errorMessage }}</StatusAlert>
     <PageLoadingState v-else-if="isLoading" :title="t('users.loadingTitle')" :rows="5" />
 
-    <div v-else class="users-page__table" role="region" aria-label="Studio users" tabindex="0">
+    <div v-else class="users-page__table" role="region" :aria-label="t('users.regionLabel')" tabindex="0">
       <table class="users-page__grid">
         <thead class="users-page__head">
           <tr class="users-page__row">
@@ -359,6 +381,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <td class="users-page__cell users-page__cell--user">
               <strong>{{ user.displayName }}</strong>
               <span>{{ user.email }}</span>
+              <span v-if="user.isDeleted">{{ t('users.deletedAt', { value: user.deletedAt }) }}</span>
             </td>
             <td class="users-page__cell"><StatusBadge :value="user.role" /></td>
             <td class="users-page__cell"><StatusBadge :value="user.status" /></td>
@@ -370,26 +393,26 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
                 </IconActionButton>
                 <IconActionButton
                   tone="primary"
-                  :disabled="isMutating"
-                  :aria-label="t('users.actions.editUser', { email: user.email })"
-                  :title="t('users.actions.editUser', { email: user.email })"
+                  :disabled="isMutating || user.isDeleted"
+                  :aria-label="user.isDeleted ? t('users.actions.editDeletedUser', { email: user.email }) : t('users.actions.editUser', { email: user.email })"
+                  :title="user.isDeleted ? t('users.actions.editDeletedUser', { email: user.email }) : t('users.actions.editUser', { email: user.email })"
                   @click="openUser(user, 'edit')"
                 >
                   <Pencil :size="17" aria-hidden="true" />
                 </IconActionButton>
                 <IconActionButton
-                  :disabled="isMutating"
-                  :aria-label="user.isSelf ? t('users.actions.changePassword', { email: user.email }) : t('users.actions.resetPassword', { email: user.email })"
-                  :title="user.isSelf ? t('users.actions.changePassword', { email: user.email }) : t('users.actions.resetPassword', { email: user.email })"
+                  :disabled="isMutating || user.isDeleted"
+                  :aria-label="user.isDeleted ? t('users.actions.resetDeletedUserPassword', { email: user.email }) : user.isSelf ? t('users.actions.changePassword', { email: user.email }) : t('users.actions.resetPassword', { email: user.email })"
+                  :title="user.isDeleted ? t('users.actions.resetDeletedUserPassword', { email: user.email }) : user.isSelf ? t('users.actions.changePassword', { email: user.email }) : t('users.actions.resetPassword', { email: user.email })"
                   @click="openPasswordReset(user)"
                 >
                   <KeyRound :size="17" aria-hidden="true" />
                 </IconActionButton>
                 <IconActionButton
                   tone="danger"
-                  :disabled="isMutating"
-                  :aria-label="t('users.actions.deleteUser', { email: user.email })"
-                  :title="t('users.actions.deleteUser', { email: user.email })"
+                  :disabled="isMutating || user.isDeleted"
+                  :aria-label="user.isDeleted ? t('users.actions.deleteDeletedUser', { email: user.email }) : t('users.actions.deleteUser', { email: user.email })"
+                  :title="user.isDeleted ? t('users.actions.deleteDeletedUser', { email: user.email }) : t('users.actions.deleteUser', { email: user.email })"
                   @click="deleteUser(user)"
                 >
                   <Trash2 :size="17" aria-hidden="true" />
@@ -405,13 +428,23 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 
     <ModalDialog :open="selectedUser !== null" :title="dialogTitle" :description="selectedUser?.email" size="lg" @close="closeDialog">
       <div v-if="selectedUser" class="users-page__modal">
+        <StatusAlert
+          v-if="selectedUserIsDeleted"
+          tone="warning"
+          :title="t('users.deletedBanner.title')"
+        >
+          {{ t('users.deletedBanner.message') }}
+        </StatusAlert>
         <div v-if="userMode === 'view'" class="users-page__detail-grid">
-            <ReadonlyField :label="t('users.editDialog.username')" :value="selectedUser.username" />
-            <ReadonlyField :label="t('users.editDialog.nickname')" :value="selectedUser.nickname" />
-            <ReadonlyField :label="t('users.editDialog.email')" :value="selectedUser.email" />
-          <ReadonlyField label="User ID" :value="selectedUser.user_id" />
-          <ReadonlyField label="Created" :value="formatUnixTime(selectedUser.created_at)" />
-          <ReadonlyField label="Updated" :value="formatUnixTime(selectedUser.updated_at)" />
+          <ReadonlyField :label="t('users.editDialog.username')" :value="selectedUser.username" />
+          <ReadonlyField :label="t('users.editDialog.nickname')" :value="selectedUser.nickname" />
+          <ReadonlyField :label="t('users.editDialog.email')" :value="selectedUser.email" />
+          <ReadonlyField :label="t('users.columns.role')" :value="t(`roles.${normalizeRole(selectedUser.role)}`)" />
+          <ReadonlyField :label="t('users.columns.status')" :value="t(`userStatus.${normalizeFormStatus(selectedUser.status)}`)" />
+          <ReadonlyField :label="t('users.viewDialog.userId')" :value="selectedUser.user_id" />
+          <ReadonlyField :label="t('users.viewDialog.created')" :value="formatUnixTime(selectedUser.created_at)" />
+          <ReadonlyField :label="t('users.viewDialog.updated')" :value="formatUnixTime(selectedUser.updated_at)" />
+          <ReadonlyField v-if="selectedUser.deleted_at" :label="t('users.columns.deletedAt')" :value="formatUnixTime(selectedUser.deleted_at)" />
         </div>
 
         <template v-if="userMode === 'edit'">
@@ -440,7 +473,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
         </template>
       </div>
       <template #footer>
-        <BaseButton v-if="userMode === 'edit'" :busy="isMutating" @click="saveUserEdits">{{ t('common.saveChanges') }}</BaseButton>
+        <BaseButton v-if="userMode === 'edit' && !selectedUserIsDeleted" :busy="isMutating" @click="saveUserEdits">{{ t('common.saveChanges') }}</BaseButton>
         <BaseButton variant="ghost" @click="closeDialog">{{ t('common.close') }}</BaseButton>
       </template>
     </ModalDialog>
@@ -452,7 +485,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       @close="closePasswordReset"
     >
       <form class="users-page__reset" novalidate @submit.prevent="submitPasswordReset">
-        <FormField label="New password" for-id="reset-password">
+        <FormField :label="t('users.passwordDialog.newPassword')" for-id="reset-password">
           <PasswordInput id="reset-password" v-model="resetPassword" autocomplete="new-password" />
         </FormField>
       </form>
@@ -476,13 +509,34 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 
 .users-page__filters {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(150px, 180px));
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(150px, 180px)) minmax(180px, 220px);
   align-items: end;
   gap: 14px;
 }
 
 .users-page__search {
   min-width: 0;
+}
+
+.users-page__deleted-toggle {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--bb-color-text);
+  cursor: pointer;
+}
+
+.users-page__deleted-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--bb-color-primary);
+}
+
+.users-page__filter-hint {
+  margin-top: -8px;
+  color: var(--bb-color-muted);
+  font-size: 0.92rem;
 }
 
 .users-page__table:focus-visible {

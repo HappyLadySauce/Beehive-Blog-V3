@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
@@ -10,6 +11,7 @@ import PasswordInput from '@/shared/components/PasswordInput.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const form = reactive({
   currentPassword: '',
   newPassword: '',
@@ -30,11 +32,11 @@ async function handleSubmit() {
   errorMessage.value = ''
 
   if (form.currentPassword.length === 0 || form.newPassword.length < 8) {
-    errorMessage.value = 'Enter the current password and a new password with at least 8 characters.'
+    errorMessage.value = t('password.validation.requirements')
     return
   }
   if (form.newPassword !== form.confirmPassword) {
-    errorMessage.value = 'New password confirmation does not match.'
+    errorMessage.value = t('password.validation.confirmationMismatch')
     return
   }
 
@@ -48,10 +50,10 @@ async function handleSubmit() {
       { accessToken: authStore.accessToken },
     )
     resetForm()
-    successMessage.value = 'Password changed.'
+    successMessage.value = t('password.status.changed')
   }
   catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to change password.'
+    errorMessage.value = error instanceof Error ? error.message : t('password.fallback.changeFailed')
   }
   finally {
     isSaving.value = false
@@ -62,32 +64,32 @@ async function handleSubmit() {
 <template>
   <section class="password-page">
     <PageHeader
-      eyebrow="Account"
-      title="Change password"
-      description="Rotate administrator credentials without leaving Studio."
+      :eyebrow="t('password.page.eyebrow')"
+      :title="t('password.page.title')"
+      :description="t('password.page.description')"
     />
 
-    <StatusAlert v-if="successMessage" tone="success" title="Password changed">
+    <StatusAlert v-if="successMessage" tone="success" :title="t('password.page.successTitle')">
       {{ successMessage }}
     </StatusAlert>
-    <StatusAlert v-if="errorMessage" tone="danger" title="Password change failed">
+    <StatusAlert v-if="errorMessage" tone="danger" :title="t('password.page.errorTitle')">
       {{ errorMessage }}
     </StatusAlert>
 
     <form class="password-page__form" novalidate @submit.prevent="handleSubmit">
-      <FormField label="Current password" for-id="current-password">
+      <FormField :label="t('common.currentPassword')" for-id="current-password">
         <PasswordInput id="current-password" v-model="form.currentPassword" autocomplete="current-password" />
       </FormField>
 
-      <FormField label="New password" for-id="new-password">
+      <FormField :label="t('common.newPassword')" for-id="new-password">
         <PasswordInput id="new-password" v-model="form.newPassword" autocomplete="new-password" />
       </FormField>
 
-      <FormField label="Confirm new password" for-id="confirm-password">
+      <FormField :label="t('common.confirmNewPassword')" for-id="confirm-password">
         <PasswordInput id="confirm-password" v-model="form.confirmPassword" autocomplete="new-password" />
       </FormField>
 
-      <BaseButton type="submit" :busy="isSaving">Change password</BaseButton>
+      <BaseButton type="submit" :busy="isSaving">{{ t('password.page.submit') }}</BaseButton>
     </form>
   </section>
 </template>

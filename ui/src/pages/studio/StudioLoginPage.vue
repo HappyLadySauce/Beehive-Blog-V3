@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import SsoProviderButtons from '@/features/auth/components/SsoProviderButtons.vue'
@@ -14,6 +15,7 @@ import StatusAlert from '@/shared/components/StatusAlert.vue'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const form = reactive({
   loginIdentifier: 'admin@beehive.local',
   password: '',
@@ -32,7 +34,7 @@ async function handleSubmit() {
   errorMessage.value = ''
 
   if (form.loginIdentifier.trim().length === 0 || form.password.length < 8) {
-    errorMessage.value = 'Enter an admin identifier and a password with at least 8 characters.'
+    errorMessage.value = t('studioLogin.validation.credentialsRequired')
     return
   }
 
@@ -46,14 +48,14 @@ async function handleSubmit() {
 
     if (!authStore.isAdmin) {
       await authStore.logout()
-      errorMessage.value = 'This account is not allowed to access Studio.'
+      errorMessage.value = t('studioLogin.validation.adminOnly')
       return
     }
 
     await router.replace(resolveRedirectPath())
   }
   catch {
-    errorMessage.value = authStore.errorMessage || 'Admin sign in failed.'
+    errorMessage.value = authStore.errorMessage || t('studioLogin.fallback.signInFailed')
   }
 }
 </script>
@@ -61,27 +63,27 @@ async function handleSubmit() {
 <template>
   <form class="studio-login" novalidate @submit.prevent="handleSubmit">
     <PageHeader
-      eyebrow="Studio"
-      title="Admin sign in"
-      description="Use an administrator account to access operational tools."
+      :eyebrow="t('studioLogin.eyebrow')"
+      :title="t('studioLogin.title')"
+      :description="t('studioLogin.description')"
     />
 
-    <StatusAlert v-if="errorMessage" tone="danger" title="Studio sign in blocked">
+    <StatusAlert v-if="errorMessage" tone="danger" :title="t('studioLogin.blockedTitle')">
       {{ errorMessage }}
     </StatusAlert>
 
-    <FormField label="Admin email or username" for-id="studio-login-identifier">
+    <FormField :label="t('studioLogin.identifierLabel')" for-id="studio-login-identifier">
       <BaseInput
         id="studio-login-identifier"
         v-model="form.loginIdentifier"
         autocomplete="username"
-        placeholder="admin@beehive.local"
+        :placeholder="t('studioLogin.identifierPlaceholder')"
         required
         :invalid="Boolean(errorMessage)"
       />
     </FormField>
 
-    <FormField label="Password" for-id="studio-login-password">
+    <FormField :label="t('common.currentPassword')" for-id="studio-login-password">
       <PasswordInput
         id="studio-login-password"
         v-model="form.password"
@@ -89,7 +91,7 @@ async function handleSubmit() {
       />
     </FormField>
 
-    <BaseButton type="submit" :busy="authStore.isLoading">Enter Studio</BaseButton>
+    <BaseButton type="submit" :busy="authStore.isLoading">{{ t('studioLogin.submit') }}</BaseButton>
     <SsoProviderButtons surface="studio" :return-to="resolveRedirectPath()" />
   </form>
 </template>

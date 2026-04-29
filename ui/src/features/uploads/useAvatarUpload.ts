@@ -1,5 +1,7 @@
 import { shallowRef } from 'vue'
 
+import { i18n } from '@/shared/i18n'
+
 import { completeFileUpload, createFileUpload, putFileUploadObject } from './api'
 import type {
   FileUploadCreateRequest,
@@ -11,6 +13,20 @@ const defaultMaxBytesByScope: Record<FileUploadScope, number> = {
   content_cover: 5 * 1024 * 1024,
   content_image: 5 * 1024 * 1024,
   attachment: 20 * 1024 * 1024,
+}
+
+const imageContentTypes = [
+  'image/avif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const
+
+const allowedContentTypesByScope: Record<FileUploadScope, readonly string[]> = {
+  avatar: imageContentTypes,
+  content_cover: imageContentTypes,
+  content_image: imageContentTypes,
+  attachment: [...imageContentTypes, 'application/pdf'],
 }
 
 const contentTypesByExtension: Record<string, string> = {
@@ -41,7 +57,7 @@ export function useAvatarUpload() {
       const completed = await completeFileUpload(upload.asset.upload_id, { accessToken })
       return completed.asset.public_url || upload.asset.public_url
     } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : 'Unable to upload file.'
+      errorMessage.value = error instanceof Error ? error.message : String(i18n.global.t('uploads.uploadFailed'))
       throw error
     } finally {
       isUploading.value = false
@@ -67,16 +83,19 @@ function normalizeContentType(file: File): string {
 
 function validateFile(file: File, scope: FileUploadScope, contentType: string): void {
   if (file.name.trim() === '') {
-    throw new Error('File name is required.')
+    throw new Error(String(i18n.global.t('uploads.fileNameRequired')))
   }
   if (contentType === '') {
-    throw new Error('File type is not supported.')
+    throw new Error(String(i18n.global.t('uploads.fileTypeUnsupported')))
+  }
+  if (!allowedContentTypesByScope[scope].includes(contentType)) {
+    throw new Error(String(i18n.global.t('uploads.fileTypeUnsupported')))
   }
   if (file.size <= 0) {
-    throw new Error('File is empty.')
+    throw new Error(String(i18n.global.t('uploads.fileEmpty')))
   }
   if (file.size > defaultMaxBytesByScope[scope]) {
-    throw new Error('File is too large.')
+    throw new Error(String(i18n.global.t('uploads.fileTooLarge')))
   }
 }
 

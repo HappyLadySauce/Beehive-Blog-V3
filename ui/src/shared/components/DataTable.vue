@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 export interface DataTableColumn {
   key: string
   label: string
@@ -9,10 +11,12 @@ defineProps<{
   rows: Record<string, string | number | boolean | null | undefined>[]
   emptyText?: string
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
-  <div class="data-table" role="region" aria-label="Data table" tabindex="0">
+  <div class="data-table" role="region" :aria-label="t('accessibility.dataTable')" tabindex="0">
     <table>
       <thead>
         <tr>
@@ -21,7 +25,7 @@ defineProps<{
       </thead>
       <tbody>
         <tr v-if="rows.length === 0">
-          <td :colspan="columns.length">{{ emptyText ?? 'No records yet.' }}</td>
+          <td :colspan="columns.length">{{ emptyText ?? t('accessibility.dataTableEmpty') }}</td>
         </tr>
         <tr v-for="(row, rowIndex) in rows" v-else :key="rowIndex">
           <td v-for="column in columns" :key="column.key">{{ row[column.key] }}</td>

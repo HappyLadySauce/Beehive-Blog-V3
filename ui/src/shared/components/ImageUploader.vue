@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ImagePlus, X } from 'lucide-vue-next'
 import { computed, useTemplateRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useAvatarUpload } from '@/features/uploads/useAvatarUpload'
@@ -27,10 +28,13 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const { isUploading, errorMessage, uploadImage } = useAvatarUpload()
 const hasPreview = computed(() => props.modelValue.trim() !== '')
+const resolvedLabel = computed(() => props.label || t('uploads.imageUpload'))
+const resolvedHint = computed(() => props.hint || t('uploads.imageHint'))
 
 function openFilePicker(): void {
   fileInput.value?.click()
@@ -69,15 +73,15 @@ async function handleFileChange(event: Event): Promise<void> {
       <div class="image-uploader__actions">
         <BaseButton variant="secondary" type="button" :busy="isUploading" @click="openFilePicker">
           <ImagePlus :size="16" aria-hidden="true" />
-          {{ label }}
+          {{ resolvedLabel }}
         </BaseButton>
         <BaseButton v-if="hasPreview" variant="ghost" type="button" @click="clearImage">
           <X :size="16" aria-hidden="true" />
-          Remove
+          {{ t('uploads.removeImage') }}
         </BaseButton>
       </div>
       <p v-if="errorMessage" class="image-uploader__error">{{ errorMessage }}</p>
-      <p v-else class="image-uploader__hint">{{ hint }}</p>
+      <p v-else class="image-uploader__hint">{{ resolvedHint }}</p>
     </div>
     <input
       ref="fileInput"

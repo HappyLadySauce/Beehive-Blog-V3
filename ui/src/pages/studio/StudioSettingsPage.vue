@@ -1,29 +1,33 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import FormField from '@/shared/components/FormField.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
+
+const { t } = useI18n()
 </script>
 
 <template>
   <section class="settings-page">
     <PageHeader
-      eyebrow="Studio"
-      title="Settings"
-      description="Workspace configuration placeholder with accessible form controls."
+      :eyebrow="t('settings.eyebrow')"
+      :title="t('settings.title')"
+      :description="t('settings.description')"
     />
-    <StatusAlert tone="info" title="Mock mode">
-      Settings are local placeholders until the gateway exposes the live management contract.
+    <StatusAlert tone="info" :title="t('settings.mockModeTitle')">
+      {{ t('settings.mockModeMessage') }}
     </StatusAlert>
-    <form class="settings-page__form" aria-label="Studio settings">
-      <FormField label="Site title" for-id="site-title">
+    <form class="settings-page__form" :aria-label="t('settings.formLabel')">
+      <FormField :label="t('settings.siteTitle')" for-id="site-title">
         <BaseInput id="site-title" model-value="Beehive Blog" />
       </FormField>
-      <FormField label="Default author" for-id="default-author">
+      <FormField :label="t('settings.defaultAuthor')" for-id="default-author">
         <BaseInput id="default-author" model-value="Admin Editor" />
       </FormField>
-      <BaseButton type="button">Save settings</BaseButton>
+      <BaseButton type="button">{{ t('settings.save') }}</BaseButton>
     </form>
   </section>
 </template>

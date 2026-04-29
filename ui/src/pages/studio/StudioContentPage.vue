@@ -117,7 +117,11 @@ async function loadTags(): Promise<void> {
     tags.value = response.items
   }
   catch (error) {
-    pushToast({ tone: 'danger', title: 'Tags unavailable', message: error instanceof Error ? error.message : 'Unable to load tags.' })
+    pushToast({
+      tone: 'danger',
+      title: t('content.tags.unavailableTitle'),
+      message: error instanceof Error ? error.message : t('content.tags.unavailableMessage'),
+    })
   }
   finally {
     isTagsLoading.value = false
@@ -181,10 +185,10 @@ async function saveTag(): Promise<void> {
   await runMutation(async () => {
     if (selectedTag.value) {
       await studioApi.updateTag(selectedTag.value.tag_id, tagForm, { accessToken: authStore.accessToken })
-      pushToast({ tone: 'success', title: 'Tag updated' })
+      pushToast({ tone: 'success', title: t('content.tags.updateTitle') })
     } else {
       await studioApi.createTag(tagForm, { accessToken: authStore.accessToken })
-      pushToast({ tone: 'success', title: 'Tag created' })
+      pushToast({ tone: 'success', title: t('content.tags.createTitle') })
     }
     selectedTag.value = null
     tagForm.name = ''
@@ -196,14 +200,19 @@ async function saveTag(): Promise<void> {
 }
 
 async function deleteTag(tag: ContentTag): Promise<void> {
-  const approved = await confirm({ title: 'Delete tag?', message: `${tag.name} will be removed if it is not in use.`, confirmText: 'Delete tag', tone: 'danger' })
+  const approved = await confirm({
+    title: t('content.tags.deleteConfirmTitle'),
+    message: t('content.tags.deleteConfirmMessage', { name: tag.name }),
+    confirmText: t('content.tags.deleteConfirmAction'),
+    tone: 'danger',
+  })
   if (!approved) {
     return
   }
   await runMutation(async () => {
     await studioApi.deleteTag(tag.tag_id, { accessToken: authStore.accessToken })
     await loadTags()
-    pushToast({ tone: 'success', title: 'Tag deleted' })
+    pushToast({ tone: 'success', title: t('content.tags.deleteTitle') })
   })
 }
 
@@ -223,7 +232,11 @@ async function runMutation(action: () => Promise<void>): Promise<void> {
     await action()
   }
   catch (error) {
-    pushToast({ tone: 'danger', title: 'Operation failed', message: error instanceof Error ? error.message : 'Unable to update content.' })
+    pushToast({
+      tone: 'danger',
+      title: t('content.toast.operationFailedTitle'),
+      message: error instanceof Error ? error.message : t('content.toast.operationFailedMessage'),
+    })
   }
   finally {
     isMutating.value = false
@@ -254,7 +267,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       :description="t('content.description')"
     />
 
-    <div class="content-page__tabs" role="tablist" aria-label="Content workspace">
+    <div class="content-page__tabs" role="tablist" :aria-label="t('content.aria.workspace')">
       <button type="button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">{{ t('content.tabs.content') }}</button>
       <button type="button" :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'">{{ t('content.tabs.tags') }}</button>
     </div>
@@ -278,7 +291,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       <StatusAlert v-if="errorMessage" tone="danger" :title="t('content.unavailableTitle')">{{ errorMessage }}</StatusAlert>
       <PageLoadingState v-else-if="isLoading" :title="t('content.loadingTitle')" :rows="5" />
 
-      <div v-else class="content-page__table" role="region" aria-label="Studio content" tabindex="0">
+      <div v-else class="content-page__table" role="region" :aria-label="t('content.aria.region')" tabindex="0">
         <table>
           <thead>
             <tr>
@@ -328,21 +341,21 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 
     <template v-else>
       <form class="content-page__tag-form" @submit.prevent="saveTag">
-        <FormField label="Name" for-id="tag-name">
+        <FormField :label="t('content.tags.fields.name')" for-id="tag-name">
           <BaseInput id="tag-name" v-model="tagForm.name" />
         </FormField>
-        <FormField label="Slug" for-id="tag-slug">
+        <FormField :label="t('content.tags.fields.slug')" for-id="tag-slug">
           <BaseInput id="tag-slug" v-model="tagForm.slug" />
         </FormField>
-        <FormField label="Color" for-id="tag-color">
+        <FormField :label="t('content.tags.fields.color')" for-id="tag-color">
           <BaseInput id="tag-color" v-model="tagForm.color" placeholder="#0f8f83" />
         </FormField>
-        <FormField label="Description" for-id="tag-description">
+        <FormField :label="t('content.tags.fields.description')" for-id="tag-description">
           <BaseInput id="tag-description" v-model="tagForm.description" />
         </FormField>
         <BaseButton type="submit" :busy="isMutating">{{ selectedTag ? t('common.save') : t('common.save') }}</BaseButton>
       </form>
-      <PageLoadingState v-if="isTagsLoading" title="Loading tags" :rows="3" />
+      <PageLoadingState v-if="isTagsLoading" :title="t('content.tags.loadingTitle')" :rows="3" />
       <div v-else class="content-page__tag-list">
         <article v-for="tag in tags" :key="tag.tag_id" class="content-page__tag-card">
           <div>
@@ -362,7 +375,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
     </template>
 
     <SideDrawer :open="selectedContent !== null" :title="t('content.detailTitle')" :description="selectedContent?.slug" size="lg" @close="closeContentDrawer">
-      <PageLoadingState v-if="isDetailLoading" title="Loading content detail" :rows="4" />
+      <PageLoadingState v-if="isDetailLoading" :title="t('content.drawer.loadingTitle')" :rows="4" />
       <div v-else-if="selectedContent" class="content-page__drawer">
         <div class="content-page__detail-grid">
           <ReadonlyField :label="t('content.columns.title')" :value="selectedContent.title" />
@@ -374,23 +387,23 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
         </div>
 
         <section class="content-page__subsection">
-          <h3>Relations</h3>
+          <h3>{{ t('content.drawer.relationsTitle') }}</h3>
           <div class="content-page__mini-list">
             <article v-for="relation in relations" :key="relation.relation_id">
               <span>{{ relation.relation_type }} -> {{ relation.to_content_id }}</span>
             </article>
-            <p v-if="relations.length === 0">No relations.</p>
+            <p v-if="relations.length === 0">{{ t('content.drawer.relationsEmpty') }}</p>
           </div>
         </section>
 
         <section class="content-page__subsection">
-          <h3>Revisions</h3>
+          <h3>{{ t('content.drawer.revisionsTitle') }}</h3>
           <div class="content-page__mini-list">
             <article v-for="revision in revisions" :key="revision.revision_id">
-              <span>#{{ revision.revision_no }} {{ revision.change_summary || 'No summary' }}</span>
+              <span>#{{ revision.revision_no }} {{ revision.change_summary || t('content.drawer.noSummary') }}</span>
               <small>{{ formatUnixTime(revision.created_at) }}</small>
             </article>
-            <p v-if="revisions.length === 0">No revisions.</p>
+            <p v-if="revisions.length === 0">{{ t('content.drawer.revisionsEmpty') }}</p>
           </div>
         </section>
       </div>

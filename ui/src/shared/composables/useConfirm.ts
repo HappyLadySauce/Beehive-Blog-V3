@@ -1,5 +1,7 @@
 import { readonly, shallowRef } from 'vue'
 
+import { i18n } from '@/shared/i18n'
+
 export interface ConfirmOptions {
   title: string
   message: string
@@ -32,8 +34,8 @@ function confirm(options: ConfirmOptions): Promise<boolean> {
     id: `confirm_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     title: options.title,
     message: options.message,
-    confirmText: options.confirmText ?? 'Confirm',
-    cancelText: options.cancelText ?? 'Cancel',
+    confirmText: options.confirmText ?? String(i18n.global.t('common.confirm')),
+    cancelText: options.cancelText ?? String(i18n.global.t('common.cancel')),
     tone: options.tone ?? 'default',
   }
 

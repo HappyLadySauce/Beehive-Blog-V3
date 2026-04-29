@@ -92,7 +92,12 @@ describe('toast infrastructure', () => {
   it('renders toast provider content with live region semantics', async () => {
     const { useToast } = await import('@/shared/composables/useToast')
     const { default: ToastProvider } = await import('@/shared/components/ToastProvider.vue')
-    const wrapper = mount(ToastProvider, { attachTo: document.body })
+    const wrapper = mount(ToastProvider, {
+      attachTo: document.body,
+      global: {
+        plugins: [i18n],
+      },
+    })
 
     useToast().pushToast({ tone: 'warning', title: 'Review needed', timeoutMs: 0 })
     await nextTick()
@@ -112,7 +117,12 @@ describe('confirm infrastructure', () => {
   it('resolves true when the provider confirm button is clicked', async () => {
     const { useConfirm } = await import('@/shared/composables/useConfirm')
     const { default: ConfirmDialogProvider } = await import('@/shared/components/ConfirmDialogProvider.vue')
-    const wrapper = mount(ConfirmDialogProvider, { attachTo: document.body })
+    const wrapper = mount(ConfirmDialogProvider, {
+      attachTo: document.body,
+      global: {
+        plugins: [i18n],
+      },
+    })
     const { confirm } = useConfirm()
 
     const result = confirm({
@@ -134,7 +144,12 @@ describe('confirm infrastructure', () => {
   it('resolves false when the provider cancel button is clicked', async () => {
     const { useConfirm } = await import('@/shared/composables/useConfirm')
     const { default: ConfirmDialogProvider } = await import('@/shared/components/ConfirmDialogProvider.vue')
-    const wrapper = mount(ConfirmDialogProvider, { attachTo: document.body })
+    const wrapper = mount(ConfirmDialogProvider, {
+      attachTo: document.body,
+      global: {
+        plugins: [i18n],
+      },
+    })
     const { confirm } = useConfirm()
 
     const result = confirm({
@@ -143,8 +158,7 @@ describe('confirm infrastructure', () => {
     })
     await nextTick()
 
-    const buttons = [...document.body.querySelectorAll('button')]
-    buttons.find((button) => button.textContent?.includes('Cancel'))?.click()
+    document.body.querySelector<HTMLButtonElement>('.confirm-dialog__button--secondary')?.click()
 
     await expect(result).resolves.toBe(false)
     wrapper.unmount()

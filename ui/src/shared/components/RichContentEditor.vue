@@ -3,9 +3,11 @@ import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import { Bold, Heading1, Heading2, Italic, List, ListOrdered, Pilcrow, Quote } from 'lucide-vue-next'
 import { onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const model = defineModel<string>({ default: '' })
 const plainText = defineModel<string>('plainText', { default: '' })
+const { t } = useI18n()
 
 const editor = useEditor({
   extensions: [StarterKit],
@@ -13,7 +15,7 @@ const editor = useEditor({
   editorProps: {
     attributes: {
       class: 'rich-editor__surface',
-      'aria-label': 'Content body editor',
+      'aria-label': String(t('editor.ariaLabel')),
     },
   },
   onUpdate({ editor }) {
@@ -53,29 +55,29 @@ function safeParse(value: string): Record<string, unknown> {
 
 <template>
   <div class="rich-editor">
-    <div v-if="editor" class="rich-editor__toolbar" aria-label="Editor toolbar">
-      <button type="button" :class="{ active: editor.isActive('paragraph') }" aria-label="Paragraph" @click="editor.chain().focus().setParagraph().run()">
+    <div v-if="editor" class="rich-editor__toolbar" :aria-label="t('accessibility.editorToolbar')">
+      <button type="button" :class="{ active: editor.isActive('paragraph') }" :aria-label="t('editor.tools.paragraph')" @click="editor.chain().focus().setParagraph().run()">
         <Pilcrow :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :class="{ active: editor.isActive('heading', { level: 1 }) }" aria-label="Heading 1" @click="editor.chain().focus().toggleHeading({ level: 1 }).run()">
+      <button type="button" :class="{ active: editor.isActive('heading', { level: 1 }) }" :aria-label="t('editor.tools.heading1')" @click="editor.chain().focus().toggleHeading({ level: 1 }).run()">
         <Heading1 :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :class="{ active: editor.isActive('heading', { level: 2 }) }" aria-label="Heading 2" @click="editor.chain().focus().toggleHeading({ level: 2 }).run()">
+      <button type="button" :class="{ active: editor.isActive('heading', { level: 2 }) }" :aria-label="t('editor.tools.heading2')" @click="editor.chain().focus().toggleHeading({ level: 2 }).run()">
         <Heading2 :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :class="{ active: editor.isActive('bold') }" aria-label="Bold" @click="editor.chain().focus().toggleBold().run()">
+      <button type="button" :class="{ active: editor.isActive('bold') }" :aria-label="t('editor.tools.bold')" @click="editor.chain().focus().toggleBold().run()">
         <Bold :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :class="{ active: editor.isActive('italic') }" aria-label="Italic" @click="editor.chain().focus().toggleItalic().run()">
+      <button type="button" :class="{ active: editor.isActive('italic') }" :aria-label="t('editor.tools.italic')" @click="editor.chain().focus().toggleItalic().run()">
         <Italic :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :class="{ active: editor.isActive('bulletList') }" aria-label="Bullet list" @click="editor.chain().focus().toggleBulletList().run()">
+      <button type="button" :class="{ active: editor.isActive('bulletList') }" :aria-label="t('editor.tools.bulletList')" @click="editor.chain().focus().toggleBulletList().run()">
         <List :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :class="{ active: editor.isActive('orderedList') }" aria-label="Ordered list" @click="editor.chain().focus().toggleOrderedList().run()">
+      <button type="button" :class="{ active: editor.isActive('orderedList') }" :aria-label="t('editor.tools.orderedList')" @click="editor.chain().focus().toggleOrderedList().run()">
         <ListOrdered :size="16" aria-hidden="true" />
       </button>
-      <button type="button" :class="{ active: editor.isActive('blockquote') }" aria-label="Quote" @click="editor.chain().focus().toggleBlockquote().run()">
+      <button type="button" :class="{ active: editor.isActive('blockquote') }" :aria-label="t('editor.tools.quote')" @click="editor.chain().focus().toggleBlockquote().run()">
         <Quote :size="16" aria-hidden="true" />
       </button>
     </div>

@@ -13,9 +13,13 @@ describe('studio api facade', () => {
     await api.deleteUser(target!.user_id)
     const after = await api.listUsers()
     const withDeleted = await api.listUsers({ include_deleted: true })
+    const deletedOnlyWithoutFlag = await api.listUsers({ status: 'deleted' })
+    const deletedOnlyWithFlag = await api.listUsers({ status: 'deleted', include_deleted: true })
 
     expect(after.items.some((user) => user.user_id === target!.user_id)).toBe(false)
     expect(withDeleted.items.find((user) => user.user_id === target!.user_id)?.status).toBe('deleted')
+    expect(deletedOnlyWithoutFlag.total).toBe(0)
+    expect(deletedOnlyWithFlag.items[0]?.user_id).toBe(target!.user_id)
   })
 
   it('creates and lists content drafts through the studio api', async () => {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Upload } from 'lucide-vue-next'
 import { computed, useTemplateRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useAvatarUpload } from '@/features/uploads/useAvatarUpload'
@@ -23,10 +24,11 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const { isUploading, errorMessage, uploadAvatar } = useAvatarUpload()
-const previewName = computed(() => props.name || 'User')
+const previewName = computed(() => props.name || t('uploads.avatarFallbackName'))
 
 function openFilePicker(): void {
   fileInput.value?.click()
@@ -57,10 +59,10 @@ async function handleFileChange(event: Event): Promise<void> {
     <div class="avatar-uploader__body">
       <BaseButton variant="secondary" type="button" :busy="isUploading" @click="openFilePicker">
         <Upload :size="16" aria-hidden="true" />
-        Upload avatar
+        {{ t('uploads.avatarUpload') }}
       </BaseButton>
       <p v-if="errorMessage" class="avatar-uploader__error">{{ errorMessage }}</p>
-      <p v-else class="avatar-uploader__hint">PNG, JPEG, WebP, or AVIF. Max 2MB.</p>
+      <p v-else class="avatar-uploader__hint">{{ t('uploads.avatarHint') }}</p>
     </div>
     <input
       ref="fileInput"

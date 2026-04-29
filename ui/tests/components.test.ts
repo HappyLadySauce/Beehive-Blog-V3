@@ -14,6 +14,10 @@ import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 import UserAvatar from '@/shared/components/UserAvatar.vue'
 import { i18n, setLocale } from '@/shared/i18n'
 
+function t(key: string, params?: Record<string, unknown>) {
+  return String(i18n.global.t(key, params ?? {}))
+}
+
 async function mountWithRouter(component: typeof UserAccountMenu, options: Parameters<typeof mount>[1]) {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -76,6 +80,9 @@ describe('shared components', () => {
         columns: [{ key: 'title', label: 'Title' }],
         rows: [],
         emptyText: 'Nothing here',
+      },
+      global: {
+        plugins: [i18n],
       },
     })
 
@@ -177,11 +184,11 @@ describe('shared components', () => {
     await wrapper.get('.account-menu__summary').trigger('click')
     await nextTick()
 
-    expect(document.body.textContent).not.toContain('Studio')
-    expect(document.body.textContent).not.toContain('Users')
-    expect(document.body.textContent).not.toContain('Profile')
-    expect(document.body.textContent).not.toContain('Change password')
-    expect(document.body.textContent).toContain('Logout')
+    expect(document.body.textContent).not.toContain(t('account.studio'))
+    expect(document.body.textContent).not.toContain(t('account.users'))
+    expect(document.body.textContent).not.toContain(t('account.profile'))
+    expect(document.body.textContent).not.toContain(t('users.passwordDialog.selfTitle'))
+    expect(document.body.textContent).toContain(t('account.logout'))
   })
 
   it('renders login and register actions in the public account menu', async () => {
@@ -195,7 +202,7 @@ describe('shared components', () => {
     await wrapper.get('.account-menu__summary').trigger('click')
     await nextTick()
 
-    expect(document.body.textContent).toContain('Login')
-    expect(document.body.textContent).toContain('Register')
+    expect(document.body.textContent).toContain(t('account.login'))
+    expect(document.body.textContent).toContain(t('account.register'))
   })
 })

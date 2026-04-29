@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Github, MessageCircle, QrCode } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
@@ -44,6 +45,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const { pushToast } = useToast()
 const { start, errorMessage } = useSsoFlow(props.surface)
@@ -78,7 +80,7 @@ function openAuthWindow(authURL = activeAuthUrl.value): void {
 async function startProvider(provider: AuthProvider): Promise<void> {
   try {
     if (props.surface === 'email' && (!props.email || !props.accessToken)) {
-      throw new Error('Email and active session are required for SSO verification.')
+      throw new Error(String(t('sso.emailSessionRequired')))
     }
     const response = await start(provider, {
       returnTo: props.returnTo || undefined,
@@ -94,8 +96,8 @@ async function startProvider(provider: AuthProvider): Promise<void> {
   catch {
     pushToast({
       tone: 'danger',
-      title: 'SSO unavailable',
-      message: errorMessage.value || 'Unable to start provider authorization.',
+      title: String(t('sso.unavailableTitle')),
+      message: errorMessage.value || String(t('sso.unavailableMessage')),
     })
   }
 }
@@ -105,7 +107,7 @@ async function handleLoginMessage(message: SsoLoginMessage): Promise<void> {
   authStore.applySession(payload.access_token, payload.refresh_token, payload.session_id, payload.user)
   activeProvider.value = null
   activeAuthUrl.value = ''
-  pushToast({ tone: 'success', title: 'Signed in', message: `Welcome back, ${payload.user.email}.` })
+  pushToast({ tone: 'success', title: String(t('sso.signedInTitle')), message: String(t('sso.welcomeBack', { email: payload.user.email })) })
   await router.push(message.returnTo || (authStore.isAdmin ? '/studio' : '/'))
 }
 
@@ -134,7 +136,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="sso-provider-buttons">
     <div class="sso-provider-buttons__divider">
-      <span>or continue with</span>
+      <span>{{ t('sso.divider') }}</span>
     </div>
     <div class="sso-provider-buttons__grid">
       <button
@@ -142,7 +144,7 @@ onBeforeUnmount(() => {
         :key="item.provider"
         class="sso-provider-buttons__button"
         type="button"
-        :aria-label="`Continue with ${item.label}`"
+        :aria-label="t('sso.continueWith', { provider: item.label })"
         @click="startProvider(item.provider)"
       >
         <component :is="item.icon" :size="17" aria-hidden="true" />

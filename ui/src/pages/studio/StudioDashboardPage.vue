@@ -1,22 +1,26 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import BaseBadge from '@/shared/components/BaseBadge.vue'
 import EmptyState from '@/shared/components/EmptyState.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
+
+const { t } = useI18n()
 </script>
 
 <template>
   <section class="studio-page">
     <PageHeader
-      eyebrow="Studio"
-      title="Dashboard"
-      description="Operational overview for publishing work and administrative activity."
+      :eyebrow="t('dashboard.eyebrow')"
+      :title="t('dashboard.title')"
+      :description="t('dashboard.description')"
     />
 
     <EmptyState
-      title="Dashboard metrics are not configured yet"
-      description="Live operational metrics will appear here after analytics and publishing signals are connected."
+      :title="t('dashboard.emptyTitle')"
+      :description="t('dashboard.emptyDescription')"
     />
-    <BaseBadge tone="success">Admin only</BaseBadge>
+    <BaseBadge tone="success">{{ t('dashboard.adminOnly') }}</BaseBadge>
   </section>
 </template>
 

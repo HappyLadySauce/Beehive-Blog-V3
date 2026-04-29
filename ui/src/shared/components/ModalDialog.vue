@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -18,6 +19,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 let previouslyFocused: HTMLElement | null = null
 
 function closeDialog(): void {
@@ -69,7 +71,7 @@ onBeforeUnmount(() => {
             <h2>{{ title }}</h2>
             <p v-if="description">{{ description }}</p>
           </div>
-          <button class="modal-dialog__close" type="button" aria-label="Close dialog" @click="closeDialog">×</button>
+          <button class="modal-dialog__close" type="button" :aria-label="t('accessibility.closeDialog')" @click="closeDialog">×</button>
         </header>
         <div class="modal-dialog__body">
           <slot />

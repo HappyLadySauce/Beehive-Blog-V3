@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { AlertTriangle } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useConfirm } from '@/shared/composables'
 
 const { currentConfirm, resolveConfirm } = useConfirm()
+const { t } = useI18n()
 const isOpen = computed(() => currentConfirm.value !== null)
 
 function cancel(): void {
@@ -20,7 +22,7 @@ function accept(): void {
   <Teleport to="body">
     <Transition name="confirm-dialog">
       <div v-if="isOpen && currentConfirm" class="confirm-dialog" role="presentation" @keydown.esc="cancel">
-        <button class="confirm-dialog__backdrop" type="button" aria-label="Cancel dialog" @click="cancel" />
+        <button class="confirm-dialog__backdrop" type="button" :aria-label="t('accessibility.cancelDialog')" @click="cancel" />
         <section
           class="confirm-dialog__panel"
           role="dialog"

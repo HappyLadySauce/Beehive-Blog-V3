@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
@@ -21,6 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const { pushToast } = useToast()
 const isSaving = shallowRef(false)
 const errorMessage = shallowRef('')
@@ -44,7 +46,7 @@ function resetForm(): void {
 
 async function submit(): Promise<void> {
   if (form.oldPassword.trim() === '' || form.newPassword.trim() === '') {
-    errorMessage.value = 'Current and new passwords are required.'
+    errorMessage.value = t('password.validation.currentAndNewRequired')
     return
   }
   isSaving.value = true
@@ -56,13 +58,13 @@ async function submit(): Promise<void> {
       },
       { accessToken: authStore.accessToken },
     )
-    pushToast({ tone: 'success', title: 'Password changed', message: 'Your password has been updated.' })
+    pushToast({ tone: 'success', title: t('password.toast.changedTitle'), message: t('password.toast.changedMessage') })
     emit('saved')
     emit('close')
     resetForm()
   }
   catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to change password.'
+    errorMessage.value = error instanceof Error ? error.message : t('password.fallback.changeFailed')
   }
   finally {
     isSaving.value = false
@@ -76,19 +78,19 @@ function close(): void {
 </script>
 
 <template>
-  <ModalDialog :open="open" title="Change password" description="Verify your current password before setting a new one." @close="close">
+  <ModalDialog :open="open" :title="t('password.dialog.title')" :description="t('password.dialog.description')" @close="close">
     <form class="change-password-dialog" novalidate @submit.prevent="submit">
-      <StatusAlert v-if="errorMessage" tone="danger" title="Password update failed">{{ errorMessage }}</StatusAlert>
-      <FormField label="Current password" for-id="dialog-old-password">
+      <StatusAlert v-if="errorMessage" tone="danger" :title="t('password.dialog.errorTitle')">{{ errorMessage }}</StatusAlert>
+      <FormField :label="t('common.currentPassword')" for-id="dialog-old-password">
         <PasswordInput id="dialog-old-password" v-model="form.oldPassword" autocomplete="current-password" required />
       </FormField>
-      <FormField label="New password" for-id="dialog-new-password">
+      <FormField :label="t('common.newPassword')" for-id="dialog-new-password">
         <PasswordInput id="dialog-new-password" v-model="form.newPassword" autocomplete="new-password" required />
       </FormField>
     </form>
     <template #footer>
-      <BaseButton :busy="isSaving" @click="submit">Change password</BaseButton>
-      <BaseButton variant="ghost" @click="close">Close</BaseButton>
+      <BaseButton :busy="isSaving" @click="submit">{{ t('password.dialog.submit') }}</BaseButton>
+      <BaseButton variant="ghost" @click="close">{{ t('common.close') }}</BaseButton>
     </template>
   </ModalDialog>
 </template>

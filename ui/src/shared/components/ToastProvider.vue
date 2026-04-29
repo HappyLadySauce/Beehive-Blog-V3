@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useToast } from '@/shared/composables'
 import type { ToastTone } from '@/shared/composables'
 
 const { toasts, dismissToast } = useToast()
+const { t } = useI18n()
 
 const toneIcons: Record<ToastTone, typeof Info> = {
   info: Info,
@@ -23,7 +25,7 @@ const hasToasts = computed(() => toasts.value.length > 0)
 
 <template>
   <Teleport to="body">
-    <section v-if="hasToasts" class="toast-region" aria-label="Notifications" aria-live="polite">
+    <section v-if="hasToasts" class="toast-region" :aria-label="t('toast.regionLabel')" aria-live="polite">
       <TransitionGroup name="toast-list" tag="div" class="toast-region__list">
         <article v-for="toast in toasts" :key="toast.id" class="toast" :class="`toast--${toast.tone}`">
           <component :is="iconFor(toast.tone)" class="toast__icon" :size="18" aria-hidden="true" />
@@ -31,7 +33,7 @@ const hasToasts = computed(() => toasts.value.length > 0)
             <strong>{{ toast.title }}</strong>
             <p v-if="toast.message">{{ toast.message }}</p>
           </div>
-          <button class="toast__close" type="button" :aria-label="`Dismiss ${toast.title}`" @click="dismissToast(toast.id)">
+          <button class="toast__close" type="button" :aria-label="t('toast.dismiss', { title: toast.title })" @click="dismissToast(toast.id)">
             <X :size="16" aria-hidden="true" />
           </button>
         </article>

@@ -36,6 +36,7 @@ function uploadResponse(): FileUploadCreateResponse {
 
 describe('uploads api', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllEnvs()
     vi.unstubAllGlobals()
     vi.resetModules()
@@ -121,5 +122,23 @@ describe('uploads api', () => {
       'Content-Type': 'image/png',
       'X-Upload-Token': 'signed-token',
     })
+  })
+
+  it('live object upload surfaces a timeout when the data plane does not respond', async () => {
+    vi.useFakeTimers()
+    vi.stubEnv('VITE_API_MODE', 'live')
+    const fetcher = vi.fn<typeof fetch>((_input, init) => new Promise((_, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        reject(new DOMException('Aborted', 'AbortError'))
+      })
+    }))
+    vi.stubGlobal('fetch', fetcher)
+    const { putFileUploadObject } = await import('@/features/uploads/api')
+
+    const uploadPromise = expect(putFileUploadObject(uploadResponse(), imageFile())).rejects.toThrow('File upload timed out.')
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    await uploadPromise
+    expect(fetcher).toHaveBeenCalledTimes(1)
   })
 })
