@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import HomePage from '@/pages/public/HomePage.vue'
-import ContentEditorPage from '@/pages/studio/ContentEditorPage.vue'
 import StudioContentPage from '@/pages/studio/StudioContentPage.vue'
 import StudioUsersPage from '@/pages/studio/StudioUsersPage.vue'
 import { i18n, setLocale } from '@/shared/i18n'
@@ -21,8 +20,6 @@ function createTestRouter() {
       { path: '/studio', component: { template: '<div />' } },
       { path: '/studio/profile', component: { template: '<div />' } },
       { path: '/studio/change-password', component: { template: '<div />' } },
-      { path: '/studio/content/new', component: { template: '<div />' } },
-      { path: '/studio/content/:content_id/edit', component: { template: '<div />' } },
     ],
   })
 }
@@ -93,31 +90,13 @@ describe('studio UX flows', () => {
     expect(document.body.querySelector('#edit-email')).not.toBeNull()
   })
 
-  it('routes new content actions to the full-screen editor', async () => {
-    const { wrapper, router } = await mountWithApp(StudioContentPage)
+  it('does not expose removed content editor actions from the content list', async () => {
+    const { wrapper } = await mountWithApp(StudioContentPage)
     await flushPromises()
 
     expect(wrapper.find('[aria-label="View v3 frontend integration notes"]').exists()).toBe(true)
-    expect(wrapper.find('[aria-label="Edit v3 frontend integration notes"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Edit v3 frontend integration notes"]').exists()).toBe(false)
     expect(wrapper.find('[aria-label="Archive v3 frontend integration notes"]').exists()).toBe(true)
-
-    await wrapper.findAll('button').find((button) => button.text().includes('New draft'))!.trigger('click')
-    await flushPromises()
-
-    expect(router.currentRoute.value.fullPath).toBe('/studio/content/new')
-  })
-
-  it('creates a draft from the full-screen content editor', async () => {
-    const { wrapper, router } = await mountWithApp(ContentEditorPage, '/studio/content/new')
-    await flushPromises()
-
-    await wrapper.get('#editor-title').setValue('Editor integration draft')
-    await wrapper.get('#editor-slug').setValue('editor-integration-draft')
-    expect(wrapper.text()).toContain('Visual')
-    expect(wrapper.text()).toContain('Markdown')
-    await wrapper.findAll('button').find((button) => button.text().includes('Create draft'))!.trigger('click')
-    await flushPromises()
-
-    expect(router.currentRoute.value.fullPath).toMatch(/^\/studio\/content\/.+\/edit$/)
+    expect(wrapper.findAll('button').some((button) => button.text().includes('New draft'))).toBe(false)
   })
 })

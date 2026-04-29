@@ -415,6 +415,9 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
         </div>
 
         <template v-if="userMode === 'edit'">
+          <div class="users-page__avatar-section">
+            <AvatarUploader class="users-page__avatar-upload" v-model="profileForm.avatar_url" :name="profileForm.nickname || profileForm.username" />
+          </div>
           <div class="users-page__edit-grid">
             <FormField :label="t('users.editDialog.username')" for-id="edit-username">
               <BaseInput id="edit-username" v-model="profileForm.username" autocomplete="username" />
@@ -425,7 +428,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <FormField :label="t('users.editDialog.nickname')" for-id="edit-nickname">
               <BaseInput id="edit-nickname" v-model="profileForm.nickname" autocomplete="nickname" />
             </FormField>
-            <AvatarUploader class="users-page__avatar-upload" v-model="profileForm.avatar_url" :name="profileForm.nickname || profileForm.username" />
           </div>
           <div v-if="!selectedUserIsSelf" class="users-page__edit-grid">
             <FormField :label="t('users.columns.role')" for-id="edit-role">
@@ -578,8 +580,15 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   padding-top: 18px;
 }
 
+.users-page__avatar-section {
+  border: 1px solid var(--bb-color-line);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--bb-color-subtle);
+}
+
 .users-page__avatar-upload {
-  grid-column: 1 / -1;
+  width: 100%;
 }
 
 @media (max-width: 780px) {

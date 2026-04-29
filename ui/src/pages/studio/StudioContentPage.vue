@@ -2,7 +2,6 @@
 import { Archive, Eye, Pencil, Trash2 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
@@ -36,7 +35,6 @@ const contentTypes: ContentType[] = ['article', 'note', 'project', 'experience',
 const statuses: ContentStatus[] = ['draft', 'review', 'published', 'archived']
 const visibilities: ContentVisibility[] = ['public', 'member', 'private']
 
-const router = useRouter()
 const authStore = useAuthStore()
 const { t } = useI18n()
 const { locale } = useLocale()
@@ -131,14 +129,6 @@ function scheduleLoadContents(): void {
   filterTimer = window.setTimeout(() => {
     void loadContents()
   }, 300)
-}
-
-function openNewDraft(): void {
-  void router.push('/studio/content/new')
-}
-
-function editContent(content: ContentSummary): void {
-  void router.push(`/studio/content/${encodeURIComponent(content.content_id)}/edit`)
 }
 
 async function viewContent(content: ContentSummary): Promise<void> {
@@ -262,11 +252,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       :eyebrow="t('content.eyebrow')"
       :title="t('content.title')"
       :description="t('content.description')"
-    >
-      <template #actions>
-        <BaseButton @click="openNewDraft">{{ t('content.newDraft') }}</BaseButton>
-      </template>
-    </PageHeader>
+    />
 
     <div class="content-page__tabs" role="tablist" aria-label="Content workspace">
       <button type="button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">{{ t('content.tabs.content') }}</button>
@@ -321,9 +307,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
                 <div class="content-page__actions">
                   <IconActionButton :aria-label="t('content.actions.view', { title: content.title })" :title="t('content.actions.view', { title: content.title })" @click="viewContent(content)">
                     <Eye :size="17" aria-hidden="true" />
-                  </IconActionButton>
-                  <IconActionButton tone="primary" :aria-label="t('content.actions.edit', { title: content.title })" :title="t('content.actions.edit', { title: content.title })" @click="editContent(content)">
-                    <Pencil :size="17" aria-hidden="true" />
                   </IconActionButton>
                   <IconActionButton
                     tone="danger"
