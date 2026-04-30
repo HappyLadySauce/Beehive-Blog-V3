@@ -6,7 +6,8 @@ import { tokenStorage } from '@/shared/storage/tokenStorage'
 import { authApi } from '../api/authApi'
 import type { AuthLoginRequest, AuthRegisterRequest, AuthSessionSnapshot, AuthUserProfile } from '../types'
 
-const accessTokenRefreshThresholdMs = 60_000
+const accessTokenRefreshThresholdMs = 120_000
+const proactiveRefreshLeadMs = 30_000
 
 function normalizeError(error: unknown): string {
   if (error instanceof Error) {
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
   const errorMessage = shallowRef('')
   let refreshSessionPromise: Promise<boolean> | null = null
   let restoreSessionPromise: Promise<boolean> | null = null
+  let proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
   const isAuthenticated = computed(() => accessToken.value.length > 0 && currentUser.value !== null)
   const isAdmin = computed(() => normalizeAuthRole(currentUser.value?.role) === 'admin')
@@ -54,15 +56,40 @@ export const useAuthStore = defineStore('auth', () => {
       sessionId: nextSessionId,
       currentUser: nextUser,
     })
+    scheduleProactiveRefresh()
   }
 
   function clearSession(): void {
+    clearProactiveRefresh()
     accessToken.value = ''
     accessTokenExpiresAt.value = 0
     sessionId.value = ''
     currentUser.value = null
     storedRefreshTokenValue.value = null
     tokenStorage.clearSnapshot()
+  }
+
+  function clearProactiveRefresh(): void {
+    if (proactiveRefreshTimer !== null) {
+      clearTimeout(proactiveRefreshTimer)
+      proactiveRefreshTimer = null
+    }
+  }
+
+  function scheduleProactiveRefresh(): void {
+    clearProactiveRefresh()
+    if (!storedRefreshTokenValue.value || accessTokenExpiresAt.value <= 0) {
+      return
+    }
+    const delay = accessTokenExpiresAt.value - Date.now() - accessTokenRefreshThresholdMs + proactiveRefreshLeadMs
+    if (delay <= 0) {
+      refreshSession()
+      return
+    }
+    proactiveRefreshTimer = setTimeout(() => {
+      proactiveRefreshTimer = null
+      refreshSession()
+    }, delay)
   }
 
   function setCurrentUser(user: AuthUserProfile): void {
@@ -209,6 +236,7 @@ export const useAuthStore = defineStore('auth', () => {
       const snapshot = tokenStorage.getSnapshot()
       if (snapshot && canReuseAccessToken(snapshot)) {
         hydrateSession(snapshot)
+        scheduleProactiveRefresh()
         if (currentUser.value !== null || (await loadCurrentUser())) {
           return true
         }
