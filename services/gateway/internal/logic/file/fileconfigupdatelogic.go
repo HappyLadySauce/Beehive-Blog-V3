@@ -18,7 +18,7 @@ func NewFileConfigUpdateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *FileConfigUpdateLogic) FileConfigUpdate(req *types.FileConfigUpdateReq) (*types.FileConfigUpdateResp, error) {
-	rpcCtx, _, err := rpcContextWithActor(l.ctx, l.svcCtx.Config.FileRPC)
+	rpcCtx, _, err := rpcContextWithAdminActor(l.ctx, l.svcCtx.Config.FileRPC)
 	if err != nil {
 		return nil, err
 	}

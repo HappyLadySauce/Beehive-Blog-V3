@@ -24,6 +24,7 @@ type ConfigCache struct {
 	cfg      DynamicConfig
 	fallback StorageConf
 	client   *clientv3.Client
+	revision int64
 }
 
 func NewConfigCache(client *clientv3.Client, fallback StorageConf) *ConfigCache {
@@ -52,9 +53,9 @@ func (c *ConfigCache) AllowedContentTypes() []string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if len(c.cfg.AllowedContentTypes) > 0 {
-		return c.cfg.AllowedContentTypes
+		return append([]string(nil), c.cfg.AllowedContentTypes...)
 	}
-	return c.fallback.AllowedContentTypes
+	return append([]string(nil), c.fallback.AllowedContentTypes...)
 }
 
 func (c *ConfigCache) PresignTTLSeconds() int {
@@ -69,7 +70,7 @@ func (c *ConfigCache) PresignTTLSeconds() int {
 func (c *ConfigCache) Snapshot() DynamicConfig {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.cfg
+	return c.snapshotLocked()
 }
 
 // Start loads current values from etcd and begins watching for changes.
@@ -95,6 +96,9 @@ func (c *ConfigCache) loadAll(ctx context.Context) {
 	for _, kv := range resp.Kvs {
 		c.applyKV(string(kv.Key), string(kv.Value))
 	}
+	if resp.Header != nil && resp.Header.Revision > c.revision {
+		c.revision = resp.Header.Revision
+	}
 	logs.Ctx(ctx).Info("config_cache_loaded", logs.Int("keys", len(resp.Kvs)))
 }
 
@@ -107,7 +111,10 @@ func (c *ConfigCache) watch(ctx context.Context) {
 		}
 		c.mu.Lock()
 		for _, ev := range wr.Events {
-			c.applyKV(string(ev.Kv.Key), string(ev.Kv.Value))
+			c.applyKVAtRevision(string(ev.Kv.Key), string(ev.Kv.Value), ev.Kv.ModRevision)
+		}
+		if wr.Header.Revision > c.revision {
+			c.revision = wr.Header.Revision
 		}
 		c.mu.Unlock()
 		logs.Ctx(ctx).Info("config_cache_reloaded", logs.Int("events", len(wr.Events)))
@@ -135,6 +142,36 @@ func (c *ConfigCache) applyKV(key, value string) {
 // Update writes a config value to etcd.
 // Update 将配置值写入 etcd。
 func (c *ConfigCache) Update(ctx context.Context, key string, value string) error {
-	_, err := c.client.Put(ctx, etcdConfigPrefix+key, value)
-	return err
+	resp, err := c.client.Put(ctx, etcdConfigPrefix+key, value)
+	if err != nil {
+		return err
+	}
+
+	c.applyUpdatedValue(key, value, resp.Header.Revision)
+	return nil
+}
+
+func (c *ConfigCache) applyUpdatedValue(key, value string, revision int64) DynamicConfig {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.applyKVAtRevision(etcdConfigPrefix+key, value, revision)
+	return c.snapshotLocked()
+}
+
+func (c *ConfigCache) applyKVAtRevision(key, value string, revision int64) {
+	if revision > 0 && revision < c.revision {
+		return
+	}
+
+	c.applyKV(key, value)
+	if revision > c.revision {
+		c.revision = revision
+	}
+}
+
+func (c *ConfigCache) snapshotLocked() DynamicConfig {
+	snapshot := c.cfg
+	snapshot.AllowedContentTypes = append([]string(nil), c.cfg.AllowedContentTypes...)
+	return snapshot
 }

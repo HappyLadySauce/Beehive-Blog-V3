@@ -37,8 +37,8 @@ func TestRegisterHandlersKeepsManualMiddlewareGuards(t *testing.T) {
 		}
 	}
 
-	if got := strings.Count(source, "serverCtx.AuthMiddleware"); got != 4 {
-		t.Fatalf("protected auth middleware should be registered for auth, uploads, studio content, and studio identity routes, got %d registrations", got)
+	if got := strings.Count(source, "serverCtx.AuthMiddleware"); got != 5 {
+		t.Fatalf("protected auth middleware should be registered for auth, uploads, studio content, studio identity, and studio file config routes, got %d registrations", got)
 	}
 }
 
