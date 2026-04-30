@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, LayoutDashboard, ScrollText, Settings, Users } from 'lucide-vue-next'
+import { File, FileText, LayoutDashboard, ScrollText, Settings, Users } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
@@ -16,6 +16,7 @@ const router = useRouter()
 const navItems = computed(() => [
   { label: t('nav.dashboard'), to: '/studio', icon: LayoutDashboard },
   { label: t('nav.content'), to: '/studio/content', icon: FileText },
+  { label: t('nav.files'), to: '/studio/files', icon: File },
   { label: t('nav.users'), to: '/studio/users', icon: Users },
   { label: t('nav.audits'), to: '/studio/audits', icon: ScrollText },
   { label: t('nav.settings'), to: '/studio/settings', icon: Settings },
@@ -25,8 +26,9 @@ const pageMeta = computed(() => {
   const meta = route.meta.pageMeta
   if (!meta) return null
   const prefix = meta.i18nPrefix as string
+  const eyebrow = t(`${prefix}.eyebrow`).trim()
   return {
-    eyebrow: t(`${prefix}.eyebrow`),
+    eyebrow: eyebrow || null,
     title: t(`${prefix}.title`),
     description: t(`${prefix}.description`),
   }
@@ -69,7 +71,7 @@ async function handleLogout() {
     <div class="studio-shell__workspace">
       <header class="studio-shell__topbar">
         <div v-if="pageMeta" class="studio-shell__topbar-page">
-          <span class="studio-shell__topbar-eyebrow">{{ pageMeta.eyebrow }}</span>
+          <span v-if="pageMeta.eyebrow" class="studio-shell__topbar-eyebrow">{{ pageMeta.eyebrow }}</span>
           <h1 class="studio-shell__topbar-title">{{ pageMeta.title }}</h1>
           <span class="studio-shell__topbar-desc">{{ pageMeta.description }}</span>
         </div>
@@ -236,7 +238,7 @@ async function handleLogout() {
   }
 
   .studio-shell__nav {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     overflow-x: auto;
   }
 
