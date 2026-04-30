@@ -1,13 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find . -name \"file.pb.go\" -newer v3/proto/file.proto)",
-      "Bash(find . -name \"file_grpc.pb.go\" -newer v3/proto/file.proto)",
-      "Bash(find . -path \"*/v3/proto/services/*\" -name \"*.go\")",
-      "Bash(rm -f file.pb.go file_grpc.pb.go)",
-      "Bash(protoc --proto_path=. --go_out=. --go_opt=paths=import --go-grpc_out=. --go-grpc_opt=paths=import v3/proto/file.proto)",
       "Bash(git checkout *)",
-      "Bash(goctl rpc *)"
+      "Bash(goctl rpc *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(go build *)",
+      "Bash(go test *)",
+      "Bash(go vet *)"
     ]
   }
 }
