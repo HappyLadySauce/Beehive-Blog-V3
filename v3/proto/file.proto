@@ -11,6 +11,8 @@ service FileService {
   rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
   rpc GetAsset(GetAssetRequest) returns (AssetResponse);
   rpc DeleteAsset(DeleteAssetRequest) returns (DeleteAssetResponse);
+  rpc GetFileConfig(GetFileConfigRequest) returns (GetFileConfigResponse);
+  rpc UpdateFileConfig(UpdateFileConfigRequest) returns (UpdateFileConfigResponse);
 }
 
 enum AssetVisibility {
@@ -108,4 +110,26 @@ message DeleteAssetRequest {
 
 message DeleteAssetResponse {
   bool ok = 1;
+}
+
+message FileConfig {
+  int64 max_upload_bytes = 1;
+  repeated string allowed_content_types = 2;
+  int32 presign_ttl_seconds = 3;
+}
+
+message GetFileConfigRequest {}
+
+message GetFileConfigResponse {
+  FileConfig config = 1;
+}
+
+message UpdateFileConfigRequest {
+  int64 max_upload_bytes = 1;
+  repeated string allowed_content_types = 2;
+  int32 presign_ttl_seconds = 3;
+}
+
+message UpdateFileConfigResponse {
+  FileConfig config = 1;
 }

@@ -107,6 +107,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	}
 
+	studioFileConfigRoutes := []rest.Route{
+		{
+			Method:  http.MethodGet,
+			Path:    "/file/config",
+			Handler: file.FileConfigGetHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/file/config",
+			Handler: file.FileConfigUpdateHandler(serverCtx),
+		},
+	}
 	studioIdentityRoutes := []rest.Route{
 		{
 			// List users
@@ -306,6 +318,14 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			serverCtx.RequestMetaMiddleware,
 			serverCtx.AuthMiddleware,
 		}, studioIdentityRoutes...),
+		rest.WithPrefix("/api/v3/studio"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares([]rest.Middleware{
+			serverCtx.RequestMetaMiddleware,
+			serverCtx.AuthMiddleware,
+		}, studioFileConfigRoutes...),
 		rest.WithPrefix("/api/v3/studio"),
 	)
 

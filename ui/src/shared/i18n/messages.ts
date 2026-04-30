@@ -321,6 +321,16 @@ export const zhCN = {
     siteTitle: '站点标题',
     defaultAuthor: '默认作者',
     save: '保存设置',
+    fileConfig: {
+      title: '文件上传配置',
+      description: '调整文件上传的大小限制、允许类型和预签名有效期。修改后即时生效。',
+      maxUploadBytes: '最大上传大小',
+      allowedContentTypes: '允许的内容类型',
+      contentTypesHint: '逗号分隔的 MIME 类型，如 image/png, image/jpeg',
+      presignTTL: '预签名有效期',
+      ttlHint: '分钟',
+      save: '保存文件配置',
+    },
   },
   files: {
     eyebrow: '',
@@ -899,6 +909,16 @@ export const enUS: typeof zhCN = {
     siteTitle: 'Site title',
     defaultAuthor: 'Default author',
     save: 'Save settings',
+    fileConfig: {
+      title: 'File upload configuration',
+      description: 'Adjust file upload size limits, allowed types, and presigned URL TTL. Changes take effect immediately.',
+      maxUploadBytes: 'Max upload size',
+      allowedContentTypes: 'Allowed content types',
+      contentTypesHint: 'Comma-separated MIME types, e.g. image/png, image/jpeg',
+      presignTTL: 'Presigned URL TTL',
+      ttlHint: 'minutes',
+      save: 'Save file config',
+    },
   },
   files: {
     eyebrow: '',

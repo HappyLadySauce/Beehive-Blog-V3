@@ -12,17 +12,19 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/model/repo"
 	fileservice "github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/service"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/storage"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type ServiceContext struct {
-	Config   config.Config
-	DB       *gorm.DB
-	SQLDB    *sql.DB
-	Store    *repo.Store
-	Services *fileservice.Manager
-	Storage  storage.ObjectStorage
+	Config      config.Config
+	DB          *gorm.DB
+	SQLDB       *sql.DB
+	Store       *repo.Store
+	Services    *fileservice.Manager
+	Storage     storage.ObjectStorage
+	ConfigCache *config.ConfigCache
 }
 
 func NewServiceContext(c config.Config) (*ServiceContext, error) {
@@ -39,6 +41,15 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		_ = sqlDB.Close()
 		return nil, fmt.Errorf("initialize file storage failed: %w", err)
 	}
+
+	etcdClient, err := newEtcdClient(c)
+	if err != nil {
+		_ = sqlDB.Close()
+		return nil, fmt.Errorf("initialize etcd client failed: %w", err)
+	}
+	configCache := config.NewConfigCache(etcdClient, c.Storage)
+	configCache.Start(context.Background())
+
 	store := repo.NewStore(db)
 	readinessChecker := func(ctx context.Context) error {
 		if sqlDB == nil {
@@ -50,9 +61,10 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		return nil
 	}
 	services := fileservice.NewManager(fileservice.Dependencies{
-		Config:         c,
-		Store:          store,
-		Storage:        objectStorage,
+		Config:      c,
+		Store:       store,
+		Storage:     objectStorage,
+		ConfigCache: configCache,
 		CheckReadiness: readinessChecker,
 	})
 
@@ -65,12 +77,13 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	)
 
 	return &ServiceContext{
-		Config:   c,
-		DB:       db,
-		SQLDB:    sqlDB,
-		Store:    store,
-		Services: services,
-		Storage:  objectStorage,
+		Config:      c,
+		DB:          db,
+		SQLDB:       sqlDB,
+		Store:       store,
+		Services:    services,
+		Storage:     objectStorage,
+		ConfigCache: configCache,
 	}, nil
 }
 
@@ -79,6 +92,16 @@ func (s *ServiceContext) Close() error {
 		return nil
 	}
 	return s.SQLDB.Close()
+}
+
+func newEtcdClient(c config.Config) (*clientv3.Client, error) {
+	if !c.HasEtcd() || len(c.Etcd.Hosts) == 0 {
+		return nil, fmt.Errorf("etcd hosts are not configured")
+	}
+	return clientv3.New(clientv3.Config{
+		Endpoints:   c.Etcd.Hosts,
+		DialTimeout: 5 * time.Second,
+	})
 }
 
 func newPostgres(c config.PostgresConf) (*gorm.DB, *sql.DB, error) {

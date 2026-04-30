@@ -12,6 +12,7 @@ type Dependencies struct {
 	Config         config.Config
 	Store          *repo.Store
 	Storage        storage.ObjectStorage
+	ConfigCache    *config.ConfigCache
 	CheckReadiness func(context.Context) error
 }
 
@@ -19,6 +20,7 @@ type Manager struct {
 	conf           config.Config
 	store          *repo.Store
 	storage        storage.ObjectStorage
+	configCache    *config.ConfigCache
 	checkReadiness func(context.Context) error
 }
 
@@ -27,6 +29,7 @@ func NewManager(deps Dependencies) *Manager {
 		conf:           deps.Config,
 		store:          deps.Store,
 		storage:        deps.Storage,
+		configCache:    deps.ConfigCache,
 		checkReadiness: deps.CheckReadiness,
 	}
 }

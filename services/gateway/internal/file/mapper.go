@@ -50,6 +50,39 @@ func BuildDeleteAssetRequest(actorUserID string, req *types.FileAssetIdReq) *fil
 	}
 }
 
+func BuildUpdateFileConfigRequest(req *types.FileConfigUpdateReq) *filepb.UpdateFileConfigRequest {
+	return &filepb.UpdateFileConfigRequest{
+		MaxUploadBytes:      req.MaxUploadBytes,
+		AllowedContentTypes: req.AllowedContentTypes,
+		PresignTtlSeconds:   req.PresignTtlSeconds,
+	}
+}
+
+func ToFileConfigView(config *filepb.FileConfig) types.FileConfigView {
+	if config == nil {
+		return types.FileConfigView{}
+	}
+	return types.FileConfigView{
+		MaxUploadBytes:      config.GetMaxUploadBytes(),
+		AllowedContentTypes: config.GetAllowedContentTypes(),
+		PresignTtlSeconds:   config.GetPresignTtlSeconds(),
+	}
+}
+
+func ToFileConfigGetResp(resp *filepb.GetFileConfigResponse) *types.FileConfigGetResp {
+	if resp == nil {
+		return &types.FileConfigGetResp{}
+	}
+	return &types.FileConfigGetResp{Config: ToFileConfigView(resp.GetConfig())}
+}
+
+func ToFileConfigUpdateResp(resp *filepb.UpdateFileConfigResponse) *types.FileConfigUpdateResp {
+	if resp == nil {
+		return &types.FileConfigUpdateResp{}
+	}
+	return &types.FileConfigUpdateResp{Config: ToFileConfigView(resp.GetConfig())}
+}
+
 func ToCreateUploadResp(resp *filepb.CreateUploadResponse) *types.FileUploadCreateResp {
 	if resp == nil {
 		return &types.FileUploadCreateResp{}

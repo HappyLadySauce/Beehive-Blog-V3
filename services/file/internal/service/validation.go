@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
-	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/config"
 )
 
 var hardcodedContentTypes = []string{
@@ -82,7 +81,7 @@ func normalizeContentType(contentType string) string {
 	return strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
 }
 
-func validateUploadFile(conf config.StorageConf, fileName string, contentType string, byteSize int64) (string, int64, error) {
+func validateUploadFile(allowedTypes []string, maxUploadBytes int64, fileName string, contentType string, byteSize int64) (string, int64, error) {
 	fileName = strings.TrimSpace(fileName)
 	if fileName == "" || len(fileName) > 255 {
 		return "", 0, invalidArgument("file_name is invalid")
@@ -92,12 +91,11 @@ func validateUploadFile(conf config.StorageConf, fileName string, contentType st
 		return "", 0, invalidArgument("content_type is invalid")
 	}
 
-	types := conf.AllowedContentTypes
-	if len(types) == 0 {
-		types = hardcodedContentTypes
+	if len(allowedTypes) == 0 {
+		allowedTypes = hardcodedContentTypes
 	}
-	allowed := make(map[string]struct{}, len(types))
-	for _, ct := range types {
+	allowed := make(map[string]struct{}, len(allowedTypes))
+	for _, ct := range allowedTypes {
 		if n := normalizeContentType(ct); n != "" {
 			allowed[n] = struct{}{}
 		}
@@ -106,14 +104,13 @@ func validateUploadFile(conf config.StorageConf, fileName string, contentType st
 		return "", 0, errs.New(errs.CodeFileInvalidContentType, "content_type is not allowed")
 	}
 
-	maxBytes := conf.MaxUploadBytes
-	if maxBytes <= 0 {
-		maxBytes = hardcodedMaxBytes
+	if maxUploadBytes <= 0 {
+		maxUploadBytes = hardcodedMaxBytes
 	}
-	if byteSize <= 0 || byteSize > maxBytes {
+	if byteSize <= 0 || byteSize > maxUploadBytes {
 		return "", 0, errs.New(errs.CodeFileTooLarge, "file byte_size is invalid")
 	}
-	return normalizedContentType, maxBytes, nil
+	return normalizedContentType, maxUploadBytes, nil
 }
 
 func extensionFor(fileName string, contentType string) string {

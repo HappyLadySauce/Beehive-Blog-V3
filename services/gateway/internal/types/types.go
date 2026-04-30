@@ -338,6 +338,27 @@ type FileAssetDeleteResp struct {
 	Ok bool `json:"ok,example=true"`
 }
 
+type FileConfigView struct {
+	MaxUploadBytes      int64    `json:"max_upload_bytes,example=20971520"`
+	AllowedContentTypes []string `json:"allowed_content_types,example=image/png"`
+	PresignTtlSeconds   int32    `json:"presign_ttl_seconds,example=300"`
+}
+
+type FileConfigGetResp struct {
+	Config FileConfigView `json:"config"`
+}
+
+type FileConfigUpdateReq struct {
+	Authorization      string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	MaxUploadBytes     int64    `json:"max_upload_bytes,optional,example=20971520"`
+	AllowedContentTypes []string `json:"allowed_content_types,optional,example=image/png"`
+	PresignTtlSeconds   int32   `json:"presign_ttl_seconds,optional,example=300"`
+}
+
+type FileConfigUpdateResp struct {
+	Config FileConfigView `json:"config"`
+}
+
 type ContentArchiveResp struct {
 	Ok bool `json:"ok,example=true"`
 }

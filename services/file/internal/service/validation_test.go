@@ -48,12 +48,10 @@ func TestNormalizeNamespace(t *testing.T) {
 func TestValidateUploadFile(t *testing.T) {
 	t.Parallel()
 
-	conf := config.StorageConf{
-		AllowedContentTypes: []string{"image/png", "image/jpeg"},
-		MaxUploadBytes:      128,
-	}
+	allowedTypes := []string{"image/png", "image/jpeg"}
+	maxUploadBytes := int64(128)
 
-	contentType, maxBytes, err := validateUploadFile(conf, "avatar.png", "image/png", 100)
+	contentType, maxBytes, err := validateUploadFile(allowedTypes, maxUploadBytes, "avatar.png", "image/png", 100)
 	if err != nil {
 		t.Fatalf("expected upload file validation to pass, got %v", err)
 	}
@@ -61,16 +59,15 @@ func TestValidateUploadFile(t *testing.T) {
 		t.Fatalf("unexpected normalized values: contentType=%s maxBytes=%d", contentType, maxBytes)
 	}
 
-	if _, _, err := validateUploadFile(conf, "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidContentType)) {
+	if _, _, err := validateUploadFile(allowedTypes, maxUploadBytes, "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidContentType)) {
 		t.Fatalf("expected invalid content type error, got %v", err)
 	}
-	if _, _, err := validateUploadFile(conf, "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
+	if _, _, err := validateUploadFile(allowedTypes, maxUploadBytes, "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
 		t.Fatalf("expected file too large error, got %v", err)
 	}
 
-	// Empty config uses hardcoded fallback
-	emptyConf := config.StorageConf{}
-	_, fallbackMaxBytes, err := validateUploadFile(emptyConf, "file.pdf", "application/pdf", 100)
+	// Empty lists use hardcoded fallback
+	_, fallbackMaxBytes, err := validateUploadFile(nil, 0, "file.pdf", "application/pdf", 100)
 	if err != nil {
 		t.Fatalf("expected PDF to pass with hardcoded fallback, got %v", err)
 	}

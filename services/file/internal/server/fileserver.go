@@ -46,3 +46,13 @@ func (s *FileServer) DeleteAsset(ctx context.Context, in *pb.DeleteAssetRequest)
 	l := logic.NewDeleteAssetLogic(ctx, s.svcCtx)
 	return l.DeleteAsset(in)
 }
+
+func (s *FileServer) GetFileConfig(ctx context.Context, in *pb.GetFileConfigRequest) (*pb.GetFileConfigResponse, error) {
+	l := logic.NewGetFileConfigLogic(ctx, s.svcCtx)
+	return l.GetFileConfig(in)
+}
+
+func (s *FileServer) UpdateFileConfig(ctx context.Context, in *pb.UpdateFileConfigRequest) (*pb.UpdateFileConfigResponse, error) {
+	l := logic.NewUpdateFileConfigLogic(ctx, s.svcCtx)
+	return l.UpdateFileConfig(in)
+}

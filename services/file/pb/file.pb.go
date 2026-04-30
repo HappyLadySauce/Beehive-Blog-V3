@@ -946,6 +946,250 @@ func (x *DeleteAssetResponse) GetOk() bool {
 	return false
 }
 
+type FileConfig struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	MaxUploadBytes      int64                  `protobuf:"varint,1,opt,name=max_upload_bytes,json=maxUploadBytes,proto3" json:"max_upload_bytes,omitempty"`
+	AllowedContentTypes []string               `protobuf:"bytes,2,rep,name=allowed_content_types,json=allowedContentTypes,proto3" json:"allowed_content_types,omitempty"`
+	PresignTtlSeconds   int32                  `protobuf:"varint,3,opt,name=presign_ttl_seconds,json=presignTtlSeconds,proto3" json:"presign_ttl_seconds,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *FileConfig) Reset() {
+	*x = FileConfig{}
+	mi := &file_v3_proto_file_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileConfig) ProtoMessage() {}
+
+func (x *FileConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileConfig.ProtoReflect.Descriptor instead.
+func (*FileConfig) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *FileConfig) GetMaxUploadBytes() int64 {
+	if x != nil {
+		return x.MaxUploadBytes
+	}
+	return 0
+}
+
+func (x *FileConfig) GetAllowedContentTypes() []string {
+	if x != nil {
+		return x.AllowedContentTypes
+	}
+	return nil
+}
+
+func (x *FileConfig) GetPresignTtlSeconds() int32 {
+	if x != nil {
+		return x.PresignTtlSeconds
+	}
+	return 0
+}
+
+type GetFileConfigRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFileConfigRequest) Reset() {
+	*x = GetFileConfigRequest{}
+	mi := &file_v3_proto_file_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFileConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFileConfigRequest) ProtoMessage() {}
+
+func (x *GetFileConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFileConfigRequest.ProtoReflect.Descriptor instead.
+func (*GetFileConfigRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{13}
+}
+
+type GetFileConfigResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Config        *FileConfig            `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFileConfigResponse) Reset() {
+	*x = GetFileConfigResponse{}
+	mi := &file_v3_proto_file_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFileConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFileConfigResponse) ProtoMessage() {}
+
+func (x *GetFileConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFileConfigResponse.ProtoReflect.Descriptor instead.
+func (*GetFileConfigResponse) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetFileConfigResponse) GetConfig() *FileConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+type UpdateFileConfigRequest struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	MaxUploadBytes      int64                  `protobuf:"varint,1,opt,name=max_upload_bytes,json=maxUploadBytes,proto3" json:"max_upload_bytes,omitempty"`
+	AllowedContentTypes []string               `protobuf:"bytes,2,rep,name=allowed_content_types,json=allowedContentTypes,proto3" json:"allowed_content_types,omitempty"`
+	PresignTtlSeconds   int32                  `protobuf:"varint,3,opt,name=presign_ttl_seconds,json=presignTtlSeconds,proto3" json:"presign_ttl_seconds,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *UpdateFileConfigRequest) Reset() {
+	*x = UpdateFileConfigRequest{}
+	mi := &file_v3_proto_file_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateFileConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateFileConfigRequest) ProtoMessage() {}
+
+func (x *UpdateFileConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateFileConfigRequest.ProtoReflect.Descriptor instead.
+func (*UpdateFileConfigRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *UpdateFileConfigRequest) GetMaxUploadBytes() int64 {
+	if x != nil {
+		return x.MaxUploadBytes
+	}
+	return 0
+}
+
+func (x *UpdateFileConfigRequest) GetAllowedContentTypes() []string {
+	if x != nil {
+		return x.AllowedContentTypes
+	}
+	return nil
+}
+
+func (x *UpdateFileConfigRequest) GetPresignTtlSeconds() int32 {
+	if x != nil {
+		return x.PresignTtlSeconds
+	}
+	return 0
+}
+
+type UpdateFileConfigResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Config        *FileConfig            `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateFileConfigResponse) Reset() {
+	*x = UpdateFileConfigResponse{}
+	mi := &file_v3_proto_file_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateFileConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateFileConfigResponse) ProtoMessage() {}
+
+func (x *UpdateFileConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateFileConfigResponse.ProtoReflect.Descriptor instead.
+func (*UpdateFileConfigResponse) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *UpdateFileConfigResponse) GetConfig() *FileConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
 var File_v3_proto_file_proto protoreflect.FileDescriptor
 
 const file_v3_proto_file_proto_rawDesc = "" +
@@ -1029,7 +1273,21 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x19\n" +
 	"\basset_id\x18\x02 \x01(\tR\aassetId\"%\n" +
 	"\x13DeleteAssetResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok*n\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"\x9a\x01\n" +
+	"\n" +
+	"FileConfig\x12(\n" +
+	"\x10max_upload_bytes\x18\x01 \x01(\x03R\x0emaxUploadBytes\x122\n" +
+	"\x15allowed_content_types\x18\x02 \x03(\tR\x13allowedContentTypes\x12.\n" +
+	"\x13presign_ttl_seconds\x18\x03 \x01(\x05R\x11presignTtlSeconds\"\x16\n" +
+	"\x14GetFileConfigRequest\"A\n" +
+	"\x15GetFileConfigResponse\x12(\n" +
+	"\x06config\x18\x01 \x01(\v2\x10.file.FileConfigR\x06config\"\xa7\x01\n" +
+	"\x17UpdateFileConfigRequest\x12(\n" +
+	"\x10max_upload_bytes\x18\x01 \x01(\x03R\x0emaxUploadBytes\x122\n" +
+	"\x15allowed_content_types\x18\x02 \x03(\tR\x13allowedContentTypes\x12.\n" +
+	"\x13presign_ttl_seconds\x18\x03 \x01(\x05R\x11presignTtlSeconds\"D\n" +
+	"\x18UpdateFileConfigResponse\x12(\n" +
+	"\x06config\x18\x01 \x01(\v2\x10.file.FileConfigR\x06config*n\n" +
 	"\x0fAssetVisibility\x12 \n" +
 	"\x1cASSET_VISIBILITY_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17ASSET_VISIBILITY_PUBLIC\x10\x01\x12\x1c\n" +
@@ -1038,7 +1296,7 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\x18ASSET_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ASSET_STATUS_PENDING\x10\x01\x12\x19\n" +
 	"\x15ASSET_STATUS_UPLOADED\x10\x02\x12\x18\n" +
-	"\x14ASSET_STATUS_DELETED\x10\x032\x84\x03\n" +
+	"\x14ASSET_STATUS_DELETED\x10\x032\xa1\x04\n" +
 	"\vFileService\x12-\n" +
 	"\x04Ping\x12\x11.file.PingRequest\x1a\x12.file.PingResponse\x12E\n" +
 	"\fCreateUpload\x12\x19.file.CreateUploadRequest\x1a\x1a.file.CreateUploadResponse\x12B\n" +
@@ -1046,7 +1304,9 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\n" +
 	"ListAssets\x12\x17.file.ListAssetsRequest\x1a\x18.file.ListAssetsResponse\x126\n" +
 	"\bGetAsset\x12\x15.file.GetAssetRequest\x1a\x13.file.AssetResponse\x12B\n" +
-	"\vDeleteAsset\x12\x18.file.DeleteAssetRequest\x1a\x19.file.DeleteAssetResponseB\x12Z\x10services/file/pbb\x06proto3"
+	"\vDeleteAsset\x12\x18.file.DeleteAssetRequest\x1a\x19.file.DeleteAssetResponse\x12H\n" +
+	"\rGetFileConfig\x12\x1a.file.GetFileConfigRequest\x1a\x1b.file.GetFileConfigResponse\x12Q\n" +
+	"\x10UpdateFileConfig\x12\x1d.file.UpdateFileConfigRequest\x1a\x1e.file.UpdateFileConfigResponseB\x12Z\x10services/file/pbb\x06proto3"
 
 var (
 	file_v3_proto_file_proto_rawDescOnce sync.Once
@@ -1061,51 +1321,62 @@ func file_v3_proto_file_proto_rawDescGZIP() []byte {
 }
 
 var file_v3_proto_file_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_v3_proto_file_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_v3_proto_file_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_v3_proto_file_proto_goTypes = []any{
-	(AssetVisibility)(0),          // 0: file.AssetVisibility
-	(AssetStatus)(0),              // 1: file.AssetStatus
-	(*PingRequest)(nil),           // 2: file.PingRequest
-	(*PingResponse)(nil),          // 3: file.PingResponse
-	(*Asset)(nil),                 // 4: file.Asset
-	(*CreateUploadRequest)(nil),   // 5: file.CreateUploadRequest
-	(*CreateUploadResponse)(nil),  // 6: file.CreateUploadResponse
-	(*CompleteUploadRequest)(nil), // 7: file.CompleteUploadRequest
-	(*ListAssetsRequest)(nil),     // 8: file.ListAssetsRequest
-	(*GetAssetRequest)(nil),       // 9: file.GetAssetRequest
-	(*AssetResponse)(nil),         // 10: file.AssetResponse
-	(*ListAssetsResponse)(nil),    // 11: file.ListAssetsResponse
-	(*DeleteAssetRequest)(nil),    // 12: file.DeleteAssetRequest
-	(*DeleteAssetResponse)(nil),   // 13: file.DeleteAssetResponse
-	nil,                           // 14: file.CreateUploadResponse.HeadersEntry
+	(AssetVisibility)(0),             // 0: file.AssetVisibility
+	(AssetStatus)(0),                 // 1: file.AssetStatus
+	(*PingRequest)(nil),              // 2: file.PingRequest
+	(*PingResponse)(nil),             // 3: file.PingResponse
+	(*Asset)(nil),                    // 4: file.Asset
+	(*CreateUploadRequest)(nil),      // 5: file.CreateUploadRequest
+	(*CreateUploadResponse)(nil),     // 6: file.CreateUploadResponse
+	(*CompleteUploadRequest)(nil),    // 7: file.CompleteUploadRequest
+	(*ListAssetsRequest)(nil),        // 8: file.ListAssetsRequest
+	(*GetAssetRequest)(nil),          // 9: file.GetAssetRequest
+	(*AssetResponse)(nil),            // 10: file.AssetResponse
+	(*ListAssetsResponse)(nil),       // 11: file.ListAssetsResponse
+	(*DeleteAssetRequest)(nil),       // 12: file.DeleteAssetRequest
+	(*DeleteAssetResponse)(nil),      // 13: file.DeleteAssetResponse
+	(*FileConfig)(nil),               // 14: file.FileConfig
+	(*GetFileConfigRequest)(nil),     // 15: file.GetFileConfigRequest
+	(*GetFileConfigResponse)(nil),    // 16: file.GetFileConfigResponse
+	(*UpdateFileConfigRequest)(nil),  // 17: file.UpdateFileConfigRequest
+	(*UpdateFileConfigResponse)(nil), // 18: file.UpdateFileConfigResponse
+	nil,                              // 19: file.CreateUploadResponse.HeadersEntry
 }
 var file_v3_proto_file_proto_depIdxs = []int32{
 	0,  // 0: file.Asset.visibility:type_name -> file.AssetVisibility
 	1,  // 1: file.Asset.status:type_name -> file.AssetStatus
 	0,  // 2: file.CreateUploadRequest.visibility:type_name -> file.AssetVisibility
 	4,  // 3: file.CreateUploadResponse.asset:type_name -> file.Asset
-	14, // 4: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
+	19, // 4: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
 	1,  // 5: file.ListAssetsRequest.status:type_name -> file.AssetStatus
 	0,  // 6: file.ListAssetsRequest.visibility:type_name -> file.AssetVisibility
 	4,  // 7: file.AssetResponse.asset:type_name -> file.Asset
 	4,  // 8: file.ListAssetsResponse.items:type_name -> file.Asset
-	2,  // 9: file.FileService.Ping:input_type -> file.PingRequest
-	5,  // 10: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
-	7,  // 11: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
-	8,  // 12: file.FileService.ListAssets:input_type -> file.ListAssetsRequest
-	9,  // 13: file.FileService.GetAsset:input_type -> file.GetAssetRequest
-	12, // 14: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
-	3,  // 15: file.FileService.Ping:output_type -> file.PingResponse
-	6,  // 16: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
-	10, // 17: file.FileService.CompleteUpload:output_type -> file.AssetResponse
-	11, // 18: file.FileService.ListAssets:output_type -> file.ListAssetsResponse
-	10, // 19: file.FileService.GetAsset:output_type -> file.AssetResponse
-	13, // 20: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	14, // 9: file.GetFileConfigResponse.config:type_name -> file.FileConfig
+	14, // 10: file.UpdateFileConfigResponse.config:type_name -> file.FileConfig
+	2,  // 11: file.FileService.Ping:input_type -> file.PingRequest
+	5,  // 12: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
+	7,  // 13: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
+	8,  // 14: file.FileService.ListAssets:input_type -> file.ListAssetsRequest
+	9,  // 15: file.FileService.GetAsset:input_type -> file.GetAssetRequest
+	12, // 16: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
+	15, // 17: file.FileService.GetFileConfig:input_type -> file.GetFileConfigRequest
+	17, // 18: file.FileService.UpdateFileConfig:input_type -> file.UpdateFileConfigRequest
+	3,  // 19: file.FileService.Ping:output_type -> file.PingResponse
+	6,  // 20: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
+	10, // 21: file.FileService.CompleteUpload:output_type -> file.AssetResponse
+	11, // 22: file.FileService.ListAssets:output_type -> file.ListAssetsResponse
+	10, // 23: file.FileService.GetAsset:output_type -> file.AssetResponse
+	13, // 24: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
+	16, // 25: file.FileService.GetFileConfig:output_type -> file.GetFileConfigResponse
+	18, // 26: file.FileService.UpdateFileConfig:output_type -> file.UpdateFileConfigResponse
+	19, // [19:27] is the sub-list for method output_type
+	11, // [11:19] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_v3_proto_file_proto_init() }
@@ -1119,7 +1390,7 @@ func file_v3_proto_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v3_proto_file_proto_rawDesc), len(file_v3_proto_file_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   13,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

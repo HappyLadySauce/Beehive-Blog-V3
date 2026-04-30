@@ -27,12 +27,15 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 	if err != nil {
 		return nil, err
 	}
-	contentType, maxBytes, err := validateUploadFile(m.conf.Storage, in.FileName, in.ContentType, in.ByteSize)
+
+	allowedTypes := m.configCache.AllowedContentTypes()
+	maxUploadBytes := m.configCache.MaxUploadBytes()
+	contentType, maxBytes, err := validateUploadFile(allowedTypes, maxUploadBytes, in.FileName, in.ContentType, in.ByteSize)
 	if err != nil {
 		return nil, err
 	}
 
-	ttl := time.Duration(m.conf.Storage.PresignTTLSeconds) * time.Second
+	ttl := time.Duration(m.configCache.PresignTTLSeconds()) * time.Second
 	if ttl <= 0 {
 		ttl = 5 * time.Minute
 	}

@@ -19,12 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FileService_Ping_FullMethodName           = "/file.FileService/Ping"
-	FileService_CreateUpload_FullMethodName   = "/file.FileService/CreateUpload"
-	FileService_CompleteUpload_FullMethodName = "/file.FileService/CompleteUpload"
-	FileService_ListAssets_FullMethodName     = "/file.FileService/ListAssets"
-	FileService_GetAsset_FullMethodName       = "/file.FileService/GetAsset"
-	FileService_DeleteAsset_FullMethodName    = "/file.FileService/DeleteAsset"
+	FileService_Ping_FullMethodName             = "/file.FileService/Ping"
+	FileService_CreateUpload_FullMethodName     = "/file.FileService/CreateUpload"
+	FileService_CompleteUpload_FullMethodName   = "/file.FileService/CompleteUpload"
+	FileService_ListAssets_FullMethodName       = "/file.FileService/ListAssets"
+	FileService_GetAsset_FullMethodName         = "/file.FileService/GetAsset"
+	FileService_DeleteAsset_FullMethodName      = "/file.FileService/DeleteAsset"
+	FileService_GetFileConfig_FullMethodName    = "/file.FileService/GetFileConfig"
+	FileService_UpdateFileConfig_FullMethodName = "/file.FileService/UpdateFileConfig"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -37,6 +39,8 @@ type FileServiceClient interface {
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*AssetResponse, error)
 	DeleteAsset(ctx context.Context, in *DeleteAssetRequest, opts ...grpc.CallOption) (*DeleteAssetResponse, error)
+	GetFileConfig(ctx context.Context, in *GetFileConfigRequest, opts ...grpc.CallOption) (*GetFileConfigResponse, error)
+	UpdateFileConfig(ctx context.Context, in *UpdateFileConfigRequest, opts ...grpc.CallOption) (*UpdateFileConfigResponse, error)
 }
 
 type fileServiceClient struct {
@@ -107,6 +111,26 @@ func (c *fileServiceClient) DeleteAsset(ctx context.Context, in *DeleteAssetRequ
 	return out, nil
 }
 
+func (c *fileServiceClient) GetFileConfig(ctx context.Context, in *GetFileConfigRequest, opts ...grpc.CallOption) (*GetFileConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFileConfigResponse)
+	err := c.cc.Invoke(ctx, FileService_GetFileConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) UpdateFileConfig(ctx context.Context, in *UpdateFileConfigRequest, opts ...grpc.CallOption) (*UpdateFileConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateFileConfigResponse)
+	err := c.cc.Invoke(ctx, FileService_UpdateFileConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -117,6 +141,8 @@ type FileServiceServer interface {
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
 	GetAsset(context.Context, *GetAssetRequest) (*AssetResponse, error)
 	DeleteAsset(context.Context, *DeleteAssetRequest) (*DeleteAssetResponse, error)
+	GetFileConfig(context.Context, *GetFileConfigRequest) (*GetFileConfigResponse, error)
+	UpdateFileConfig(context.Context, *UpdateFileConfigRequest) (*UpdateFileConfigResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -144,6 +170,12 @@ func (UnimplementedFileServiceServer) GetAsset(context.Context, *GetAssetRequest
 }
 func (UnimplementedFileServiceServer) DeleteAsset(context.Context, *DeleteAssetRequest) (*DeleteAssetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteAsset not implemented")
+}
+func (UnimplementedFileServiceServer) GetFileConfig(context.Context, *GetFileConfigRequest) (*GetFileConfigResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFileConfig not implemented")
+}
+func (UnimplementedFileServiceServer) UpdateFileConfig(context.Context, *UpdateFileConfigRequest) (*UpdateFileConfigResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateFileConfig not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -274,6 +306,42 @@ func _FileService_DeleteAsset_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_GetFileConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFileConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).GetFileConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_GetFileConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).GetFileConfig(ctx, req.(*GetFileConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_UpdateFileConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateFileConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).UpdateFileConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_UpdateFileConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).UpdateFileConfig(ctx, req.(*UpdateFileConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +372,14 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteAsset",
 			Handler:    _FileService_DeleteAsset_Handler,
+		},
+		{
+			MethodName: "GetFileConfig",
+			Handler:    _FileService_GetFileConfig_Handler,
+		},
+		{
+			MethodName: "UpdateFileConfig",
+			Handler:    _FileService_UpdateFileConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
