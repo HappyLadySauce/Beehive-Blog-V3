@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
+import { appConfig } from '@/shared/config/env'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import FormField from '@/shared/components/FormField.vue'
@@ -17,7 +18,7 @@ const { t } = useI18n()
       :title="t('settings.title')"
       :description="t('settings.description')"
     />
-    <StatusAlert tone="info" :title="t('settings.mockModeTitle')">
+    <StatusAlert v-if="appConfig.apiMode === 'mock'" tone="info" :title="t('settings.mockModeTitle')">
       {{ t('settings.mockModeMessage') }}
     </StatusAlert>
     <form class="settings-page__form" :aria-label="t('settings.formLabel')">
