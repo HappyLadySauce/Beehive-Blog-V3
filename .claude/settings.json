@@ -6,7 +6,13 @@
       "Bash(echo \"exit: $?\")",
       "Bash(go build *)",
       "Bash(go test *)",
-      "Bash(go vet *)"
+      "Bash(go vet *)",
+      "Bash(protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative v3/proto/file.proto)",
+      "Bash(mkdir -p /tmp/goctl-tmp)",
+      "Bash(rm -rf /tmp/goctl-tmp)",
+      "Bash(rm -f services/file/fileservice/fileservice.go)",
+      "Bash(rmdir services/file/fileservice)",
+      "Bash(pnpm run *)"
     ]
   }
 }
