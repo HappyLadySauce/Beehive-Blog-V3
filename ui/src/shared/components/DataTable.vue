@@ -9,6 +9,7 @@ import PageLoadingState from './PageLoadingState.vue'
 export interface DataTableColumn {
   key: string
   label: string
+  width?: string
 }
 
 defineProps<{
@@ -38,6 +39,9 @@ const { t } = useI18n()
         <InlineLoadingState :title="loadingTitle ?? t('common.refreshing')" />
       </div>
       <table class="data-table__grid">
+        <colgroup>
+          <col v-for="column in columns" :key="column.key" :style="{ width: column.width }">
+        </colgroup>
         <thead>
           <tr>
             <th v-for="column in columns" :key="column.key" scope="col">{{ column.label }}</th>

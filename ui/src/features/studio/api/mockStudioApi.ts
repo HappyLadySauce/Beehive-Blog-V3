@@ -148,6 +148,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1001',
     user_id: 'user_mock_admin',
+    username: 'admin',
     auth_source: 'local',
     event_type: 'login',
     result: 'success',
@@ -158,6 +159,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1002',
     user_id: 'user_mock_admin',
+    username: 'admin',
     auth_source: 'local',
     event_type: 'admin_update_user_status',
     result: 'success',
@@ -168,6 +170,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1003',
     user_id: 'user_mock_member',
+    username: 'member',
     auth_source: 'local',
     event_type: 'studio_access',
     result: 'failure',
@@ -178,6 +181,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1004',
     user_id: 'user_mock_editor',
+    username: 'editor',
     auth_source: 'local',
     event_type: 'refresh_session_token',
     result: 'success',
@@ -188,6 +192,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1005',
     user_id: 'user_mock_admin',
+    username: 'admin',
     auth_source: 'local',
     event_type: 'refresh_session_token',
     result: 'success',
@@ -198,6 +203,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1006',
     user_id: 'user_mock_admin',
+    username: 'admin',
     auth_source: 'local',
     event_type: 'refresh_session_token',
     result: 'success',
@@ -208,6 +214,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1007',
     user_id: 'user_mock_support',
+    username: 'support',
     auth_source: 'local',
     event_type: 'password_reset',
     result: 'success',
@@ -218,6 +225,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1008',
     user_id: 'user_mock_qa',
+    username: 'qa',
     auth_source: 'local',
     event_type: 'login',
     result: 'failure',
@@ -228,6 +236,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1009',
     user_id: 'user_mock_ops',
+    username: 'ops',
     auth_source: 'local',
     event_type: 'login',
     result: 'success',
@@ -238,6 +247,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1010',
     user_id: 'user_mock_release',
+    username: 'release',
     auth_source: 'local',
     event_type: 'refresh_session_token',
     result: 'success',
@@ -248,6 +258,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1011',
     user_id: 'user_mock_docs',
+    username: 'docs',
     auth_source: 'local',
     event_type: 'role_changed',
     result: 'success',
@@ -258,6 +269,7 @@ const mockAudits: StudioAuditEvent[] = [
   {
     audit_id: 'audit_1012',
     user_id: 'user_mock_admin',
+    username: 'admin',
     auth_source: 'local',
     event_type: 'content_archive',
     result: 'success',

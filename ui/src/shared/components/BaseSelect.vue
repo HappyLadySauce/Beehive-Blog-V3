@@ -62,11 +62,17 @@ function updatePanelPosition(): void {
   const aboveSpace = rect.top - viewportPadding
   const maxHeight = Math.max(180, Math.min(300, Math.max(belowSpace, aboveSpace)))
   const openAbove = belowSpace < 180 && aboveSpace > belowSpace
+  const estimatedPanelHeight = Math.min(
+    maxHeight,
+    12 + props.options.length * 40,
+  )
 
   panelStyle.left = `${left}px`
   panelStyle.width = `${width}px`
   panelStyle.maxHeight = `${maxHeight}px`
-  panelStyle.top = openAbove ? `${Math.max(viewportPadding, rect.top - maxHeight - 6)}px` : `${rect.bottom + 6}px`
+  panelStyle.top = openAbove
+    ? `${Math.max(viewportPadding, rect.top - estimatedPanelHeight - 6)}px`
+    : `${rect.bottom + 6}px`
 }
 
 async function openSelect(): Promise<void> {

@@ -17,6 +17,7 @@ export interface StudioUser {
 export interface StudioAuditEvent {
   audit_id: string
   user_id?: string
+  username?: string
   session_id?: string
   provider?: string
   auth_source?: string

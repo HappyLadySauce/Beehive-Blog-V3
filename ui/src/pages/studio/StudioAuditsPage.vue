@@ -40,12 +40,12 @@ const resultOptions = computed<BaseSelectOption[]>(() => [
   { value: 'failure', label: t('audits.failure') },
 ])
 const columns = computed<DataTableColumn[]>(() => [
-  { key: 'createdAt', label: t('audits.columns.time') },
-  { key: 'eventType', label: t('audits.columns.event') },
-  { key: 'result', label: t('audits.columns.result') },
-  { key: 'userId', label: t('audits.columns.user') },
-  { key: 'clientIp', label: t('audits.columns.ip') },
-  { key: 'detail', label: t('audits.columns.detail') },
+  { key: 'createdAt', label: t('audits.columns.time'), width: '18%' },
+  { key: 'eventType', label: t('audits.columns.event'), width: '16%' },
+  { key: 'result', label: t('audits.columns.result'), width: '8%' },
+  { key: 'username', label: t('audits.columns.user'), width: '6%' },
+  { key: 'clientIp', label: t('audits.columns.ip'), width: '8%' },
+  { key: 'detail', label: t('audits.columns.detail'), width: '44%' },
 ])
 const pagination = usePaginatedRouteState({
   route,
@@ -84,7 +84,7 @@ const rows = computed(() =>
     createdAt: formatUnixTime(event.created_at),
     eventType: event.event_type,
     result: event.result,
-    userId: event.user_id || t('common.system'),
+    username: event.username || t('common.system'),
     clientIp: event.client_ip || t('common.none'),
     detail: event.detail_json || t('common.none'),
   })),
@@ -96,7 +96,7 @@ function formatUnixTime(value?: number): string {
   }
   return new Intl.DateTimeFormat(locale.value, {
     dateStyle: 'medium',
-    timeStyle: 'short',
+    timeStyle: 'medium',
   }).format(new Date(value * 1000))
 }
 
@@ -190,6 +190,15 @@ function readQueryString(value: unknown): string {
 
 .audits-page__filters {
   grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(160px, 180px));
+}
+
+.audits-page :deep(.data-table__grid th:last-child),
+.audits-page :deep(.data-table__grid td:last-child) {
+  text-align: left;
+}
+
+.audits-page :deep(.data-table__grid td:last-child) {
+  white-space: pre-wrap;
 }
 
 @media (max-width: 760px) {
