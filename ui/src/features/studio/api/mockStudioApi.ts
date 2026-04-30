@@ -44,6 +44,104 @@ const mockUsers: StudioUser[] = [
     created_at: 1776858060,
     updated_at: 1776858060,
   },
+  {
+    user_id: 'user_mock_writer',
+    username: 'writer',
+    email: 'writer@beehive.local',
+    nickname: 'Writer',
+    role: 'member',
+    status: 'active',
+    created_at: 1776901200,
+    updated_at: 1777260000,
+    last_login_at: 1777260000,
+  },
+  {
+    user_id: 'user_mock_ops',
+    username: 'ops',
+    email: 'ops@beehive.local',
+    nickname: 'Ops',
+    role: 'admin',
+    status: 'active',
+    created_at: 1776912000,
+    updated_at: 1777256400,
+    last_login_at: 1777256400,
+  },
+  {
+    user_id: 'user_mock_support',
+    username: 'support',
+    email: 'support@beehive.local',
+    nickname: 'Support',
+    role: 'member',
+    status: 'active',
+    created_at: 1776922800,
+    updated_at: 1777249200,
+    last_login_at: 1777249200,
+  },
+  {
+    user_id: 'user_mock_qa',
+    username: 'qa',
+    email: 'qa@beehive.local',
+    nickname: 'QA',
+    role: 'member',
+    status: 'disabled',
+    created_at: 1776933600,
+    updated_at: 1777242000,
+    last_login_at: 1777242000,
+  },
+  {
+    user_id: 'user_mock_growth',
+    username: 'growth',
+    email: 'growth@beehive.local',
+    nickname: 'Growth',
+    role: 'member',
+    status: 'active',
+    created_at: 1776944400,
+    updated_at: 1777234800,
+    last_login_at: 1777234800,
+  },
+  {
+    user_id: 'user_mock_design',
+    username: 'design',
+    email: 'design@beehive.local',
+    nickname: 'Design',
+    role: 'member',
+    status: 'active',
+    created_at: 1776955200,
+    updated_at: 1777227600,
+    last_login_at: 1777227600,
+  },
+  {
+    user_id: 'user_mock_data',
+    username: 'data',
+    email: 'data@beehive.local',
+    nickname: 'Data',
+    role: 'member',
+    status: 'locked',
+    created_at: 1776966000,
+    updated_at: 1777220400,
+  },
+  {
+    user_id: 'user_mock_release',
+    username: 'release',
+    email: 'release@beehive.local',
+    nickname: 'Release',
+    role: 'admin',
+    status: 'active',
+    created_at: 1776976800,
+    updated_at: 1777213200,
+    last_login_at: 1777213200,
+  },
+  {
+    user_id: 'user_mock_docs',
+    username: 'docs',
+    email: 'docs@beehive.local',
+    nickname: 'Docs',
+    role: 'member',
+    status: 'active',
+    created_at: 1776987600,
+    updated_at: 1777206000,
+    last_login_at: 1777206000,
+  },
 ]
 
 const mockAudits: StudioAuditEvent[] = [
@@ -77,11 +175,110 @@ const mockAudits: StudioAuditEvent[] = [
     detail_json: '{"reason":"forbidden"}',
     created_at: 1777187580,
   },
+  {
+    audit_id: 'audit_1004',
+    user_id: 'user_mock_editor',
+    auth_source: 'local',
+    event_type: 'refresh_session_token',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '-',
+    created_at: 1777186500,
+  },
+  {
+    audit_id: 'audit_1005',
+    user_id: 'user_mock_admin',
+    auth_source: 'local',
+    event_type: 'refresh_session_token',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '-',
+    created_at: 1777186200,
+  },
+  {
+    audit_id: 'audit_1006',
+    user_id: 'user_mock_admin',
+    auth_source: 'local',
+    event_type: 'refresh_session_token',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '-',
+    created_at: 1777185900,
+  },
+  {
+    audit_id: 'audit_1007',
+    user_id: 'user_mock_support',
+    auth_source: 'local',
+    event_type: 'password_reset',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '{"target_user_id":"user_mock_member"}',
+    created_at: 1777185600,
+  },
+  {
+    audit_id: 'audit_1008',
+    user_id: 'user_mock_qa',
+    auth_source: 'local',
+    event_type: 'login',
+    result: 'failure',
+    client_ip: '127.0.0.1',
+    detail_json: '{"reason":"invalid_password"}',
+    created_at: 1777185300,
+  },
+  {
+    audit_id: 'audit_1009',
+    user_id: 'user_mock_ops',
+    auth_source: 'local',
+    event_type: 'login',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '{"surface":"studio"}',
+    created_at: 1777185000,
+  },
+  {
+    audit_id: 'audit_1010',
+    user_id: 'user_mock_release',
+    auth_source: 'local',
+    event_type: 'refresh_session_token',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '-',
+    created_at: 1777184700,
+  },
+  {
+    audit_id: 'audit_1011',
+    user_id: 'user_mock_docs',
+    auth_source: 'local',
+    event_type: 'role_changed',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '{"new_role":"member"}',
+    created_at: 1777184400,
+  },
+  {
+    audit_id: 'audit_1012',
+    user_id: 'user_mock_admin',
+    auth_source: 'local',
+    event_type: 'content_archive',
+    result: 'success',
+    client_ip: '127.0.0.1',
+    detail_json: '{"content_id":"1001"}',
+    created_at: 1777184100,
+  },
 ]
 
 const mockTags: ContentTag[] = [
   { tag_id: 'tag_1001', name: 'Gateway', slug: 'gateway', description: 'Gateway notes', color: '#0f8f83', created_at: 1776676320, updated_at: 1776676320 },
   { tag_id: 'tag_1002', name: 'Identity', slug: 'identity', description: 'Identity flows', color: '#e45f35', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1003', name: 'Release', slug: 'release', description: 'Release process', color: '#5a67d8', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1004', name: 'Design', slug: 'design', description: 'Design system', color: '#d97706', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1005', name: 'Platform', slug: 'platform', description: 'Platform changes', color: '#0ea5e9', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1006', name: 'Infra', slug: 'infra', description: 'Infrastructure work', color: '#64748b', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1007', name: 'Docs', slug: 'docs', description: 'Documentation', color: '#84cc16', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1008', name: 'Search', slug: 'search', description: 'Search relevance', color: '#ec4899', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1009', name: 'Analytics', slug: 'analytics', description: 'Analytics notes', color: '#8b5cf6', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1010', name: 'Observability', slug: 'observability', description: 'Tracing and logs', color: '#14b8a6', created_at: 1776676320, updated_at: 1776676320 },
+  { tag_id: 'tag_1011', name: 'Auth', slug: 'auth', description: 'Authentication guides', color: '#ef4444', created_at: 1776676320, updated_at: 1776676320 },
 ]
 
 const mockContents: ContentDetail[] = [
@@ -140,6 +337,33 @@ function rejectWeakPassword(password: string): void {
   }
 }
 
+function normalizePage(page?: number): number {
+  if (!Number.isInteger(page) || (page ?? 0) < 1) {
+    return 1
+  }
+  return page as number
+}
+
+function normalizePageSize(pageSize?: number): number {
+  if (!Number.isInteger(pageSize) || (pageSize ?? 0) < 1) {
+    return 20
+  }
+  return pageSize as number
+}
+
+function paginateItems<T>(items: T[], page?: number, pageSize?: number) {
+  const normalizedPage = normalizePage(page)
+  const normalizedPageSize = normalizePageSize(pageSize)
+  const start = (normalizedPage - 1) * normalizedPageSize
+  const end = start + normalizedPageSize
+  return {
+    items: items.slice(start, end),
+    page: normalizedPage,
+    page_size: normalizedPageSize,
+    total: items.length,
+  }
+}
+
 export function createMockStudioApi(): StudioApi {
   return {
     async listUsers(params) {
@@ -154,7 +378,7 @@ export function createMockStudioApi(): StudioApi {
         const matchesDeleted = params?.include_deleted || user.status !== 'deleted'
         return matchesKeyword && matchesRole && matchesStatus && matchesDeleted
       })
-      return { items: [...filtered], total: filtered.length, page: params?.page ?? 1, page_size: params?.page_size ?? 20 }
+      return paginateItems([...filtered], params?.page, params?.page_size)
     },
     async listAudits(params) {
       const filtered = mockAudits.filter((event) => {
@@ -163,7 +387,7 @@ export function createMockStudioApi(): StudioApi {
         const matchesUser = !params?.user_id || event.user_id === params.user_id
         return matchesEventType && matchesResult && matchesUser
       })
-      return { items: [...filtered], total: filtered.length, page: params?.page ?? 1, page_size: params?.page_size ?? 20 }
+      return paginateItems([...filtered], params?.page, params?.page_size)
     },
     async updateUserRole(userId, payload) {
       const user = mockUsers.find((item) => item.user_id === userId)
@@ -267,7 +491,7 @@ export function createMockStudioApi(): StudioApi {
         const matchesVisibility = !params?.visibility || item.visibility === params.visibility
         return matchesKeyword && matchesType && matchesStatus && matchesVisibility
       })
-      return { items: filtered.map(toSummary), total: filtered.length, page: params?.page ?? 1, page_size: params?.page_size ?? 20 }
+      return paginateItems(filtered.map(toSummary), params?.page, params?.page_size)
     },
     async createContent(payload) {
       const now = Math.floor(Date.now() / 1000)
@@ -296,7 +520,7 @@ export function createMockStudioApi(): StudioApi {
     async listTags(params) {
       const keyword = params?.keyword?.toLowerCase().trim()
       const filtered = mockTags.filter((tag) => !keyword || tag.name.toLowerCase().includes(keyword) || tag.slug.toLowerCase().includes(keyword))
-      return { items: [...filtered], total: filtered.length, page: params?.page ?? 1, page_size: params?.page_size ?? 50 }
+      return paginateItems([...filtered], params?.page, params?.page_size)
     },
     async createTag(payload) {
       const now = Math.floor(Date.now() / 1000)

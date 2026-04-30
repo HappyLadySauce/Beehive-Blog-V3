@@ -210,6 +210,12 @@ summary {
   color: var(--bb-color-muted);
 }
 
+.studio-list-footer {
+  display: grid;
+  gap: 10px;
+  color: var(--bb-color-muted);
+}
+
 ::selection {
   color: #ffffff;
   background: var(--bb-color-primary);

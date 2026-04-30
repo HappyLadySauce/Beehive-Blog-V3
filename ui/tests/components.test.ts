@@ -10,6 +10,7 @@ import EmptyState from '@/shared/components/EmptyState.vue'
 import FormField from '@/shared/components/FormField.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import BaseSelect from '@/shared/components/BaseSelect.vue'
+import TablePagination from '@/shared/components/TablePagination.vue'
 import LocaleToggle from '@/shared/components/LocaleToggle.vue'
 import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 import UserAvatar from '@/shared/components/UserAvatar.vue'
@@ -141,6 +142,25 @@ describe('shared components', () => {
     expect(wrapper.text()).toContain('Admin')
     expect(wrapper.text()).toContain('Refreshing')
     expect(wrapper.find('.data-table__refreshing').exists()).toBe(true)
+  })
+
+  it('renders pagination ranges and emits page changes', async () => {
+    const wrapper = mount(TablePagination, {
+      props: {
+        page: 2,
+        pageSize: 10,
+        total: 35,
+      },
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.text()).toContain('Showing 11-20 of 35')
+
+    await wrapper.findAll('button').find((button) => button.text() === 'Previous')!.trigger('click')
+    expect(wrapper.emitted('update:page')?.[0]).toEqual([1])
+    wrapper.unmount()
   })
 
   it('renders custom visuals in empty state slots', () => {

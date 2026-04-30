@@ -103,6 +103,21 @@ describe('studio UX flows', () => {
     expect(document.body.querySelector('#edit-email')).not.toBeNull()
   })
 
+  it('restores user pagination from the URL and resets to the first page after filtering', async () => {
+    const { wrapper, router } = await mountWithApp(StudioUsersPage, '/?page=2&pageSize=10')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('release@beehive.local')
+    expect(wrapper.text()).not.toContain('admin@beehive.local')
+
+    await wrapper.get('#user-search').setValue('member')
+    await new Promise((resolve) => window.setTimeout(resolve, 350))
+    await flushPromises()
+
+    expect(router.currentRoute.value.query.page).toBeUndefined()
+    expect(wrapper.text()).toContain('member@beehive.local')
+  })
+
   it('routes new content actions to the full-screen editor', async () => {
     const { wrapper, router } = await mountWithApp(StudioContentPage)
     await flushPromises()
@@ -144,6 +159,14 @@ describe('studio UX flows', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Identity')
+    expect(wrapper.text()).not.toContain('Gateway')
+  })
+
+  it('restores tag pagination from the URL without affecting the content tab state', async () => {
+    const { wrapper } = await mountWithApp(StudioContentPage, '/?tab=tags&tagPage=2&tagPageSize=10')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Auth')
     expect(wrapper.text()).not.toContain('Gateway')
   })
 
@@ -198,6 +221,14 @@ describe('studio UX flows', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('admin_update_user_status')
+    expect(wrapper.text()).not.toContain('login')
+  })
+
+  it('restores audits pagination from the URL', async () => {
+    const { wrapper } = await mountWithApp(StudioAuditsPage, '/?page=2&pageSize=10')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('content_archive')
     expect(wrapper.text()).not.toContain('login')
   })
 

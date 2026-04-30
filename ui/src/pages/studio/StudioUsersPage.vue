@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, reactive, shallowRef, watch } from 'vue'
 import { Eye, KeyRound, Pencil, Trash2, Users } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
@@ -22,7 +23,8 @@ import PasswordInput from '@/shared/components/PasswordInput.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
-import { useConfirm, useProgressiveQuery, useToast } from '@/shared/composables'
+import TablePagination from '@/shared/components/TablePagination.vue'
+import { useConfirm, usePaginatedRouteState, useProgressiveQuery, useToast } from '@/shared/composables'
 import { useLocale } from '@/shared/i18n'
 
 type UserMode = 'view' | 'edit'
@@ -35,6 +37,8 @@ const { t } = useI18n()
 const { locale } = useLocale()
 const { confirm } = useConfirm()
 const { pushToast } = useToast()
+const route = useRoute()
+const router = useRouter()
 
 const isMutating = shallowRef(false)
 const errorMessage = shallowRef('')
@@ -46,16 +50,16 @@ const isSelfPasswordDialogOpen = shallowRef(false)
 let filterTimer: number | undefined
 
 const filters = reactive({
-  keyword: '',
-  role: '',
-  status: '',
-  includeDeleted: false,
+  keyword: readQueryString(route.query.keyword),
+  role: readQueryString(route.query.role),
+  status: readQueryString(route.query.status),
+  includeDeleted: readBooleanQuery(route.query.includeDeleted),
 })
 const appliedFilters = reactive({
-  keyword: '',
-  role: '',
-  status: '',
-  includeDeleted: false,
+  keyword: readQueryString(route.query.keyword),
+  role: readQueryString(route.query.role),
+  status: readQueryString(route.query.status),
+  includeDeleted: readBooleanQuery(route.query.includeDeleted),
 })
 
 const editForm = reactive({
@@ -69,24 +73,35 @@ const profileForm = reactive({
   nickname: '',
   avatar_url: '',
 })
+const total = shallowRef(0)
+const pagination = usePaginatedRouteState({
+  route,
+  router,
+  total,
+})
 
 const usersQuery = useProgressiveQuery({
-  queryKey: computed(() => ['studio-users', { ...appliedFilters }, authStore.currentUser?.user_id ?? 'anonymous']),
+  queryKey: computed(() => [
+    'studio-users',
+    { ...appliedFilters },
+    pagination.page.value,
+    pagination.pageSize.value,
+    authStore.currentUser?.user_id ?? 'anonymous',
+  ]),
   queryFn: () => studioApi.listUsers(
     {
       keyword: appliedFilters.keyword.trim(),
       role: appliedFilters.role,
       status: appliedFilters.status,
       include_deleted: appliedFilters.includeDeleted,
-      page: 1,
-      page_size: 50,
+      page: pagination.page.value,
+      page_size: pagination.pageSize.value,
     },
     { accessToken: authStore.accessToken },
   ),
 })
 
 const users = computed(() => usersQuery.data.value?.items ?? [])
-const total = computed(() => usersQuery.data.value?.total ?? 0)
 const hasUsers = computed(() => users.value.length > 0)
 const queryErrorMessage = computed(() => {
   const error = usersQuery.error.value
@@ -139,10 +154,6 @@ function formatUnixTime(value?: number): string {
   }).format(new Date(value * 1000))
 }
 
-async function loadUsers(): Promise<void> {
-  await usersQuery.refetch()
-}
-
 function scheduleLoadUsers(): void {
   window.clearTimeout(filterTimer)
   filterTimer = window.setTimeout(() => {
@@ -150,6 +161,8 @@ function scheduleLoadUsers(): void {
     appliedFilters.role = filters.role
     appliedFilters.status = filters.status
     appliedFilters.includeDeleted = filters.includeDeleted
+    pagination.page.value = 1
+    void pagination.syncQuery(buildUserQuery())
   }, 300)
 }
 
@@ -332,8 +345,45 @@ watch(() => filters.includeDeleted, (includeDeleted) => {
   }
 })
 
+watch(() => usersQuery.data.value?.total ?? 0, (value) => {
+  total.value = value
+}, { immediate: true })
+
+watch(
+  () => [route.query.keyword, route.query.role, route.query.status, route.query.includeDeleted],
+  () => {
+    filters.keyword = readQueryString(route.query.keyword)
+    filters.role = readQueryString(route.query.role)
+    filters.status = readQueryString(route.query.status)
+    filters.includeDeleted = readBooleanQuery(route.query.includeDeleted)
+    appliedFilters.keyword = filters.keyword
+    appliedFilters.role = filters.role
+    appliedFilters.status = filters.status
+    appliedFilters.includeDeleted = filters.includeDeleted
+  },
+)
+
 watch(() => [filters.keyword, filters.role, filters.status, filters.includeDeleted], scheduleLoadUsers)
 onBeforeUnmount(() => window.clearTimeout(filterTimer))
+
+function buildUserQuery() {
+  return {
+    keyword: filters.keyword.trim() || undefined,
+    role: filters.role || undefined,
+    status: filters.status || undefined,
+    includeDeleted: filters.includeDeleted ? '1' : undefined,
+  }
+}
+
+function readQueryString(value: unknown): string {
+  const normalized = Array.isArray(value) ? value[0] : value
+  return typeof normalized === 'string' ? normalized : ''
+}
+
+function readBooleanQuery(value: unknown): boolean {
+  const normalized = Array.isArray(value) ? value[0] : value
+  return normalized === '1' || normalized === 'true'
+}
 </script>
 
 <template>
@@ -433,7 +483,16 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       </div>
     </div>
 
-    <p v-if="usersQuery.data.value" class="studio-list-count">{{ t('users.count', { count: total }) }}</p>
+    <div v-if="usersQuery.data.value" class="studio-list-footer">
+      <TablePagination
+        :page="pagination.page.value"
+        :page-size="pagination.pageSize.value"
+        :total="total"
+        :disabled="usersQuery.isFetching.value"
+        @update:page="pagination.setPage"
+        @update:page-size="pagination.setPageSize"
+      />
+    </div>
 
     <ModalDialog :open="selectedUser !== null" :title="dialogTitle" :description="selectedUser?.email" size="lg" @close="closeDialog">
       <div v-if="selectedUser" class="users-page__modal">

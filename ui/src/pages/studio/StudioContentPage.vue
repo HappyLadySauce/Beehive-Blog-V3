@@ -2,7 +2,7 @@
 import { Archive, Eye, PackageOpen, Pencil, Tag, Trash2 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
@@ -29,7 +29,8 @@ import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 import SideDrawer from '@/shared/components/SideDrawer.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
-import { useConfirm, useProgressiveQuery, useToast } from '@/shared/composables'
+import TablePagination from '@/shared/components/TablePagination.vue'
+import { useConfirm, usePaginatedRouteState, useProgressiveQuery, useToast } from '@/shared/composables'
 import { useLocale } from '@/shared/i18n'
 
 type StudioTab = 'content' | 'tags'
@@ -38,6 +39,7 @@ const contentTypes: ContentType[] = ['article', 'note', 'project', 'experience',
 const statuses: ContentStatus[] = ['draft', 'review', 'published', 'archived']
 const visibilities: ContentVisibility[] = ['public', 'member', 'private']
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -45,7 +47,7 @@ const { locale } = useLocale()
 const { confirm } = useConfirm()
 const { pushToast } = useToast()
 
-const activeTab = shallowRef<StudioTab>('content')
+const activeTab = shallowRef<StudioTab>(readTabQuery(route.query.tab))
 const selectedContentId = shallowRef('')
 const selectedTag = shallowRef<ContentTag | null>(null)
 const isMutating = shallowRef(false)
@@ -55,23 +57,25 @@ let filterTimer: number | undefined
 let tagFilterTimer: number | undefined
 
 const filters = reactive({
-  keyword: '',
-  type: '',
-  status: '',
-  visibility: '',
+  keyword: readQueryString(route.query.keyword),
+  type: readQueryString(route.query.type),
+  status: readQueryString(route.query.status),
+  visibility: readQueryString(route.query.visibility),
 })
 const appliedFilters = reactive({
-  keyword: '',
-  type: '',
-  status: '',
-  visibility: '',
+  keyword: readQueryString(route.query.keyword),
+  type: readQueryString(route.query.type),
+  status: readQueryString(route.query.status),
+  visibility: readQueryString(route.query.visibility),
 })
 const tagFilters = reactive({
-  keyword: '',
+  keyword: readQueryString(route.query.tagKeyword),
 })
 const appliedTagFilters = reactive({
-  keyword: '',
+  keyword: readQueryString(route.query.tagKeyword),
 })
+const contentTotal = shallowRef(0)
+const tagTotal = shallowRef(0)
 
 const typeOptions = computed<BaseSelectOption[]>(() => [
   { value: '', label: t('contentType.all') },
@@ -92,29 +96,41 @@ const tagForm = reactive({
   description: '',
   color: '',
 })
+const contentPagination = usePaginatedRouteState({
+  route,
+  router,
+  total: contentTotal,
+})
+const tagPagination = usePaginatedRouteState({
+  route,
+  router,
+  total: tagTotal,
+  pageParam: 'tagPage',
+  pageSizeParam: 'tagPageSize',
+})
 
 const contentQuery = useProgressiveQuery({
-  queryKey: computed(() => ['studio-contents', { ...appliedFilters }]),
+  queryKey: computed(() => ['studio-contents', { ...appliedFilters }, contentPagination.page.value, contentPagination.pageSize.value]),
   queryFn: () => studioApi.listContents(
     {
       keyword: appliedFilters.keyword.trim(),
       type: appliedFilters.type,
       status: appliedFilters.status,
       visibility: appliedFilters.visibility,
-      page: 1,
-      page_size: 50,
+      page: contentPagination.page.value,
+      page_size: contentPagination.pageSize.value,
     },
     { accessToken: authStore.accessToken },
   ),
 })
 
 const tagsQuery = useProgressiveQuery({
-  queryKey: computed(() => ['studio-tags', { ...appliedTagFilters }]),
+  queryKey: computed(() => ['studio-tags', { ...appliedTagFilters }, tagPagination.page.value, tagPagination.pageSize.value]),
   queryFn: () => studioApi.listTags(
     {
       keyword: appliedTagFilters.keyword.trim(),
-      page: 1,
-      page_size: 100,
+      page: tagPagination.page.value,
+      page_size: tagPagination.pageSize.value,
     },
     { accessToken: authStore.accessToken },
   ),
@@ -139,9 +155,7 @@ const revisionsQuery = useProgressiveQuery({
 })
 
 const contents = computed<ContentSummary[]>(() => contentQuery.data.value?.items ?? [])
-const total = computed(() => contentQuery.data.value?.total ?? 0)
 const tags = computed<ContentTag[]>(() => tagsQuery.data.value?.items ?? [])
-const tagTotal = computed(() => tagsQuery.data.value?.total ?? 0)
 const selectedContent = computed<ContentDetail | null>(() => detailQuery.data.value?.content ?? null)
 const relations = computed<ContentRelation[]>(() => relationsQuery.data.value?.items ?? [])
 const revisions = computed<ContentRevisionSummary[]>(() => revisionsQuery.data.value?.items ?? [])
@@ -168,6 +182,8 @@ function scheduleLoadContents(): void {
     appliedFilters.type = filters.type
     appliedFilters.status = filters.status
     appliedFilters.visibility = filters.visibility
+    contentPagination.page.value = 1
+    void contentPagination.syncQuery(buildContentQuery())
   }, 300)
 }
 
@@ -175,6 +191,8 @@ function scheduleLoadTags(): void {
   window.clearTimeout(tagFilterTimer)
   tagFilterTimer = window.setTimeout(() => {
     appliedTagFilters.keyword = tagFilters.keyword
+    tagPagination.page.value = 1
+    void tagPagination.syncQuery(buildTagQuery())
   }, 300)
 }
 
@@ -291,12 +309,71 @@ function formatUnixTime(value?: number): string {
 
 const tagDrawerTitle = computed(() => (selectedTag.value ? t('content.tags.editTitle') : t('content.tags.createDrawerTitle')))
 
+watch(() => contentQuery.data.value?.total ?? 0, (value) => {
+  contentTotal.value = value
+}, { immediate: true })
+watch(() => tagsQuery.data.value?.total ?? 0, (value) => {
+  tagTotal.value = value
+}, { immediate: true })
+watch(
+  () => [route.query.tab, route.query.keyword, route.query.type, route.query.status, route.query.visibility, route.query.tagKeyword],
+  () => {
+    activeTab.value = readTabQuery(route.query.tab)
+    filters.keyword = readQueryString(route.query.keyword)
+    filters.type = readQueryString(route.query.type)
+    filters.status = readQueryString(route.query.status)
+    filters.visibility = readQueryString(route.query.visibility)
+    appliedFilters.keyword = filters.keyword
+    appliedFilters.type = filters.type
+    appliedFilters.status = filters.status
+    appliedFilters.visibility = filters.visibility
+    tagFilters.keyword = readQueryString(route.query.tagKeyword)
+    appliedTagFilters.keyword = tagFilters.keyword
+  },
+)
+watch(activeTab, (tab) => {
+  const query = tab === 'content' ? buildContentQuery() : buildTagQuery()
+  if (route.query.tab !== tab) {
+    if (tab === 'content') {
+      void contentPagination.syncQuery(query)
+      return
+    }
+    void tagPagination.syncQuery(query)
+  }
+})
 watch(() => [filters.keyword, filters.type, filters.status, filters.visibility], scheduleLoadContents)
 watch(() => tagFilters.keyword, scheduleLoadTags)
 onBeforeUnmount(() => {
   window.clearTimeout(filterTimer)
   window.clearTimeout(tagFilterTimer)
 })
+
+function buildContentQuery() {
+  return {
+    tab: activeTab.value,
+    keyword: filters.keyword.trim() || undefined,
+    type: filters.type || undefined,
+    status: filters.status || undefined,
+    visibility: filters.visibility || undefined,
+  }
+}
+
+function buildTagQuery() {
+  return {
+    tab: activeTab.value,
+    tagKeyword: tagFilters.keyword.trim() || undefined,
+  }
+}
+
+function readQueryString(value: unknown): string {
+  const normalized = Array.isArray(value) ? value[0] : value
+  return typeof normalized === 'string' ? normalized : ''
+}
+
+function readTabQuery(value: unknown): StudioTab {
+  const normalized = readQueryString(value)
+  return normalized === 'tags' ? 'tags' : 'content'
+}
 </script>
 
 <template>
@@ -399,7 +476,16 @@ onBeforeUnmount(() => {
           </EmptyState>
         </div>
       </div>
-      <p class="content-page__count">{{ t('content.count', { count: total }) }}</p>
+      <div v-if="contentQuery.data.value" class="studio-list-footer">
+        <TablePagination
+          :page="contentPagination.page.value"
+          :page-size="contentPagination.pageSize.value"
+          :total="contentTotal"
+          :disabled="contentQuery.isFetching.value"
+          @update:page="contentPagination.setPage"
+          @update:page-size="contentPagination.setPageSize"
+        />
+      </div>
     </template>
 
     <template v-else>
@@ -462,7 +548,16 @@ onBeforeUnmount(() => {
             </EmptyState>
           </div>
         </div>
-        <p class="studio-list-count">{{ t('content.tags.count', { count: tagTotal }) }}</p>
+        <div v-if="tagsQuery.data.value" class="studio-list-footer">
+          <TablePagination
+            :page="tagPagination.page.value"
+            :page-size="tagPagination.pageSize.value"
+            :total="tagTotal"
+            :disabled="tagsQuery.isFetching.value"
+            @update:page="tagPagination.setPage"
+            @update:page-size="tagPagination.setPageSize"
+          />
+        </div>
       </div>
     </template>
 
