@@ -4,7 +4,7 @@ import { computed, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import { useAvatarUpload } from '@/features/uploads/useAvatarUpload'
+import { useAvatarUpload } from '@/features/file-manager/useAvatarUpload'
 
 import BaseButton from './BaseButton.vue'
 import UserAvatar from './UserAvatar.vue'

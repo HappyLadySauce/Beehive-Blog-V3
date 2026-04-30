@@ -1,12 +1,11 @@
 import { computed, reactive, shallowRef, watch } from 'vue'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import type { FileUploadScope } from '@/features/uploads/types'
-import { useFileUpload } from '@/features/uploads/useFileUpload'
 import { useConfirm, useProgressiveQuery, useToast } from '@/shared/composables'
 
-import { deleteFileAsset, getFileAsset, listFileAssets } from '../api'
-import type { FileAssetListParams, FileAssetSummary } from '../types'
+import { deleteFileAsset, getFileAsset, listFileAssets } from './api'
+import type { FileAssetListParams, FileAssetSummary, FileUploadNamespace } from './types'
+import { useFileUpload } from './useFileUpload'
 
 export function useFileManager() {
   const authStore = useAuthStore()
@@ -16,7 +15,7 @@ export function useFileManager() {
 
   const filters = reactive<FileAssetListParams>({
     keyword: '',
-    scope: '',
+    namespace: '',
     status: 'uploaded',
     visibility: '',
     owner_user_id: '',
@@ -25,7 +24,7 @@ export function useFileManager() {
   })
   const selectedAssetId = shallowRef('')
   const isDeleting = shallowRef(false)
-  const uploadScope = shallowRef<FileUploadScope>('content_image')
+  const uploadNamespace = shallowRef<FileUploadNamespace>('content_image')
 
   const listQuery = useProgressiveQuery({
     queryKey: computed(() => ['studio-files', { ...filters }]),
@@ -45,7 +44,7 @@ export function useFileManager() {
   const pageSize = computed(() => listQuery.data.value?.page_size ?? Number(filters.page_size ?? 20))
 
   watch(
-    () => [filters.keyword, filters.scope, filters.status, filters.visibility, filters.owner_user_id],
+    () => [filters.keyword, filters.namespace, filters.status, filters.visibility, filters.owner_user_id],
     () => {
       filters.page = 1
     },
@@ -69,8 +68,8 @@ export function useFileManager() {
   }
 
   async function uploadSelectedFile(file: File): Promise<void> {
-    const scope = uploadScope.value
-    await uploadFile(file, authStore.accessToken, scope)
+    const namespace = uploadNamespace.value
+    await uploadFile(file, authStore.accessToken, namespace)
     pushToast({
       tone: 'success',
       title: 'File uploaded',
@@ -122,7 +121,7 @@ export function useFileManager() {
     pageSize,
     selectedAssetId,
     selectedAsset,
-    uploadScope,
+    uploadNamespace,
     isUploading,
     uploadErrorMessage: errorMessage,
     isDeleting,

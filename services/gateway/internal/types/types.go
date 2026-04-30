@@ -270,7 +270,7 @@ type FileAssetView struct {
 	AssetId     string `json:"asset_id,example=asset_01J8FILEEXAMPLE"`
 	UploadId    string `json:"upload_id,example=upload_01J8FILEEXAMPLE"`
 	OwnerUserId string `json:"owner_user_id,example=1"`
-	Scope       string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar"`
+	Namespace   string `json:"namespace,example=avatar"`
 	Visibility  string `json:"visibility,options=public|private,example=public"`
 	Status      string `json:"status,options=pending|uploaded|deleted,example=pending"`
 	Bucket      string `json:"bucket,example=beehive"`
@@ -287,8 +287,8 @@ type FileAssetView struct {
 
 type FileUploadCreateReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-	Scope         string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar" validate:"required"`
-	FileName      string `json:"file_name,example=avatar.png" validate:"required,min=1,max=255"`
+	Namespace    string `json:"namespace,example=avatar" validate:"required"`
+	FileName     string `json:"file_name,example=avatar.png" validate:"required,min=1,max=255"`
 	ContentType   string `json:"content_type,example=image/png" validate:"required,max=128"`
 	ByteSize      int64  `json:"byte_size,example=153600" validate:"required,min=1"`
 	Visibility    string `json:"visibility,optional,options=public|private,default=public,example=public"`
@@ -309,8 +309,8 @@ type FileUploadCompleteReq struct {
 
 type FileAssetListReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-	Scope         string `form:"scope,optional,options=avatar|content_cover|content_image|attachment,example=avatar" validate:"omitempty"`
-	Status        string `form:"status,optional,options=pending|uploaded|deleted,example=uploaded" validate:"omitempty"`
+	Namespace    string `form:"namespace,optional,example=avatar" validate:"omitempty"`
+	Status       string `form:"status,optional,options=pending|uploaded|deleted,example=uploaded" validate:"omitempty"`
 	Visibility    string `form:"visibility,optional,options=public|private,example=public" validate:"omitempty"`
 	OwnerUserId   string `form:"owner_user_id,optional,example=1" validate:"omitempty"`
 	Keyword       string `form:"keyword,optional,example=avatar" validate:"omitempty,max=255"`

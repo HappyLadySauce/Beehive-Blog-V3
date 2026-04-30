@@ -9,35 +9,56 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/config"
 )
 
-func TestNormalizeScope(t *testing.T) {
-	t.Parallel()
-
-	scope, err := normalizeScope("content_cover")
-	if err != nil {
-		t.Fatalf("expected content_cover to pass, got %v", err)
-	}
-	if scope != ScopeContentCover {
-		t.Fatalf("expected %s, got %s", ScopeContentCover, scope)
-	}
-
-	if _, err := normalizeScope("profile_banner"); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
-		t.Fatalf("expected invalid scope error, got %v", err)
+func mkNamespacesConf() config.StorageConf {
+	return config.StorageConf{
+		Namespaces: map[string]config.NamespaceRule{
+			"content_cover": {MaxBytes: 5 * 1024 * 1024, AllowedContentTypes: []string{"image/png", "image/jpeg", "image/webp", "image/avif"}, StoragePrefix: "content/covers"},
+			"content_image": {MaxBytes: 5 * 1024 * 1024, AllowedContentTypes: []string{"image/png", "image/jpeg", "image/webp", "image/avif"}, StoragePrefix: "content/images"},
+			"avatar":        {MaxBytes: 128, AllowedContentTypes: []string{"image/png"}, StoragePrefix: "avatars"},
+			"*":             {MaxBytes: 5 * 1024 * 1024, AllowedContentTypes: []string{"image/png", "image/jpeg"}, StoragePrefix: "misc"},
+		},
 	}
 }
 
-func TestValidateUploadFile(t *testing.T) {
+func TestNormalizeNamespace(t *testing.T) {
 	t.Parallel()
 
-	conf := config.StorageConf{
-		MaxBytesByScope: map[string]int64{
-			ScopeAvatar: 128,
-		},
-		AllowedContentTypesByScope: map[string][]string{
-			ScopeAvatar: []string{"image/png"},
-		},
+	conf := mkNamespacesConf()
+
+	ns, err := normalizeNamespace(conf, "content_cover")
+	if err != nil {
+		t.Fatalf("expected content_cover to pass, got %v", err)
+	}
+	if ns != "content_cover" {
+		t.Fatalf("expected content_cover, got %s", ns)
 	}
 
-	contentType, maxBytes, err := validateUploadFile(conf, ScopeAvatar, "avatar.png", "image/png", 100)
+	// Unknown namespace without wildcard fallback
+	confNoWildcard := config.StorageConf{
+		Namespaces: map[string]config.NamespaceRule{
+			"avatar": {},
+		},
+	}
+	if _, err := normalizeNamespace(confNoWildcard, "profile_banner"); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
+		t.Fatalf("expected invalid namespace error, got %v", err)
+	}
+
+	// Unknown namespace with wildcard fallback should pass
+	ns2, err := normalizeNamespace(conf, "banner")
+	if err != nil {
+		t.Fatalf("expected banner to pass via wildcard, got %v", err)
+	}
+	if ns2 != "banner" {
+		t.Fatalf("expected banner, got %s", ns2)
+	}
+}
+
+func TestValidateUploadFileNamespace(t *testing.T) {
+	t.Parallel()
+
+	conf := mkNamespacesConf()
+
+	contentType, maxBytes, err := validateUploadFile(conf, "avatar", "avatar.png", "image/png", 100)
 	if err != nil {
 		t.Fatalf("expected upload file validation to pass, got %v", err)
 	}
@@ -45,23 +66,30 @@ func TestValidateUploadFile(t *testing.T) {
 		t.Fatalf("unexpected normalized values: contentType=%s maxBytes=%d", contentType, maxBytes)
 	}
 
-	if _, _, err := validateUploadFile(conf, ScopeAvatar, "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidContentType)) {
+	if _, _, err := validateUploadFile(conf, "avatar", "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidContentType)) {
 		t.Fatalf("expected invalid content type error, got %v", err)
 	}
-	if _, _, err := validateUploadFile(conf, ScopeAvatar, "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
+	if _, _, err := validateUploadFile(conf, "avatar", "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
 		t.Fatalf("expected file too large error, got %v", err)
 	}
 }
 
-func TestObjectKeyUsesScopePrefix(t *testing.T) {
+func TestObjectKeyUsesNamespacePrefix(t *testing.T) {
 	t.Parallel()
 
-	key := objectKey(ScopeContentImage, 42, "cover.jpeg", "image/jpeg")
+	conf := mkNamespacesConf()
+	key := objectKey(conf, "content_image", 42, "cover.jpeg", "image/jpeg")
 	if !strings.HasPrefix(key, "content/images/42/") {
 		t.Fatalf("expected content image prefix, got %s", key)
 	}
 	if !strings.HasSuffix(key, ".jpg") {
 		t.Fatalf("expected jpeg extension normalization, got %s", key)
+	}
+
+	// Wildcard namespace uses "misc" prefix
+	key2 := objectKey(conf, "banner", 42, "hero.png", "image/png")
+	if !strings.HasPrefix(key2, "misc/42/") {
+		t.Fatalf("expected misc prefix for wildcard namespace, got %s", key2)
 	}
 }
 

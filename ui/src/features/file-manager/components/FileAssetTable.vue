@@ -52,7 +52,7 @@ function formatUnixTime(value?: number): string {
           <strong>{{ asset.file_name }}</strong>
           <span>{{ asset.object_key }}</span>
         </td>
-        <td><StatusBadge :value="asset.scope" /></td>
+        <td><StatusBadge :value="asset.namespace" /></td>
         <td>{{ asset.content_type }}</td>
         <td>{{ formatFileSize(asset.byte_size) }}</td>
         <td><StatusBadge :value="asset.status" /></td>

@@ -3,14 +3,7 @@ import { shallowRef } from 'vue'
 import { i18n } from '@/shared/i18n'
 
 import { completeFileUpload, createFileUpload, putFileUploadObject } from './api'
-import type { FileUploadCreateRequest, FileUploadScope } from './types'
-
-const defaultMaxBytesByScope: Record<FileUploadScope, number> = {
-  avatar: 2 * 1024 * 1024,
-  content_cover: 5 * 1024 * 1024,
-  content_image: 5 * 1024 * 1024,
-  attachment: 20 * 1024 * 1024,
-}
+import type { FileUploadCreateRequest, FileUploadNamespace } from './types'
 
 const imageContentTypes = [
   'image/avif',
@@ -19,12 +12,7 @@ const imageContentTypes = [
   'image/webp',
 ] as const
 
-const allowedContentTypesByScope: Record<FileUploadScope, readonly string[]> = {
-  avatar: imageContentTypes,
-  content_cover: imageContentTypes,
-  content_image: imageContentTypes,
-  attachment: [...imageContentTypes, 'application/pdf'],
-}
+const genericAllowedContentTypes: readonly string[] = [...imageContentTypes, 'application/pdf']
 
 const contentTypesByExtension: Record<string, string> = {
   avif: 'image/avif',
@@ -39,13 +27,13 @@ export function useFileUpload() {
   const isUploading = shallowRef(false)
   const errorMessage = shallowRef('')
 
-  async function uploadFile(file: File, accessToken: string | undefined, scope: FileUploadScope): Promise<string> {
+  async function uploadFile(file: File, accessToken: string | undefined, namespace: FileUploadNamespace): Promise<string> {
     errorMessage.value = ''
     isUploading.value = true
     try {
       const contentType = normalizeContentType(file)
-      validateFile(file, scope, contentType)
-      const upload = await createFileUpload(createUploadPayload(file, scope, contentType), { accessToken })
+      validateFile(file, contentType)
+      const upload = await createFileUpload(createUploadPayload(file, namespace, contentType), { accessToken })
       await putFileUploadObject(upload, file)
       const completed = await completeFileUpload(upload.asset.upload_id, { accessToken })
       return completed.asset.public_url || upload.asset.public_url
@@ -61,8 +49,8 @@ export function useFileUpload() {
     return uploadFile(file, accessToken, 'avatar')
   }
 
-  async function uploadImage(file: File, accessToken: string | undefined, scope: FileUploadScope): Promise<string> {
-    return uploadFile(file, accessToken, scope)
+  async function uploadImage(file: File, accessToken: string | undefined, namespace: FileUploadNamespace): Promise<string> {
+    return uploadFile(file, accessToken, namespace)
   }
 
   return {
@@ -83,27 +71,27 @@ function normalizeContentType(file: File): string {
   return contentTypesByExtension[extension] ?? ''
 }
 
-function validateFile(file: File, scope: FileUploadScope, contentType: string): void {
+function validateFile(file: File, contentType: string): void {
   if (file.name.trim() === '') {
     throw new Error(String(i18n.global.t('uploads.fileNameRequired')))
   }
   if (contentType === '') {
     throw new Error(String(i18n.global.t('uploads.fileTypeUnsupported')))
   }
-  if (!allowedContentTypesByScope[scope].includes(contentType)) {
+  if (!genericAllowedContentTypes.includes(contentType)) {
     throw new Error(String(i18n.global.t('uploads.fileTypeUnsupported')))
   }
   if (file.size <= 0) {
     throw new Error(String(i18n.global.t('uploads.fileEmpty')))
   }
-  if (file.size > defaultMaxBytesByScope[scope]) {
+  if (file.size > 20 * 1024 * 1024) {
     throw new Error(String(i18n.global.t('uploads.fileTooLarge')))
   }
 }
 
-function createUploadPayload(file: File, scope: FileUploadScope, contentType: string): FileUploadCreateRequest {
+function createUploadPayload(file: File, namespace: FileUploadNamespace, contentType: string): FileUploadCreateRequest {
   return {
-    scope,
+    namespace,
     file_name: file.name,
     content_type: contentType,
     byte_size: file.size,

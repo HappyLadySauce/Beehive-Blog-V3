@@ -14,7 +14,7 @@ func toAssetView(asset *entity.FileAsset) *AssetView {
 		AssetID:     asset.AssetID,
 		UploadID:    asset.UploadID,
 		OwnerUserID: strconv.FormatInt(asset.OwnerUserID, 10),
-		Scope:       asset.Scope,
+		Namespace:   asset.Namespace,
 		Visibility:  asset.Visibility,
 		Status:      asset.Status,
 		Bucket:      asset.Bucket,

@@ -17,7 +17,7 @@ func TestDeleteAssetAllowsRetryAfterObjectDeleteFailure(t *testing.T) {
 		AssetID:     "asset-delete-retry",
 		UploadID:    "upload-delete-retry",
 		OwnerUserID: 42,
-		Scope:       ScopeAttachment,
+		Namespace:   "attachment",
 		Visibility:  VisibilityPrivate,
 		Status:      StatusUploaded,
 		Bucket:      "beehive-test",

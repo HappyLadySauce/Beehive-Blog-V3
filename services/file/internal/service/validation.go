@@ -10,20 +10,6 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/config"
 )
 
-var defaultMaxBytesByScope = map[string]int64{
-	ScopeAvatar:       2 * 1024 * 1024,
-	ScopeContentCover: 5 * 1024 * 1024,
-	ScopeContentImage: 5 * 1024 * 1024,
-	ScopeAttachment:   20 * 1024 * 1024,
-}
-
-var defaultContentTypesByScope = map[string][]string{
-	ScopeAvatar:       {"image/png", "image/jpeg", "image/webp", "image/avif"},
-	ScopeContentCover: {"image/png", "image/jpeg", "image/webp", "image/avif"},
-	ScopeContentImage: {"image/png", "image/jpeg", "image/webp", "image/avif"},
-	ScopeAttachment:   {"image/png", "image/jpeg", "image/webp", "image/avif", "application/pdf"},
-}
-
 func parseActorUserID(actorUserID string) (int64, error) {
 	value, err := strconv.ParseInt(strings.TrimSpace(actorUserID), 10, 64)
 	if err != nil || value <= 0 {
@@ -32,19 +18,15 @@ func parseActorUserID(actorUserID string) (int64, error) {
 	return value, nil
 }
 
-func normalizeScope(scope string) (string, error) {
-	switch strings.ToLower(strings.TrimSpace(scope)) {
-	case ScopeAvatar:
-		return ScopeAvatar, nil
-	case ScopeContentCover:
-		return ScopeContentCover, nil
-	case ScopeContentImage:
-		return ScopeContentImage, nil
-	case ScopeAttachment:
-		return ScopeAttachment, nil
-	default:
-		return "", errs.New(errs.CodeFileInvalidScope, "file scope is invalid")
+func normalizeNamespace(conf config.StorageConf, namespace string) (string, error) {
+	namespace = strings.ToLower(strings.TrimSpace(namespace))
+	if namespace == "" || len(namespace) > 64 {
+		return "", errs.New(errs.CodeFileInvalidScope, "namespace is invalid")
 	}
+	if _, ok := conf.NamespaceRule(namespace); !ok {
+		return "", errs.New(errs.CodeFileInvalidScope, "namespace is not configured")
+	}
+	return namespace, nil
 }
 
 func normalizeVisibility(visibility string) (string, error) {
@@ -58,11 +40,11 @@ func normalizeVisibility(visibility string) (string, error) {
 	}
 }
 
-func normalizeOptionalScope(scope string) (string, error) {
-	if strings.TrimSpace(scope) == "" {
+func normalizeOptionalNamespace(conf config.StorageConf, namespace string) (string, error) {
+	if strings.TrimSpace(namespace) == "" {
 		return "", nil
 	}
-	return normalizeScope(scope)
+	return normalizeNamespace(conf, namespace)
 }
 
 func normalizeOptionalStatus(status string) (string, error) {
@@ -91,17 +73,25 @@ func normalizeContentType(contentType string) string {
 	return strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
 }
 
-func maxBytesForScope(conf config.StorageConf, scope string) int64 {
-	if conf.MaxBytesByScope != nil && conf.MaxBytesByScope[scope] > 0 {
-		return conf.MaxBytesByScope[scope]
+func maxBytesForNamespace(conf config.StorageConf, namespace string) int64 {
+	if rule, ok := conf.NamespaceRule(namespace); ok && rule.MaxBytes > 0 {
+		return rule.MaxBytes
 	}
-	return defaultMaxBytesByScope[scope]
+	if conf.MaxBytesByScope != nil && conf.MaxBytesByScope[namespace] > 0 {
+		return conf.MaxBytesByScope[namespace]
+	}
+	return 0
 }
 
-func allowedContentTypesForScope(conf config.StorageConf, scope string) map[string]struct{} {
-	values := defaultContentTypesByScope[scope]
-	if conf.AllowedContentTypesByScope != nil && len(conf.AllowedContentTypesByScope[scope]) > 0 {
-		values = conf.AllowedContentTypesByScope[scope]
+func allowedContentTypesForNamespace(conf config.StorageConf, namespace string) map[string]struct{} {
+	var values []string
+	if rule, ok := conf.NamespaceRule(namespace); ok && len(rule.AllowedContentTypes) > 0 {
+		values = rule.AllowedContentTypes
+	} else if conf.AllowedContentTypesByScope != nil && len(conf.AllowedContentTypesByScope[namespace]) > 0 {
+		values = conf.AllowedContentTypesByScope[namespace]
+	}
+	if len(values) == 0 {
+		return nil
 	}
 	allowlist := make(map[string]struct{}, len(values))
 	for _, value := range values {
@@ -113,7 +103,7 @@ func allowedContentTypesForScope(conf config.StorageConf, scope string) map[stri
 	return allowlist
 }
 
-func validateUploadFile(conf config.StorageConf, scope string, fileName string, contentType string, byteSize int64) (string, int64, error) {
+func validateUploadFile(conf config.StorageConf, namespace string, fileName string, contentType string, byteSize int64) (string, int64, error) {
 	fileName = strings.TrimSpace(fileName)
 	if fileName == "" || len(fileName) > 255 {
 		return "", 0, invalidArgument("file_name is invalid")
@@ -122,10 +112,15 @@ func validateUploadFile(conf config.StorageConf, scope string, fileName string, 
 	if normalizedContentType == "" || len(normalizedContentType) > 128 {
 		return "", 0, invalidArgument("content_type is invalid")
 	}
-	if _, ok := allowedContentTypesForScope(conf, scope)[normalizedContentType]; !ok {
-		return "", 0, errs.New(errs.CodeFileInvalidContentType, "content_type is not allowed")
+	if allowed := allowedContentTypesForNamespace(conf, namespace); allowed != nil {
+		if _, ok := allowed[normalizedContentType]; !ok {
+			return "", 0, errs.New(errs.CodeFileInvalidContentType, "content_type is not allowed")
+		}
 	}
-	maxBytes := maxBytesForScope(conf, scope)
+	maxBytes := maxBytesForNamespace(conf, namespace)
+	if maxBytes <= 0 {
+		maxBytes = 5 * 1024 * 1024
+	}
 	if byteSize <= 0 || byteSize > maxBytes {
 		return "", 0, errs.New(errs.CodeFileTooLarge, "file byte_size is invalid")
 	}

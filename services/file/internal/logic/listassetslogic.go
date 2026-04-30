@@ -19,7 +19,7 @@ func NewListAssetsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ListAs
 func (l *ListAssetsLogic) ListAssets(in *pb.ListAssetsRequest) (*pb.ListAssetsResponse, error) {
 	result, err := l.svcCtx.Services.ListAssets(l.ctx, fileservice.ListAssetsInput{
 		ActorUserID: in.GetActorUserId(),
-		Scope:       toOptionalServiceScope(in.GetScope()),
+		Namespace:   in.GetNamespace(),
 		Status:      toOptionalServiceStatus(in.GetStatus()),
 		Visibility:  toOptionalServiceVisibility(in.GetVisibility()),
 		OwnerUserID: in.GetOwnerUserId(),

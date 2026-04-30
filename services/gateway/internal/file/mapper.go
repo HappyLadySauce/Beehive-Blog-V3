@@ -8,7 +8,7 @@ import (
 func BuildCreateUploadRequest(actorUserID string, req *types.FileUploadCreateReq) *filepb.CreateUploadRequest {
 	return &filepb.CreateUploadRequest{
 		ActorUserId: actorUserID,
-		Scope:       ScopeToProto(req.Scope),
+		Namespace:   req.Namespace,
 		FileName:    req.FileName,
 		ContentType: req.ContentType,
 		ByteSize:    req.ByteSize,
@@ -26,7 +26,7 @@ func BuildCompleteUploadRequest(actorUserID string, req *types.FileUploadComplet
 func BuildListAssetsRequest(actorUserID string, req *types.FileAssetListReq) *filepb.ListAssetsRequest {
 	return &filepb.ListAssetsRequest{
 		ActorUserId: actorUserID,
-		Scope:       ScopeToProto(req.Scope),
+		Namespace:   req.Namespace,
 		Status:      StatusToProto(req.Status),
 		Visibility:  VisibilityToProtoOptional(req.Visibility),
 		OwnerUserId: req.OwnerUserId,
@@ -94,7 +94,7 @@ func ToAssetView(asset *filepb.Asset) types.FileAssetView {
 		AssetId:     asset.GetAssetId(),
 		UploadId:    asset.GetUploadId(),
 		OwnerUserId: asset.GetOwnerUserId(),
-		Scope:       ScopeFromProto(asset.GetScope()),
+		Namespace:   asset.GetNamespace(),
 		Visibility:  VisibilityFromProto(asset.GetVisibility()),
 		Status:      StatusFromProto(asset.GetStatus()),
 		Bucket:      asset.GetBucket(),

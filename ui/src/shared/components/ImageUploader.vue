@@ -4,21 +4,21 @@ import { computed, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import { useAvatarUpload } from '@/features/uploads/useAvatarUpload'
-import type { FileUploadScope } from '@/features/uploads/types'
+import { useAvatarUpload } from '@/features/file-manager/useAvatarUpload'
+import type { FileUploadNamespace } from '@/features/file-manager/types'
 
 import BaseButton from './BaseButton.vue'
 
 const props = withDefaults(
   defineProps<{
     modelValue?: string
-    scope?: FileUploadScope
+    namespace?: FileUploadNamespace
     label?: string
     hint?: string
   }>(),
   {
     modelValue: '',
-    scope: 'content_cover',
+    namespace: 'content_cover',
     label: 'Upload image',
     hint: 'PNG, JPEG, WebP, or AVIF. Max 5MB.',
   },
@@ -50,7 +50,7 @@ async function handleFileChange(event: Event): Promise<void> {
     return
   }
   try {
-    const publicURL = await uploadImage(input.files[0], authStore.accessToken, props.scope)
+    const publicURL = await uploadImage(input.files[0], authStore.accessToken, props.namespace)
     emit('update:modelValue', publicURL)
   }
   catch {

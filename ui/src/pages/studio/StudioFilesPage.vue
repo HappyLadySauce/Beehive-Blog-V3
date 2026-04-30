@@ -14,9 +14,9 @@ import SideDrawer from '@/shared/components/SideDrawer.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import TablePagination from '@/shared/components/TablePagination.vue'
 
-import FileAssetPreviewPanel from '@/features/files/components/FileAssetPreviewPanel.vue'
-import FileAssetTable from '@/features/files/components/FileAssetTable.vue'
-import { useFileManager } from '@/features/files/composables/useFileManager'
+import FileAssetPreviewPanel from '@/features/file-manager/components/FileAssetPreviewPanel.vue'
+import FileAssetTable from '@/features/file-manager/components/FileAssetTable.vue'
+import { useFileManager } from '@/features/file-manager/useFileManager'
 
 const { t } = useI18n()
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
@@ -28,7 +28,7 @@ const {
   pageSize,
   selectedAssetId,
   selectedAsset,
-  uploadScope,
+  uploadNamespace,
   isUploading,
   uploadErrorMessage,
   isDeleting,
@@ -42,7 +42,7 @@ const {
   removeAsset,
 } = useFileManager()
 
-const scopeOptions = computed<BaseSelectOption[]>(() => [
+const namespaceOptions = computed<BaseSelectOption[]>(() => [
   { value: '', label: t('contentType.all') },
   { value: 'avatar', label: t('files.scope.avatar') },
   { value: 'content_cover', label: t('files.scope.content_cover') },
@@ -63,7 +63,7 @@ const visibilityOptions = computed<BaseSelectOption[]>(() => [
   { value: 'private', label: t('visibility.private') },
 ])
 
-const uploadScopeOptions = computed<BaseSelectOption[]>(() => [
+const uploadNamespaceOptions = computed<BaseSelectOption[]>(() => [
   { value: 'content_image', label: t('files.scope.content_image') },
   { value: 'content_cover', label: t('files.scope.content_cover') },
   { value: 'avatar', label: t('files.scope.avatar') },
@@ -71,8 +71,8 @@ const uploadScopeOptions = computed<BaseSelectOption[]>(() => [
 ])
 
 const uploadAccept = computed(() => {
-  const scope = uploadScope.value
-  if (scope === 'attachment') {
+  const namespace = uploadNamespace.value
+  if (namespace === 'attachment') {
     return 'image/png,image/jpeg,image/webp,image/avif,application/pdf'
   }
   return 'image/png,image/jpeg,image/webp,image/avif'
@@ -110,7 +110,7 @@ async function handleDeleteSelected(): Promise<void> {
           <BaseInput id="files-search" v-model="filters.keyword" :placeholder="t('files.searchPlaceholder')" />
         </FormField>
         <FormField :label="t('files.fields.scope')" for-id="files-scope">
-          <BaseSelect id="files-scope" v-model="filters.scope" :options="scopeOptions" />
+          <BaseSelect id="files-scope" v-model="filters.namespace" :options="namespaceOptions" />
         </FormField>
         <FormField :label="t('files.fields.status')" for-id="files-status">
           <BaseSelect id="files-status" v-model="filters.status" :options="statusOptions" />
@@ -121,7 +121,7 @@ async function handleDeleteSelected(): Promise<void> {
       </div>
 
       <div class="files-page__upload">
-        <BaseSelect v-model="uploadScope" :options="uploadScopeOptions" :aria-label="t('files.uploadScope')" />
+        <BaseSelect v-model="uploadNamespace" :options="uploadNamespaceOptions" :aria-label="t('files.uploadScope')" />
         <BaseButton :busy="isUploading" @click="openFilePicker">
           <Upload :size="16" aria-hidden="true" />
           {{ t('files.uploadAction') }}

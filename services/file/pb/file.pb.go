@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v3.19.4
-// source: file.proto
+// source: v3/proto/file.proto
 
 package pb
 
@@ -20,61 +20,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-type FileScope int32
-
-const (
-	FileScope_FILE_SCOPE_UNSPECIFIED   FileScope = 0
-	FileScope_FILE_SCOPE_AVATAR        FileScope = 1
-	FileScope_FILE_SCOPE_CONTENT_COVER FileScope = 2
-	FileScope_FILE_SCOPE_CONTENT_IMAGE FileScope = 3
-	FileScope_FILE_SCOPE_ATTACHMENT    FileScope = 4
-)
-
-// Enum value maps for FileScope.
-var (
-	FileScope_name = map[int32]string{
-		0: "FILE_SCOPE_UNSPECIFIED",
-		1: "FILE_SCOPE_AVATAR",
-		2: "FILE_SCOPE_CONTENT_COVER",
-		3: "FILE_SCOPE_CONTENT_IMAGE",
-		4: "FILE_SCOPE_ATTACHMENT",
-	}
-	FileScope_value = map[string]int32{
-		"FILE_SCOPE_UNSPECIFIED":   0,
-		"FILE_SCOPE_AVATAR":        1,
-		"FILE_SCOPE_CONTENT_COVER": 2,
-		"FILE_SCOPE_CONTENT_IMAGE": 3,
-		"FILE_SCOPE_ATTACHMENT":    4,
-	}
-)
-
-func (x FileScope) Enum() *FileScope {
-	p := new(FileScope)
-	*p = x
-	return p
-}
-
-func (x FileScope) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (FileScope) Descriptor() protoreflect.EnumDescriptor {
-	return file_file_proto_enumTypes[0].Descriptor()
-}
-
-func (FileScope) Type() protoreflect.EnumType {
-	return &file_file_proto_enumTypes[0]
-}
-
-func (x FileScope) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use FileScope.Descriptor instead.
-func (FileScope) EnumDescriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{0}
-}
 
 type AssetVisibility int32
 
@@ -109,11 +54,11 @@ func (x AssetVisibility) String() string {
 }
 
 func (AssetVisibility) Descriptor() protoreflect.EnumDescriptor {
-	return file_file_proto_enumTypes[1].Descriptor()
+	return file_v3_proto_file_proto_enumTypes[0].Descriptor()
 }
 
 func (AssetVisibility) Type() protoreflect.EnumType {
-	return &file_file_proto_enumTypes[1]
+	return &file_v3_proto_file_proto_enumTypes[0]
 }
 
 func (x AssetVisibility) Number() protoreflect.EnumNumber {
@@ -122,7 +67,7 @@ func (x AssetVisibility) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AssetVisibility.Descriptor instead.
 func (AssetVisibility) EnumDescriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{1}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{0}
 }
 
 type AssetStatus int32
@@ -161,11 +106,11 @@ func (x AssetStatus) String() string {
 }
 
 func (AssetStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_file_proto_enumTypes[2].Descriptor()
+	return file_v3_proto_file_proto_enumTypes[1].Descriptor()
 }
 
 func (AssetStatus) Type() protoreflect.EnumType {
-	return &file_file_proto_enumTypes[2]
+	return &file_v3_proto_file_proto_enumTypes[1]
 }
 
 func (x AssetStatus) Number() protoreflect.EnumNumber {
@@ -174,7 +119,7 @@ func (x AssetStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AssetStatus.Descriptor instead.
 func (AssetStatus) EnumDescriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{2}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{1}
 }
 
 type PingRequest struct {
@@ -185,7 +130,7 @@ type PingRequest struct {
 
 func (x *PingRequest) Reset() {
 	*x = PingRequest{}
-	mi := &file_file_proto_msgTypes[0]
+	mi := &file_v3_proto_file_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -197,7 +142,7 @@ func (x *PingRequest) String() string {
 func (*PingRequest) ProtoMessage() {}
 
 func (x *PingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[0]
+	mi := &file_v3_proto_file_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -210,7 +155,7 @@ func (x *PingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
 func (*PingRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{0}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{0}
 }
 
 type PingResponse struct {
@@ -223,7 +168,7 @@ type PingResponse struct {
 
 func (x *PingResponse) Reset() {
 	*x = PingResponse{}
-	mi := &file_file_proto_msgTypes[1]
+	mi := &file_v3_proto_file_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +180,7 @@ func (x *PingResponse) String() string {
 func (*PingResponse) ProtoMessage() {}
 
 func (x *PingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[1]
+	mi := &file_v3_proto_file_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +193,7 @@ func (x *PingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
 func (*PingResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{1}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PingResponse) GetOk() bool {
@@ -270,7 +215,7 @@ type Asset struct {
 	AssetId       string                 `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	UploadId      string                 `protobuf:"bytes,2,opt,name=upload_id,json=uploadId,proto3" json:"upload_id,omitempty"`
 	OwnerUserId   string                 `protobuf:"bytes,3,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"`
-	Scope         FileScope              `protobuf:"varint,4,opt,name=scope,proto3,enum=file.FileScope" json:"scope,omitempty"`
+	Namespace     string                 `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Visibility    AssetVisibility        `protobuf:"varint,5,opt,name=visibility,proto3,enum=file.AssetVisibility" json:"visibility,omitempty"`
 	Status        AssetStatus            `protobuf:"varint,6,opt,name=status,proto3,enum=file.AssetStatus" json:"status,omitempty"`
 	Bucket        string                 `protobuf:"bytes,7,opt,name=bucket,proto3" json:"bucket,omitempty"`
@@ -289,7 +234,7 @@ type Asset struct {
 
 func (x *Asset) Reset() {
 	*x = Asset{}
-	mi := &file_file_proto_msgTypes[2]
+	mi := &file_v3_proto_file_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -301,7 +246,7 @@ func (x *Asset) String() string {
 func (*Asset) ProtoMessage() {}
 
 func (x *Asset) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[2]
+	mi := &file_v3_proto_file_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -314,7 +259,7 @@ func (x *Asset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Asset.ProtoReflect.Descriptor instead.
 func (*Asset) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{2}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Asset) GetAssetId() string {
@@ -338,11 +283,11 @@ func (x *Asset) GetOwnerUserId() string {
 	return ""
 }
 
-func (x *Asset) GetScope() FileScope {
+func (x *Asset) GetNamespace() string {
 	if x != nil {
-		return x.Scope
+		return x.Namespace
 	}
-	return FileScope_FILE_SCOPE_UNSPECIFIED
+	return ""
 }
 
 func (x *Asset) GetVisibility() AssetVisibility {
@@ -432,7 +377,7 @@ func (x *Asset) GetDeletedAt() int64 {
 type CreateUploadRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorUserId   string                 `protobuf:"bytes,1,opt,name=actor_user_id,json=actorUserId,proto3" json:"actor_user_id,omitempty"`
-	Scope         FileScope              `protobuf:"varint,2,opt,name=scope,proto3,enum=file.FileScope" json:"scope,omitempty"`
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	FileName      string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
 	ContentType   string                 `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
 	ByteSize      int64                  `protobuf:"varint,5,opt,name=byte_size,json=byteSize,proto3" json:"byte_size,omitempty"`
@@ -443,7 +388,7 @@ type CreateUploadRequest struct {
 
 func (x *CreateUploadRequest) Reset() {
 	*x = CreateUploadRequest{}
-	mi := &file_file_proto_msgTypes[3]
+	mi := &file_v3_proto_file_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -455,7 +400,7 @@ func (x *CreateUploadRequest) String() string {
 func (*CreateUploadRequest) ProtoMessage() {}
 
 func (x *CreateUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[3]
+	mi := &file_v3_proto_file_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -468,7 +413,7 @@ func (x *CreateUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadRequest.ProtoReflect.Descriptor instead.
 func (*CreateUploadRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{3}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CreateUploadRequest) GetActorUserId() string {
@@ -478,11 +423,11 @@ func (x *CreateUploadRequest) GetActorUserId() string {
 	return ""
 }
 
-func (x *CreateUploadRequest) GetScope() FileScope {
+func (x *CreateUploadRequest) GetNamespace() string {
 	if x != nil {
-		return x.Scope
+		return x.Namespace
 	}
-	return FileScope_FILE_SCOPE_UNSPECIFIED
+	return ""
 }
 
 func (x *CreateUploadRequest) GetFileName() string {
@@ -526,7 +471,7 @@ type CreateUploadResponse struct {
 
 func (x *CreateUploadResponse) Reset() {
 	*x = CreateUploadResponse{}
-	mi := &file_file_proto_msgTypes[4]
+	mi := &file_v3_proto_file_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -538,7 +483,7 @@ func (x *CreateUploadResponse) String() string {
 func (*CreateUploadResponse) ProtoMessage() {}
 
 func (x *CreateUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[4]
+	mi := &file_v3_proto_file_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -551,7 +496,7 @@ func (x *CreateUploadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadResponse.ProtoReflect.Descriptor instead.
 func (*CreateUploadResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{4}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreateUploadResponse) GetAsset() *Asset {
@@ -599,7 +544,7 @@ type CompleteUploadRequest struct {
 
 func (x *CompleteUploadRequest) Reset() {
 	*x = CompleteUploadRequest{}
-	mi := &file_file_proto_msgTypes[5]
+	mi := &file_v3_proto_file_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -611,7 +556,7 @@ func (x *CompleteUploadRequest) String() string {
 func (*CompleteUploadRequest) ProtoMessage() {}
 
 func (x *CompleteUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[5]
+	mi := &file_v3_proto_file_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -624,7 +569,7 @@ func (x *CompleteUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteUploadRequest.ProtoReflect.Descriptor instead.
 func (*CompleteUploadRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{5}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CompleteUploadRequest) GetActorUserId() string {
@@ -644,7 +589,7 @@ func (x *CompleteUploadRequest) GetUploadId() string {
 type ListAssetsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorUserId   string                 `protobuf:"bytes,1,opt,name=actor_user_id,json=actorUserId,proto3" json:"actor_user_id,omitempty"`
-	Scope         FileScope              `protobuf:"varint,2,opt,name=scope,proto3,enum=file.FileScope" json:"scope,omitempty"`
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Status        AssetStatus            `protobuf:"varint,3,opt,name=status,proto3,enum=file.AssetStatus" json:"status,omitempty"`
 	Visibility    AssetVisibility        `protobuf:"varint,4,opt,name=visibility,proto3,enum=file.AssetVisibility" json:"visibility,omitempty"`
 	OwnerUserId   string                 `protobuf:"bytes,5,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"`
@@ -657,7 +602,7 @@ type ListAssetsRequest struct {
 
 func (x *ListAssetsRequest) Reset() {
 	*x = ListAssetsRequest{}
-	mi := &file_file_proto_msgTypes[6]
+	mi := &file_v3_proto_file_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -669,7 +614,7 @@ func (x *ListAssetsRequest) String() string {
 func (*ListAssetsRequest) ProtoMessage() {}
 
 func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[6]
+	mi := &file_v3_proto_file_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -682,7 +627,7 @@ func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsRequest.ProtoReflect.Descriptor instead.
 func (*ListAssetsRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{6}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ListAssetsRequest) GetActorUserId() string {
@@ -692,11 +637,11 @@ func (x *ListAssetsRequest) GetActorUserId() string {
 	return ""
 }
 
-func (x *ListAssetsRequest) GetScope() FileScope {
+func (x *ListAssetsRequest) GetNamespace() string {
 	if x != nil {
-		return x.Scope
+		return x.Namespace
 	}
-	return FileScope_FILE_SCOPE_UNSPECIFIED
+	return ""
 }
 
 func (x *ListAssetsRequest) GetStatus() AssetStatus {
@@ -751,7 +696,7 @@ type GetAssetRequest struct {
 
 func (x *GetAssetRequest) Reset() {
 	*x = GetAssetRequest{}
-	mi := &file_file_proto_msgTypes[7]
+	mi := &file_v3_proto_file_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -763,7 +708,7 @@ func (x *GetAssetRequest) String() string {
 func (*GetAssetRequest) ProtoMessage() {}
 
 func (x *GetAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[7]
+	mi := &file_v3_proto_file_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -776,7 +721,7 @@ func (x *GetAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAssetRequest.ProtoReflect.Descriptor instead.
 func (*GetAssetRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{7}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetAssetRequest) GetActorUserId() string {
@@ -802,7 +747,7 @@ type AssetResponse struct {
 
 func (x *AssetResponse) Reset() {
 	*x = AssetResponse{}
-	mi := &file_file_proto_msgTypes[8]
+	mi := &file_v3_proto_file_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -814,7 +759,7 @@ func (x *AssetResponse) String() string {
 func (*AssetResponse) ProtoMessage() {}
 
 func (x *AssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[8]
+	mi := &file_v3_proto_file_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -827,7 +772,7 @@ func (x *AssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetResponse.ProtoReflect.Descriptor instead.
 func (*AssetResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{8}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AssetResponse) GetAsset() *Asset {
@@ -849,7 +794,7 @@ type ListAssetsResponse struct {
 
 func (x *ListAssetsResponse) Reset() {
 	*x = ListAssetsResponse{}
-	mi := &file_file_proto_msgTypes[9]
+	mi := &file_v3_proto_file_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -861,7 +806,7 @@ func (x *ListAssetsResponse) String() string {
 func (*ListAssetsResponse) ProtoMessage() {}
 
 func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[9]
+	mi := &file_v3_proto_file_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -874,7 +819,7 @@ func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsResponse.ProtoReflect.Descriptor instead.
 func (*ListAssetsResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{9}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListAssetsResponse) GetItems() []*Asset {
@@ -915,7 +860,7 @@ type DeleteAssetRequest struct {
 
 func (x *DeleteAssetRequest) Reset() {
 	*x = DeleteAssetRequest{}
-	mi := &file_file_proto_msgTypes[10]
+	mi := &file_v3_proto_file_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -927,7 +872,7 @@ func (x *DeleteAssetRequest) String() string {
 func (*DeleteAssetRequest) ProtoMessage() {}
 
 func (x *DeleteAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[10]
+	mi := &file_v3_proto_file_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -940,7 +885,7 @@ func (x *DeleteAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAssetRequest.ProtoReflect.Descriptor instead.
 func (*DeleteAssetRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{10}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeleteAssetRequest) GetActorUserId() string {
@@ -966,7 +911,7 @@ type DeleteAssetResponse struct {
 
 func (x *DeleteAssetResponse) Reset() {
 	*x = DeleteAssetResponse{}
-	mi := &file_file_proto_msgTypes[11]
+	mi := &file_v3_proto_file_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -978,7 +923,7 @@ func (x *DeleteAssetResponse) String() string {
 func (*DeleteAssetResponse) ProtoMessage() {}
 
 func (x *DeleteAssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[11]
+	mi := &file_v3_proto_file_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -991,7 +936,7 @@ func (x *DeleteAssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAssetResponse.ProtoReflect.Descriptor instead.
 func (*DeleteAssetResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{11}
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DeleteAssetResponse) GetOk() bool {
@@ -1001,21 +946,20 @@ func (x *DeleteAssetResponse) GetOk() bool {
 	return false
 }
 
-var File_file_proto protoreflect.FileDescriptor
+var File_v3_proto_file_proto protoreflect.FileDescriptor
 
-const file_file_proto_rawDesc = "" +
+const file_v3_proto_file_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"file.proto\x12\x04file\"\r\n" +
+	"\x13v3/proto/file.proto\x12\x04file\"\r\n" +
 	"\vPingRequest\"8\n" +
 	"\fPingResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x18\n" +
-	"\aservice\x18\x02 \x01(\tR\aservice\"\x9d\x04\n" +
+	"\aservice\x18\x02 \x01(\tR\aservice\"\x94\x04\n" +
 	"\x05Asset\x12\x19\n" +
 	"\basset_id\x18\x01 \x01(\tR\aassetId\x12\x1b\n" +
 	"\tupload_id\x18\x02 \x01(\tR\buploadId\x12\"\n" +
-	"\rowner_user_id\x18\x03 \x01(\tR\vownerUserId\x12%\n" +
-	"\x05scope\x18\x04 \x01(\x0e2\x0f.file.FileScopeR\x05scope\x125\n" +
+	"\rowner_user_id\x18\x03 \x01(\tR\vownerUserId\x12\x1c\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x125\n" +
 	"\n" +
 	"visibility\x18\x05 \x01(\x0e2\x15.file.AssetVisibilityR\n" +
 	"visibility\x12)\n" +
@@ -1036,10 +980,10 @@ const file_file_proto_rawDesc = "" +
 	"\vuploaded_at\x18\x0f \x01(\x03R\n" +
 	"uploadedAt\x12\x1d\n" +
 	"\n" +
-	"deleted_at\x18\x10 \x01(\x03R\tdeletedAt\"\xf4\x01\n" +
+	"deleted_at\x18\x10 \x01(\x03R\tdeletedAt\"\xeb\x01\n" +
 	"\x13CreateUploadRequest\x12\"\n" +
-	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12%\n" +
-	"\x05scope\x18\x02 \x01(\x0e2\x0f.file.FileScopeR\x05scope\x12\x1b\n" +
+	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x1c\n" +
+	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1b\n" +
 	"\tfile_name\x18\x03 \x01(\tR\bfileName\x12!\n" +
 	"\fcontent_type\x18\x04 \x01(\tR\vcontentType\x12\x1b\n" +
 	"\tbyte_size\x18\x05 \x01(\x03R\bbyteSize\x125\n" +
@@ -1059,10 +1003,10 @@ const file_file_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"X\n" +
 	"\x15CompleteUploadRequest\x12\"\n" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x1b\n" +
-	"\tupload_id\x18\x02 \x01(\tR\buploadId\"\xaf\x02\n" +
+	"\tupload_id\x18\x02 \x01(\tR\buploadId\"\xa6\x02\n" +
 	"\x11ListAssetsRequest\x12\"\n" +
-	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12%\n" +
-	"\x05scope\x18\x02 \x01(\x0e2\x0f.file.FileScopeR\x05scope\x12)\n" +
+	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x1c\n" +
+	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12)\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x11.file.AssetStatusR\x06status\x125\n" +
 	"\n" +
 	"visibility\x18\x04 \x01(\x0e2\x15.file.AssetVisibilityR\n" +
@@ -1085,13 +1029,7 @@ const file_file_proto_rawDesc = "" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x19\n" +
 	"\basset_id\x18\x02 \x01(\tR\aassetId\"%\n" +
 	"\x13DeleteAssetResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok*\x95\x01\n" +
-	"\tFileScope\x12\x1a\n" +
-	"\x16FILE_SCOPE_UNSPECIFIED\x10\x00\x12\x15\n" +
-	"\x11FILE_SCOPE_AVATAR\x10\x01\x12\x1c\n" +
-	"\x18FILE_SCOPE_CONTENT_COVER\x10\x02\x12\x1c\n" +
-	"\x18FILE_SCOPE_CONTENT_IMAGE\x10\x03\x12\x19\n" +
-	"\x15FILE_SCOPE_ATTACHMENT\x10\x04*n\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok*n\n" +
 	"\x0fAssetVisibility\x12 \n" +
 	"\x1cASSET_VISIBILITY_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17ASSET_VISIBILITY_PUBLIC\x10\x01\x12\x1c\n" +
@@ -1111,90 +1049,86 @@ const file_file_proto_rawDesc = "" +
 	"\vDeleteAsset\x12\x18.file.DeleteAssetRequest\x1a\x19.file.DeleteAssetResponseB\x12Z\x10services/file/pbb\x06proto3"
 
 var (
-	file_file_proto_rawDescOnce sync.Once
-	file_file_proto_rawDescData []byte
+	file_v3_proto_file_proto_rawDescOnce sync.Once
+	file_v3_proto_file_proto_rawDescData []byte
 )
 
-func file_file_proto_rawDescGZIP() []byte {
-	file_file_proto_rawDescOnce.Do(func() {
-		file_file_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)))
+func file_v3_proto_file_proto_rawDescGZIP() []byte {
+	file_v3_proto_file_proto_rawDescOnce.Do(func() {
+		file_v3_proto_file_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_v3_proto_file_proto_rawDesc), len(file_v3_proto_file_proto_rawDesc)))
 	})
-	return file_file_proto_rawDescData
+	return file_v3_proto_file_proto_rawDescData
 }
 
-var file_file_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
-var file_file_proto_goTypes = []any{
-	(FileScope)(0),                // 0: file.FileScope
-	(AssetVisibility)(0),          // 1: file.AssetVisibility
-	(AssetStatus)(0),              // 2: file.AssetStatus
-	(*PingRequest)(nil),           // 3: file.PingRequest
-	(*PingResponse)(nil),          // 4: file.PingResponse
-	(*Asset)(nil),                 // 5: file.Asset
-	(*CreateUploadRequest)(nil),   // 6: file.CreateUploadRequest
-	(*CreateUploadResponse)(nil),  // 7: file.CreateUploadResponse
-	(*CompleteUploadRequest)(nil), // 8: file.CompleteUploadRequest
-	(*ListAssetsRequest)(nil),     // 9: file.ListAssetsRequest
-	(*GetAssetRequest)(nil),       // 10: file.GetAssetRequest
-	(*AssetResponse)(nil),         // 11: file.AssetResponse
-	(*ListAssetsResponse)(nil),    // 12: file.ListAssetsResponse
-	(*DeleteAssetRequest)(nil),    // 13: file.DeleteAssetRequest
-	(*DeleteAssetResponse)(nil),   // 14: file.DeleteAssetResponse
-	nil,                           // 15: file.CreateUploadResponse.HeadersEntry
+var file_v3_proto_file_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_v3_proto_file_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_v3_proto_file_proto_goTypes = []any{
+	(AssetVisibility)(0),          // 0: file.AssetVisibility
+	(AssetStatus)(0),              // 1: file.AssetStatus
+	(*PingRequest)(nil),           // 2: file.PingRequest
+	(*PingResponse)(nil),          // 3: file.PingResponse
+	(*Asset)(nil),                 // 4: file.Asset
+	(*CreateUploadRequest)(nil),   // 5: file.CreateUploadRequest
+	(*CreateUploadResponse)(nil),  // 6: file.CreateUploadResponse
+	(*CompleteUploadRequest)(nil), // 7: file.CompleteUploadRequest
+	(*ListAssetsRequest)(nil),     // 8: file.ListAssetsRequest
+	(*GetAssetRequest)(nil),       // 9: file.GetAssetRequest
+	(*AssetResponse)(nil),         // 10: file.AssetResponse
+	(*ListAssetsResponse)(nil),    // 11: file.ListAssetsResponse
+	(*DeleteAssetRequest)(nil),    // 12: file.DeleteAssetRequest
+	(*DeleteAssetResponse)(nil),   // 13: file.DeleteAssetResponse
+	nil,                           // 14: file.CreateUploadResponse.HeadersEntry
 }
-var file_file_proto_depIdxs = []int32{
-	0,  // 0: file.Asset.scope:type_name -> file.FileScope
-	1,  // 1: file.Asset.visibility:type_name -> file.AssetVisibility
-	2,  // 2: file.Asset.status:type_name -> file.AssetStatus
-	0,  // 3: file.CreateUploadRequest.scope:type_name -> file.FileScope
-	1,  // 4: file.CreateUploadRequest.visibility:type_name -> file.AssetVisibility
-	5,  // 5: file.CreateUploadResponse.asset:type_name -> file.Asset
-	15, // 6: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
-	0,  // 7: file.ListAssetsRequest.scope:type_name -> file.FileScope
-	2,  // 8: file.ListAssetsRequest.status:type_name -> file.AssetStatus
-	1,  // 9: file.ListAssetsRequest.visibility:type_name -> file.AssetVisibility
-	5,  // 10: file.AssetResponse.asset:type_name -> file.Asset
-	5,  // 11: file.ListAssetsResponse.items:type_name -> file.Asset
-	3,  // 12: file.FileService.Ping:input_type -> file.PingRequest
-	6,  // 13: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
-	8,  // 14: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
-	9,  // 15: file.FileService.ListAssets:input_type -> file.ListAssetsRequest
-	10, // 16: file.FileService.GetAsset:input_type -> file.GetAssetRequest
-	13, // 17: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
-	4,  // 18: file.FileService.Ping:output_type -> file.PingResponse
-	7,  // 19: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
-	11, // 20: file.FileService.CompleteUpload:output_type -> file.AssetResponse
-	12, // 21: file.FileService.ListAssets:output_type -> file.ListAssetsResponse
-	11, // 22: file.FileService.GetAsset:output_type -> file.AssetResponse
-	14, // 23: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
-	18, // [18:24] is the sub-list for method output_type
-	12, // [12:18] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+var file_v3_proto_file_proto_depIdxs = []int32{
+	0,  // 0: file.Asset.visibility:type_name -> file.AssetVisibility
+	1,  // 1: file.Asset.status:type_name -> file.AssetStatus
+	0,  // 2: file.CreateUploadRequest.visibility:type_name -> file.AssetVisibility
+	4,  // 3: file.CreateUploadResponse.asset:type_name -> file.Asset
+	14, // 4: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
+	1,  // 5: file.ListAssetsRequest.status:type_name -> file.AssetStatus
+	0,  // 6: file.ListAssetsRequest.visibility:type_name -> file.AssetVisibility
+	4,  // 7: file.AssetResponse.asset:type_name -> file.Asset
+	4,  // 8: file.ListAssetsResponse.items:type_name -> file.Asset
+	2,  // 9: file.FileService.Ping:input_type -> file.PingRequest
+	5,  // 10: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
+	7,  // 11: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
+	8,  // 12: file.FileService.ListAssets:input_type -> file.ListAssetsRequest
+	9,  // 13: file.FileService.GetAsset:input_type -> file.GetAssetRequest
+	12, // 14: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
+	3,  // 15: file.FileService.Ping:output_type -> file.PingResponse
+	6,  // 16: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
+	10, // 17: file.FileService.CompleteUpload:output_type -> file.AssetResponse
+	11, // 18: file.FileService.ListAssets:output_type -> file.ListAssetsResponse
+	10, // 19: file.FileService.GetAsset:output_type -> file.AssetResponse
+	13, // 20: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
+	15, // [15:21] is the sub-list for method output_type
+	9,  // [9:15] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_file_proto_init() }
-func file_file_proto_init() {
-	if File_file_proto != nil {
+func init() { file_v3_proto_file_proto_init() }
+func file_v3_proto_file_proto_init() {
+	if File_v3_proto_file_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
-			NumEnums:      3,
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v3_proto_file_proto_rawDesc), len(file_v3_proto_file_proto_rawDesc)),
+			NumEnums:      2,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_file_proto_goTypes,
-		DependencyIndexes: file_file_proto_depIdxs,
-		EnumInfos:         file_file_proto_enumTypes,
-		MessageInfos:      file_file_proto_msgTypes,
+		GoTypes:           file_v3_proto_file_proto_goTypes,
+		DependencyIndexes: file_v3_proto_file_proto_depIdxs,
+		EnumInfos:         file_v3_proto_file_proto_enumTypes,
+		MessageInfos:      file_v3_proto_file_proto_msgTypes,
 	}.Build()
-	File_file_proto = out.File
-	file_file_proto_goTypes = nil
-	file_file_proto_depIdxs = nil
+	File_v3_proto_file_proto = out.File
+	file_v3_proto_file_proto_goTypes = nil
+	file_v3_proto_file_proto_depIdxs = nil
 }

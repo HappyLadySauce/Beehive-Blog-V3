@@ -1,11 +1,30 @@
 import { requestJson } from '@/shared/api/httpClient'
 import { appConfig } from '@/shared/config/env'
 
-import type { FileAssetResponse, FileUploadCreateRequest, FileUploadCreateResponse } from './types'
-import { completeMockUpload, createMockUpload, getMockUpload, setMockUploadPublicUrl } from './mockStore'
+import {
+  completeMockUpload,
+  createMockUpload,
+  deleteMockAsset,
+  getMockAsset,
+  getMockUpload,
+  listMockAssets,
+  setMockUploadPublicUrl,
+} from './mockStore'
+
+import type {
+  FileAssetDeleteResponse,
+  FileAssetDetailResponse,
+  FileAssetListParams,
+  FileAssetListResponse,
+  FileAssetResponse,
+  FileUploadCreateRequest,
+  FileUploadCreateResponse,
+} from './types'
 
 const fileBasePath = '/api/v3/files'
 let activeCompletedMockObjectUrl = ''
+
+// ---- Upload operations ----
 
 export async function createFileUpload(
   payload: FileUploadCreateRequest,
@@ -19,7 +38,7 @@ export async function createFileUpload(
       upload_url: '',
       headers: {},
       expires_at: now + 300,
-      max_bytes: payload.scope === 'avatar' ? 2 * 1024 * 1024 : 5 * 1024 * 1024,
+      max_bytes: 5 * 1024 * 1024,
     }
   }
 
@@ -82,6 +101,62 @@ export async function putFileUploadObject(upload: FileUploadCreateResponse, file
   }
 }
 
+// ---- Asset management operations ----
+
+function withQuery(path: string, params?: Record<string, string | number | boolean | undefined>): string {
+  const searchParams = new URLSearchParams()
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value !== undefined && value !== '') {
+      searchParams.set(key, String(value))
+    }
+  }
+  const query = searchParams.toString()
+  return query ? `${path}?${query}` : path
+}
+
+export async function listFileAssets(
+  params: FileAssetListParams = {},
+  options: { accessToken?: string } = {},
+): Promise<FileAssetListResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return listMockAssets(params)
+  }
+  return requestJson<FileAssetListResponse>(withQuery(`${fileBasePath}/assets`, params), {
+    method: 'GET',
+    accessToken: options.accessToken,
+  })
+}
+
+export async function getFileAsset(assetId: string, options: { accessToken?: string } = {}): Promise<FileAssetDetailResponse> {
+  if (appConfig.apiMode === 'mock') {
+    const asset = getMockAsset(assetId)
+    if (!asset) {
+      throw new Error('File asset not found.')
+    }
+    return { asset }
+  }
+  return requestJson<FileAssetDetailResponse>(`${fileBasePath}/assets/${encodeURIComponent(assetId)}`, {
+    method: 'GET',
+    accessToken: options.accessToken,
+  })
+}
+
+export async function deleteFileAsset(assetId: string, options: { accessToken?: string } = {}): Promise<FileAssetDeleteResponse> {
+  if (appConfig.apiMode === 'mock') {
+    const asset = deleteMockAsset(assetId)
+    if (!asset) {
+      throw new Error('File asset not found.')
+    }
+    return { ok: true }
+  }
+  return requestJson<FileAssetDeleteResponse>(`${fileBasePath}/assets/${encodeURIComponent(assetId)}`, {
+    method: 'DELETE',
+    accessToken: options.accessToken,
+  })
+}
+
+// ---- Helpers ----
+
 function requireLiveAccessToken(accessToken?: string): asserts accessToken is string {
   if (!accessToken) {
     throw new Error('Sign in to upload files.')
@@ -92,7 +167,7 @@ function createPreviewUrl(file: File, uploadId: string): string {
   if (typeof URL.createObjectURL === 'function') {
     return URL.createObjectURL(file)
   }
-  return mockPublicUrl(uploadId)
+  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E#${encodeURIComponent(uploadId)}`
 }
 
 function replaceCompletedMockObjectUrl(nextUrl: string): void {
@@ -108,8 +183,4 @@ function replaceCompletedMockObjectUrl(nextUrl: string): void {
 
 function isObjectUrl(url: string): boolean {
   return url.startsWith('blob:')
-}
-
-function mockPublicUrl(uploadId: string): string {
-  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E#${encodeURIComponent(uploadId)}`
 }

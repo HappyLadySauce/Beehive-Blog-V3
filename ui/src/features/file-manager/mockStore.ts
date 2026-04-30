@@ -15,11 +15,11 @@ export function createMockUpload(payload: FileUploadCreateRequest): FileAsset {
     asset_id: `mock_asset_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     upload_id: uploadId,
     owner_user_id: 'user_mock_admin',
-    scope: payload.scope,
+    namespace: payload.namespace,
     visibility: payload.visibility ?? 'public',
     status: 'pending',
     bucket: 'mock',
-    object_key: `mock/${payload.scope}/${payload.file_name}`,
+    object_key: `mock/${payload.namespace}/${payload.file_name}`,
     public_url: '',
     file_name: payload.file_name,
     content_type: payload.content_type,
@@ -51,7 +51,7 @@ export function completeMockUpload(uploadId: string): FileAsset {
     asset_id: `mock_asset_${uploadId}`,
     upload_id: uploadId,
     owner_user_id: 'user_mock_admin',
-    scope: 'avatar',
+    namespace: 'avatar',
     visibility: 'public',
     status: 'pending',
     bucket: 'mock',
@@ -76,7 +76,7 @@ export function completeMockUpload(uploadId: string): FileAsset {
 }
 
 export function listMockAssets(params: {
-  scope?: string
+  namespace?: string
   status?: string
   visibility?: string
   owner_user_id?: string
@@ -89,7 +89,7 @@ export function listMockAssets(params: {
   const pageSize = normalizePageSize(params.page_size)
   const items = Array.from(mockAssets.values())
     .filter((asset) => {
-      const matchesScope = !params.scope || asset.scope === params.scope
+      const matchesNamespace = !params.namespace || asset.namespace === params.namespace
       const matchesStatus = !params.status || asset.status === params.status
       const matchesVisibility = !params.visibility || asset.visibility === params.visibility
       const matchesOwner = !params.owner_user_id || asset.owner_user_id === params.owner_user_id
@@ -97,7 +97,7 @@ export function listMockAssets(params: {
         || asset.file_name.toLowerCase().includes(keyword)
         || asset.content_type.toLowerCase().includes(keyword)
         || asset.object_key.toLowerCase().includes(keyword)
-      return matchesScope && matchesStatus && matchesVisibility && matchesOwner && matchesKeyword
+      return matchesNamespace && matchesStatus && matchesVisibility && matchesOwner && matchesKeyword
     })
     .sort((left, right) => {
       const leftUpdated = left.deleted_at ?? left.uploaded_at ?? left.created_at

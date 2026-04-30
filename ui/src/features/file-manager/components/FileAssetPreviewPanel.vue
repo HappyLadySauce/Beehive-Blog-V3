@@ -39,7 +39,7 @@ function formatFileSize(byteSize?: number): string {
 
     <div class="file-preview-panel__grid">
       <ReadonlyField :label="t('files.fields.fileName')" :value="asset.file_name" />
-      <ReadonlyField :label="t('files.fields.scope')" :value="asset.scope" />
+      <ReadonlyField :label="t('files.fields.scope')" :value="asset.namespace" />
       <ReadonlyField :label="t('files.fields.status')" :value="asset.status" />
       <ReadonlyField :label="t('files.fields.visibility')" :value="asset.visibility" />
       <ReadonlyField :label="t('files.fields.contentType')" :value="asset.content_type" />

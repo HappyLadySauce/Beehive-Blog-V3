@@ -25,7 +25,7 @@ import type {
   ContentVisibility,
   ContentWriteRequest,
 } from '@/features/studio/types'
-import { useAvatarUpload } from '@/features/uploads/useAvatarUpload'
+import { useAvatarUpload } from '@/features/file-manager/useAvatarUpload'
 
 export type ContentEditorMode = 'create' | 'edit'
 export type ContentEditorSaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error'

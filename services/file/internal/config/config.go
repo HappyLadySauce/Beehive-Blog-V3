@@ -32,13 +32,35 @@ type PostgresConf struct {
 }
 
 type StorageConf struct {
-	Driver                     string              `json:"Driver"`
-	PublicBaseURL              string              `json:"PublicBaseURL"`
-	PresignTTLSeconds          int                 `json:"PresignTTLSeconds"`
-	MaxBytesByScope            map[string]int64    `json:"MaxBytesByScope"`
-	AllowedContentTypesByScope map[string][]string `json:"AllowedContentTypesByScope"`
-	Local                      LocalStorageConf    `json:"Local"`
-	S3                         S3StorageConf       `json:"S3"`
+	Driver                     string                   `json:"Driver"`
+	PublicBaseURL              string                   `json:"PublicBaseURL"`
+	PresignTTLSeconds          int                      `json:"PresignTTLSeconds"`
+	MaxBytesByScope            map[string]int64         `json:"MaxBytesByScope"`
+	AllowedContentTypesByScope map[string][]string      `json:"AllowedContentTypesByScope"`
+	Namespaces                 map[string]NamespaceRule `json:"Namespaces"`
+	Local                      LocalStorageConf         `json:"Local"`
+	S3                         S3StorageConf            `json:"S3"`
+}
+
+type NamespaceRule struct {
+	MaxBytes            int64    `json:"MaxBytes"`
+	AllowedContentTypes []string `json:"AllowedContentTypes"`
+	StoragePrefix       string   `json:"StoragePrefix"`
+}
+
+// NamespaceRule looks up the rule for a namespace, falling back to the "*" wildcard.
+// NamespaceRule 查找 namespace 对应的规则，回退到 "*" 通配符。
+func (c StorageConf) NamespaceRule(namespace string) (NamespaceRule, bool) {
+	if c.Namespaces == nil {
+		return NamespaceRule{}, false
+	}
+	if rule, ok := c.Namespaces[namespace]; ok {
+		return rule, true
+	}
+	if rule, ok := c.Namespaces["*"]; ok {
+		return rule, true
+	}
+	return NamespaceRule{}, false
 }
 
 type LocalStorageConf struct {

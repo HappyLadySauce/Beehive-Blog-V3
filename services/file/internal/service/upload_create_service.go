@@ -19,7 +19,7 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 	if err != nil {
 		return nil, err
 	}
-	scope, err := normalizeScope(in.Scope)
+	namespace, err := normalizeNamespace(m.conf.Storage, in.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 	if err != nil {
 		return nil, err
 	}
-	contentType, maxBytes, err := validateUploadFile(m.conf.Storage, scope, in.FileName, in.ContentType, in.ByteSize)
+	contentType, maxBytes, err := validateUploadFile(m.conf.Storage, namespace, in.FileName, in.ContentType, in.ByteSize)
 	if err != nil {
 		return nil, err
 	}
@@ -37,14 +37,14 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 		ttl = 5 * time.Minute
 	}
 	now := time.Now().UTC()
-	objectKey := objectKey(scope, ownerUserID, in.FileName, contentType)
+	objectKey := objectKey(m.conf.Storage, namespace, ownerUserID, in.FileName, contentType)
 	assetID := "asset_" + uuid.NewString()
 	publicURL := publicURLForVisibility(m.conf.Storage, visibility, assetID, objectKey)
 	asset := &entity.FileAsset{
 		AssetID:     assetID,
 		UploadID:    "upload_" + uuid.NewString(),
 		OwnerUserID: ownerUserID,
-		Scope:       scope,
+		Namespace:   namespace,
 		Visibility:  visibility,
 		Status:      StatusPending,
 		Bucket:      storageBucket(m.conf.Storage),

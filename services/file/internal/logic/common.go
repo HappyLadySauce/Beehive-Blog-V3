@@ -26,28 +26,6 @@ func newBaseLogic(ctx context.Context, svcCtx *svc.ServiceContext) baseLogic {
 	}
 }
 
-func toServiceScope(scope pb.FileScope) string {
-	switch scope {
-	case pb.FileScope_FILE_SCOPE_AVATAR:
-		return fileservice.ScopeAvatar
-	case pb.FileScope_FILE_SCOPE_CONTENT_COVER:
-		return fileservice.ScopeContentCover
-	case pb.FileScope_FILE_SCOPE_CONTENT_IMAGE:
-		return fileservice.ScopeContentImage
-	case pb.FileScope_FILE_SCOPE_ATTACHMENT:
-		return fileservice.ScopeAttachment
-	default:
-		return ""
-	}
-}
-
-func toOptionalServiceScope(scope pb.FileScope) string {
-	if scope == pb.FileScope_FILE_SCOPE_UNSPECIFIED {
-		return ""
-	}
-	return toServiceScope(scope)
-}
-
 func toServiceVisibility(visibility pb.AssetVisibility) string {
 	switch visibility {
 	case pb.AssetVisibility_ASSET_VISIBILITY_PUBLIC:
@@ -76,21 +54,6 @@ func toOptionalServiceStatus(status pb.AssetStatus) string {
 		return fileservice.StatusDeleted
 	default:
 		return ""
-	}
-}
-
-func toProtoScope(scope string) pb.FileScope {
-	switch scope {
-	case fileservice.ScopeAvatar:
-		return pb.FileScope_FILE_SCOPE_AVATAR
-	case fileservice.ScopeContentCover:
-		return pb.FileScope_FILE_SCOPE_CONTENT_COVER
-	case fileservice.ScopeContentImage:
-		return pb.FileScope_FILE_SCOPE_CONTENT_IMAGE
-	case fileservice.ScopeAttachment:
-		return pb.FileScope_FILE_SCOPE_ATTACHMENT
-	default:
-		return pb.FileScope_FILE_SCOPE_UNSPECIFIED
 	}
 }
 
@@ -126,7 +89,7 @@ func toProtoAsset(asset *fileservice.AssetView) *pb.Asset {
 		AssetId:     asset.AssetID,
 		UploadId:    asset.UploadID,
 		OwnerUserId: asset.OwnerUserID,
-		Scope:       toProtoScope(asset.Scope),
+		Namespace:   asset.Namespace,
 		Visibility:  toProtoVisibility(asset.Visibility),
 		Status:      toProtoStatus(asset.Status),
 		Bucket:      asset.Bucket,

@@ -38,30 +38,45 @@ Storage:
     Bucket: "beehive"
     AccessKeyID: ""
     SecretAccessKey: ""
-  MaxBytesByScope:
-    avatar: 2097152
-    content_cover: 5242880
-    content_image: 5242880
-    attachment: 20971520
-  AllowedContentTypesByScope:
+  Namespaces:
     avatar:
-      - image/png
-      - image/jpeg
-      - image/webp
-      - image/avif
+      MaxBytes: 2097152
+      AllowedContentTypes:
+        - image/png
+        - image/jpeg
+        - image/webp
+        - image/avif
+      StoragePrefix: "avatars"
     content_cover:
-      - image/png
-      - image/jpeg
-      - image/webp
-      - image/avif
+      MaxBytes: 5242880
+      AllowedContentTypes:
+        - image/png
+        - image/jpeg
+        - image/webp
+        - image/avif
+      StoragePrefix: "content/covers"
     content_image:
-      - image/png
-      - image/jpeg
-      - image/webp
-      - image/avif
+      MaxBytes: 5242880
+      AllowedContentTypes:
+        - image/png
+        - image/jpeg
+        - image/webp
+        - image/avif
+      StoragePrefix: "content/images"
     attachment:
-      - image/png
-      - image/jpeg
-      - image/webp
-      - image/avif
-      - application/pdf
+      MaxBytes: 20971520
+      AllowedContentTypes:
+        - image/png
+        - image/jpeg
+        - image/webp
+        - image/avif
+        - application/pdf
+      StoragePrefix: "attachments"
+    "*":
+      MaxBytes: 5242880
+      AllowedContentTypes:
+        - image/png
+        - image/jpeg
+        - image/webp
+        - image/avif
+      StoragePrefix: "misc"

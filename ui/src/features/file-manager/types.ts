@@ -1,4 +1,4 @@
-export type FileUploadScope = 'avatar' | 'content_cover' | 'content_image' | 'attachment'
+export type FileUploadNamespace = string
 export type FileUploadVisibility = 'public' | 'private'
 export type FileAssetStatus = 'pending' | 'uploaded' | 'deleted'
 
@@ -6,7 +6,7 @@ export interface FileAsset {
   asset_id: string
   upload_id: string
   owner_user_id: string
-  scope: FileUploadScope
+  namespace: string
   visibility: FileUploadVisibility
   status: FileAssetStatus
   bucket: string
@@ -21,8 +21,11 @@ export interface FileAsset {
   deleted_at?: number
 }
 
+export type FileAssetSummary = FileAsset
+export type FileAssetDetail = FileAsset
+
 export interface FileUploadCreateRequest {
-  scope: FileUploadScope
+  namespace: string
   file_name: string
   content_type: string
   byte_size: number
@@ -39,4 +42,29 @@ export interface FileUploadCreateResponse {
 
 export interface FileAssetResponse {
   asset: FileAsset
+}
+
+export interface FileAssetListParams {
+  namespace?: string
+  status?: string
+  visibility?: string
+  owner_user_id?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}
+
+export interface FileAssetListResponse {
+  items: FileAssetSummary[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface FileAssetDetailResponse {
+  asset: FileAssetDetail
+}
+
+export interface FileAssetDeleteResponse {
+  ok: boolean
 }

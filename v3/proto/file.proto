@@ -13,14 +13,6 @@ service FileService {
   rpc DeleteAsset(DeleteAssetRequest) returns (DeleteAssetResponse);
 }
 
-enum FileScope {
-  FILE_SCOPE_UNSPECIFIED = 0;
-  FILE_SCOPE_AVATAR = 1;
-  FILE_SCOPE_CONTENT_COVER = 2;
-  FILE_SCOPE_CONTENT_IMAGE = 3;
-  FILE_SCOPE_ATTACHMENT = 4;
-}
-
 enum AssetVisibility {
   ASSET_VISIBILITY_UNSPECIFIED = 0;
   ASSET_VISIBILITY_PUBLIC = 1;
@@ -45,7 +37,7 @@ message Asset {
   string asset_id = 1;
   string upload_id = 2;
   string owner_user_id = 3;
-  FileScope scope = 4;
+  string namespace = 4;
   AssetVisibility visibility = 5;
   AssetStatus status = 6;
   string bucket = 7;
@@ -62,7 +54,7 @@ message Asset {
 
 message CreateUploadRequest {
   string actor_user_id = 1;
-  FileScope scope = 2;
+  string namespace = 2;
   string file_name = 3;
   string content_type = 4;
   int64 byte_size = 5;
@@ -84,7 +76,7 @@ message CompleteUploadRequest {
 
 message ListAssetsRequest {
   string actor_user_id = 1;
-  FileScope scope = 2;
+  string namespace = 2;
   AssetStatus status = 3;
   AssetVisibility visibility = 4;
   string owner_user_id = 5;

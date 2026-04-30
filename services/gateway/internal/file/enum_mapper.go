@@ -2,21 +2,6 @@ package file
 
 import filepb "github.com/HappyLadySauce/Beehive-Blog-V3/services/file/pb"
 
-func ScopeToProto(scope string) filepb.FileScope {
-	switch scope {
-	case "avatar":
-		return filepb.FileScope_FILE_SCOPE_AVATAR
-	case "content_cover":
-		return filepb.FileScope_FILE_SCOPE_CONTENT_COVER
-	case "content_image":
-		return filepb.FileScope_FILE_SCOPE_CONTENT_IMAGE
-	case "attachment":
-		return filepb.FileScope_FILE_SCOPE_ATTACHMENT
-	default:
-		return filepb.FileScope_FILE_SCOPE_UNSPECIFIED
-	}
-}
-
 func VisibilityToProto(visibility string) filepb.AssetVisibility {
 	switch visibility {
 	case "public", "":
@@ -47,21 +32,6 @@ func StatusToProto(status string) filepb.AssetStatus {
 		return filepb.AssetStatus_ASSET_STATUS_DELETED
 	default:
 		return filepb.AssetStatus_ASSET_STATUS_UNSPECIFIED
-	}
-}
-
-func ScopeFromProto(scope filepb.FileScope) string {
-	switch scope {
-	case filepb.FileScope_FILE_SCOPE_AVATAR:
-		return "avatar"
-	case filepb.FileScope_FILE_SCOPE_CONTENT_COVER:
-		return "content_cover"
-	case filepb.FileScope_FILE_SCOPE_CONTENT_IMAGE:
-		return "content_image"
-	case filepb.FileScope_FILE_SCOPE_ATTACHMENT:
-		return "attachment"
-	default:
-		return ""
 	}
 }
 

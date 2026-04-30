@@ -3,11 +3,6 @@ package service
 import "time"
 
 const (
-	ScopeAvatar       = "avatar"
-	ScopeContentCover = "content_cover"
-	ScopeContentImage = "content_image"
-	ScopeAttachment   = "attachment"
-
 	VisibilityPublic  = "public"
 	VisibilityPrivate = "private"
 
@@ -18,7 +13,7 @@ const (
 
 type CreateUploadInput struct {
 	ActorUserID string
-	Scope       string
+	Namespace   string
 	FileName    string
 	ContentType string
 	ByteSize    int64
@@ -35,7 +30,7 @@ type CreateUploadResult struct {
 
 type ListAssetsInput struct {
 	ActorUserID string
-	Scope       string
+	Namespace   string
 	Status      string
 	Visibility  string
 	OwnerUserID string
@@ -55,7 +50,7 @@ type AssetView struct {
 	AssetID     string
 	UploadID    string
 	OwnerUserID string
-	Scope       string
+	Namespace   string
 	Visibility  string
 	Status      string
 	Bucket      string

@@ -19,7 +19,7 @@ func NewCreateUploadLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Crea
 func (l *CreateUploadLogic) CreateUpload(in *pb.CreateUploadRequest) (*pb.CreateUploadResponse, error) {
 	result, err := l.svcCtx.Services.CreateUpload(l.ctx, fileservice.CreateUploadInput{
 		ActorUserID: in.GetActorUserId(),
-		Scope:       toServiceScope(in.GetScope()),
+		Namespace:   in.GetNamespace(),
 		FileName:    in.GetFileName(),
 		ContentType: in.GetContentType(),
 		ByteSize:    in.GetByteSize(),
