@@ -32,6 +32,11 @@ func (s *FileServer) CompleteUpload(ctx context.Context, in *pb.CompleteUploadRe
 	return l.CompleteUpload(in)
 }
 
+func (s *FileServer) ListAssets(ctx context.Context, in *pb.ListAssetsRequest) (*pb.ListAssetsResponse, error) {
+	l := logic.NewListAssetsLogic(ctx, s.svcCtx)
+	return l.ListAssets(in)
+}
+
 func (s *FileServer) GetAsset(ctx context.Context, in *pb.GetAssetRequest) (*pb.AssetResponse, error) {
 	l := logic.NewGetAssetLogic(ctx, s.svcCtx)
 	return l.GetAsset(in)

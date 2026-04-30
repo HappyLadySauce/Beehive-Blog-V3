@@ -31,6 +31,7 @@ export const router = createRouter({
       children: [
         { path: '', name: 'studio-dashboard', component: () => import('@/pages/studio/StudioDashboardPage.vue'), meta: { pageMeta: { i18nPrefix: 'dashboard' } } },
         { path: 'content', name: 'studio-content', component: () => import('@/pages/studio/StudioContentPage.vue'), meta: { pageMeta: { i18nPrefix: 'content' } } },
+        { path: 'files', name: 'studio-files', component: () => import('@/pages/studio/StudioFilesPage.vue'), meta: { pageMeta: { i18nPrefix: 'files' } } },
         { path: 'content/new', name: 'studio-content-new', component: () => import('@/pages/studio/ContentEditorPage.vue'), meta: { pageMeta: null } },
         { path: 'content/:content_id/edit', name: 'studio-content-edit', component: () => import('@/pages/studio/ContentEditorPage.vue'), meta: { pageMeta: null } },
         { path: 'users', name: 'studio-users', component: () => import('@/pages/studio/StudioUsersPage.vue'), meta: { pageMeta: { i18nPrefix: 'users' } } },

@@ -8,6 +8,7 @@ service FileService {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc CreateUpload(CreateUploadRequest) returns (CreateUploadResponse);
   rpc CompleteUpload(CompleteUploadRequest) returns (AssetResponse);
+  rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
   rpc GetAsset(GetAssetRequest) returns (AssetResponse);
   rpc DeleteAsset(DeleteAssetRequest) returns (DeleteAssetResponse);
 }
@@ -81,6 +82,17 @@ message CompleteUploadRequest {
   string upload_id = 2;
 }
 
+message ListAssetsRequest {
+  string actor_user_id = 1;
+  FileScope scope = 2;
+  AssetStatus status = 3;
+  AssetVisibility visibility = 4;
+  string owner_user_id = 5;
+  string keyword = 6;
+  int32 page = 7;
+  int32 page_size = 8;
+}
+
 message GetAssetRequest {
   string actor_user_id = 1;
   string asset_id = 2;
@@ -88,6 +100,13 @@ message GetAssetRequest {
 
 message AssetResponse {
   Asset asset = 1;
+}
+
+message ListAssetsResponse {
+  repeated Asset items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
 }
 
 message DeleteAssetRequest {

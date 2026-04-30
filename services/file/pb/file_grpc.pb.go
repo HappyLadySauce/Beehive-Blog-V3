@@ -22,6 +22,7 @@ const (
 	FileService_Ping_FullMethodName           = "/file.FileService/Ping"
 	FileService_CreateUpload_FullMethodName   = "/file.FileService/CreateUpload"
 	FileService_CompleteUpload_FullMethodName = "/file.FileService/CompleteUpload"
+	FileService_ListAssets_FullMethodName     = "/file.FileService/ListAssets"
 	FileService_GetAsset_FullMethodName       = "/file.FileService/GetAsset"
 	FileService_DeleteAsset_FullMethodName    = "/file.FileService/DeleteAsset"
 )
@@ -33,6 +34,7 @@ type FileServiceClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	CreateUpload(ctx context.Context, in *CreateUploadRequest, opts ...grpc.CallOption) (*CreateUploadResponse, error)
 	CompleteUpload(ctx context.Context, in *CompleteUploadRequest, opts ...grpc.CallOption) (*AssetResponse, error)
+	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*AssetResponse, error)
 	DeleteAsset(ctx context.Context, in *DeleteAssetRequest, opts ...grpc.CallOption) (*DeleteAssetResponse, error)
 }
@@ -75,6 +77,16 @@ func (c *fileServiceClient) CompleteUpload(ctx context.Context, in *CompleteUplo
 	return out, nil
 }
 
+func (c *fileServiceClient) ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAssetsResponse)
+	err := c.cc.Invoke(ctx, FileService_ListAssets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *fileServiceClient) GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*AssetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AssetResponse)
@@ -102,6 +114,7 @@ type FileServiceServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	CreateUpload(context.Context, *CreateUploadRequest) (*CreateUploadResponse, error)
 	CompleteUpload(context.Context, *CompleteUploadRequest) (*AssetResponse, error)
+	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
 	GetAsset(context.Context, *GetAssetRequest) (*AssetResponse, error)
 	DeleteAsset(context.Context, *DeleteAssetRequest) (*DeleteAssetResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
@@ -122,6 +135,9 @@ func (UnimplementedFileServiceServer) CreateUpload(context.Context, *CreateUploa
 }
 func (UnimplementedFileServiceServer) CompleteUpload(context.Context, *CompleteUploadRequest) (*AssetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CompleteUpload not implemented")
+}
+func (UnimplementedFileServiceServer) ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAssets not implemented")
 }
 func (UnimplementedFileServiceServer) GetAsset(context.Context, *GetAssetRequest) (*AssetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAsset not implemented")
@@ -204,6 +220,24 @@ func _FileService_CompleteUpload_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_ListAssets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAssetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).ListAssets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_ListAssets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).ListAssets(ctx, req.(*ListAssetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _FileService_GetAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetAssetRequest)
 	if err := dec(in); err != nil {
@@ -258,6 +292,10 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompleteUpload",
 			Handler:    _FileService_CompleteUpload_Handler,
+		},
+		{
+			MethodName: "ListAssets",
+			Handler:    _FileService_ListAssets_Handler,
 		},
 		{
 			MethodName: "GetAsset",

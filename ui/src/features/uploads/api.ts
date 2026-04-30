@@ -1,10 +1,10 @@
 import { requestJson } from '@/shared/api/httpClient'
 import { appConfig } from '@/shared/config/env'
 
-import type { FileAsset, FileAssetResponse, FileUploadCreateRequest, FileUploadCreateResponse } from './types'
+import type { FileAssetResponse, FileUploadCreateRequest, FileUploadCreateResponse } from './types'
+import { completeMockUpload, createMockUpload, getMockUpload, setMockUploadPublicUrl } from './mockStore'
 
 const fileBasePath = '/api/v3/files'
-const mockUploads = new Map<string, { asset: FileAsset, publicUrl: string }>()
 let activeCompletedMockObjectUrl = ''
 
 export async function createFileUpload(
@@ -13,24 +13,7 @@ export async function createFileUpload(
 ): Promise<FileUploadCreateResponse> {
   if (appConfig.apiMode === 'mock') {
     const now = Math.floor(Date.now() / 1000)
-    const uploadId = `mock_upload_${Date.now()}`
-    const asset: FileAsset = {
-      asset_id: `mock_asset_${Date.now()}`,
-      upload_id: uploadId,
-      owner_user_id: 'mock',
-      scope: payload.scope,
-      visibility: payload.visibility ?? 'public',
-      status: 'pending',
-      bucket: 'mock',
-      object_key: `mock/${payload.scope}/${payload.file_name}`,
-      public_url: '',
-      file_name: payload.file_name,
-      content_type: payload.content_type,
-      byte_size: payload.byte_size,
-      created_at: now,
-      expires_at: now + 300,
-    }
-    mockUploads.set(uploadId, { asset, publicUrl: '' })
+    const asset = createMockUpload(payload)
     return {
       asset,
       upload_url: '',
@@ -53,38 +36,12 @@ export async function completeFileUpload(
   options: { accessToken?: string } = {},
 ): Promise<FileAssetResponse> {
   if (appConfig.apiMode === 'mock') {
-    const now = Math.floor(Date.now() / 1000)
-    const state = mockUploads.get(uploadId)
-    const asset = state?.asset ?? {
-      asset_id: `mock_asset_${uploadId}`,
-      upload_id: uploadId,
-      owner_user_id: 'mock',
-      scope: 'avatar',
-      visibility: 'public',
-      status: 'pending',
-      bucket: 'mock',
-      object_key: `mock/${uploadId}`,
-      public_url: '',
-      file_name: 'mock',
-      content_type: 'image/png',
-      byte_size: 0,
-      created_at: now,
-      expires_at: now + 300,
-    } satisfies FileAsset
-    const publicUrl = state?.publicUrl || asset.public_url || mockPublicUrl(uploadId)
-    const response = {
-      asset: {
-        ...asset,
-        status: 'uploaded',
-        public_url: publicUrl,
-        uploaded_at: now,
-      },
+    const existingState = getMockUpload(uploadId)
+    const asset = completeMockUpload(uploadId)
+    if (existingState) {
+      replaceCompletedMockObjectUrl(asset.public_url)
     }
-    mockUploads.delete(uploadId)
-    if (state) {
-      replaceCompletedMockObjectUrl(publicUrl)
-    }
-    return response
+    return { asset }
   }
 
   requireLiveAccessToken(options.accessToken)
@@ -96,10 +53,7 @@ export async function completeFileUpload(
 
 export async function putFileUploadObject(upload: FileUploadCreateResponse, file: File): Promise<void> {
   if (appConfig.apiMode === 'mock') {
-    const state = mockUploads.get(upload.asset.upload_id)
-    if (state) {
-      state.publicUrl = createPreviewUrl(file, upload.asset.upload_id)
-    }
+    setMockUploadPublicUrl(upload.asset.upload_id, createPreviewUrl(file, upload.asset.upload_id))
     return
   }
   if (!upload.upload_url) {

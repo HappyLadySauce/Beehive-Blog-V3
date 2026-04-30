@@ -33,6 +33,24 @@ type CreateUploadResult struct {
 	MaxBytes  int64
 }
 
+type ListAssetsInput struct {
+	ActorUserID string
+	Scope       string
+	Status      string
+	Visibility  string
+	OwnerUserID string
+	Keyword     string
+	Page        int
+	PageSize    int
+}
+
+type AssetListResult struct {
+	Items    []*AssetView
+	Total    int64
+	Page     int
+	PageSize int
+}
+
 type AssetView struct {
 	AssetID     string
 	UploadID    string

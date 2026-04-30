@@ -81,6 +81,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 
 	fileRoutes := []rest.Route{
 		{
+			Method:  http.MethodGet,
+			Path:    "/assets",
+			Handler: file.FileAssetListHandler(serverCtx),
+		},
+		{
 			Method:  http.MethodPost,
 			Path:    "/uploads",
 			Handler: file.FileUploadCreateHandler(serverCtx),
@@ -89,6 +94,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			Method:  http.MethodPost,
 			Path:    "/uploads/:upload_id/complete",
 			Handler: file.FileUploadCompleteHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/assets/:asset_id",
+			Handler: file.FileAssetGetHandler(serverCtx),
 		},
 		{
 			Method:  http.MethodDelete,

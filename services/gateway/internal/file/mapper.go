@@ -23,6 +23,26 @@ func BuildCompleteUploadRequest(actorUserID string, req *types.FileUploadComplet
 	}
 }
 
+func BuildListAssetsRequest(actorUserID string, req *types.FileAssetListReq) *filepb.ListAssetsRequest {
+	return &filepb.ListAssetsRequest{
+		ActorUserId: actorUserID,
+		Scope:       ScopeToProto(req.Scope),
+		Status:      StatusToProto(req.Status),
+		Visibility:  VisibilityToProtoOptional(req.Visibility),
+		OwnerUserId: req.OwnerUserId,
+		Keyword:     req.Keyword,
+		Page:        int32(req.Page),
+		PageSize:    int32(req.PageSize),
+	}
+}
+
+func BuildGetAssetRequest(actorUserID string, req *types.FileAssetIdReq) *filepb.GetAssetRequest {
+	return &filepb.GetAssetRequest{
+		ActorUserId: actorUserID,
+		AssetId:     req.AssetId,
+	}
+}
+
 func BuildDeleteAssetRequest(actorUserID string, req *types.FileAssetIdReq) *filepb.DeleteAssetRequest {
 	return &filepb.DeleteAssetRequest{
 		ActorUserId: actorUserID,
@@ -48,6 +68,22 @@ func ToAssetResp(resp *filepb.AssetResponse) *types.FileAssetResp {
 		return &types.FileAssetResp{}
 	}
 	return &types.FileAssetResp{Asset: ToAssetView(resp.GetAsset())}
+}
+
+func ToAssetListResp(resp *filepb.ListAssetsResponse) *types.FileAssetListResp {
+	if resp == nil {
+		return &types.FileAssetListResp{}
+	}
+	items := make([]types.FileAssetView, 0, len(resp.GetItems()))
+	for _, item := range resp.GetItems() {
+		items = append(items, ToAssetView(item))
+	}
+	return &types.FileAssetListResp{
+		Items:    items,
+		Total:    resp.GetTotal(),
+		Page:     int(resp.GetPage()),
+		PageSize: int(resp.GetPageSize()),
+	}
 }
 
 func ToAssetView(asset *filepb.Asset) types.FileAssetView {

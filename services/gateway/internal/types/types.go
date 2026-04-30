@@ -307,6 +307,17 @@ type FileUploadCompleteReq struct {
 	UploadId      string `path:"upload_id,example=upload_01J8FILEEXAMPLE" validate:"required"`
 }
 
+type FileAssetListReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	Scope         string `form:"scope,optional,options=avatar|content_cover|content_image|attachment,example=avatar" validate:"omitempty"`
+	Status        string `form:"status,optional,options=pending|uploaded|deleted,example=uploaded" validate:"omitempty"`
+	Visibility    string `form:"visibility,optional,options=public|private,example=public" validate:"omitempty"`
+	OwnerUserId   string `form:"owner_user_id,optional,example=1" validate:"omitempty"`
+	Keyword       string `form:"keyword,optional,example=avatar" validate:"omitempty,max=255"`
+	Page          int    `form:"page,optional,default=1,example=1" validate:"omitempty,min=1"`
+	PageSize      int    `form:"page_size,optional,default=20,example=20" validate:"omitempty,min=1,max=100"`
+}
+
 type FileAssetIdReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
 	AssetId       string `path:"asset_id,example=asset_01J8FILEEXAMPLE" validate:"required"`
@@ -314,6 +325,13 @@ type FileAssetIdReq struct {
 
 type FileAssetResp struct {
 	Asset FileAssetView `json:"asset"`
+}
+
+type FileAssetListResp struct {
+	Items    []FileAssetView `json:"items"`
+	Total    int64           `json:"total,example=1"`
+	Page     int             `json:"page,example=1"`
+	PageSize int             `json:"page_size,example=20"`
 }
 
 type FileAssetDeleteResp struct {

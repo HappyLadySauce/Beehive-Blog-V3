@@ -41,12 +41,39 @@ func toServiceScope(scope pb.FileScope) string {
 	}
 }
 
+func toOptionalServiceScope(scope pb.FileScope) string {
+	if scope == pb.FileScope_FILE_SCOPE_UNSPECIFIED {
+		return ""
+	}
+	return toServiceScope(scope)
+}
+
 func toServiceVisibility(visibility pb.AssetVisibility) string {
 	switch visibility {
 	case pb.AssetVisibility_ASSET_VISIBILITY_PUBLIC:
 		return fileservice.VisibilityPublic
 	case pb.AssetVisibility_ASSET_VISIBILITY_PRIVATE:
 		return fileservice.VisibilityPrivate
+	default:
+		return ""
+	}
+}
+
+func toOptionalServiceVisibility(visibility pb.AssetVisibility) string {
+	if visibility == pb.AssetVisibility_ASSET_VISIBILITY_UNSPECIFIED {
+		return ""
+	}
+	return toServiceVisibility(visibility)
+}
+
+func toOptionalServiceStatus(status pb.AssetStatus) string {
+	switch status {
+	case pb.AssetStatus_ASSET_STATUS_PENDING:
+		return fileservice.StatusPending
+	case pb.AssetStatus_ASSET_STATUS_UPLOADED:
+		return fileservice.StatusUploaded
+	case pb.AssetStatus_ASSET_STATUS_DELETED:
+		return fileservice.StatusDeleted
 	default:
 		return ""
 	}

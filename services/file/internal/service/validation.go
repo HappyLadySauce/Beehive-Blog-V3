@@ -58,6 +58,35 @@ func normalizeVisibility(visibility string) (string, error) {
 	}
 }
 
+func normalizeOptionalScope(scope string) (string, error) {
+	if strings.TrimSpace(scope) == "" {
+		return "", nil
+	}
+	return normalizeScope(scope)
+}
+
+func normalizeOptionalStatus(status string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "":
+		return "", nil
+	case StatusPending:
+		return StatusPending, nil
+	case StatusUploaded:
+		return StatusUploaded, nil
+	case StatusDeleted:
+		return StatusDeleted, nil
+	default:
+		return "", errs.New(errs.CodeFileInvalidArgument, "asset status is invalid")
+	}
+}
+
+func normalizeOptionalVisibility(visibility string) (string, error) {
+	if strings.TrimSpace(visibility) == "" {
+		return "", nil
+	}
+	return normalizeVisibility(visibility)
+}
+
 func normalizeContentType(contentType string) string {
 	return strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
 }

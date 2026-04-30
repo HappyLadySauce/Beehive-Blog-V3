@@ -28,6 +28,28 @@ func VisibilityToProto(visibility string) filepb.AssetVisibility {
 	}
 }
 
+func VisibilityToProtoOptional(visibility string) filepb.AssetVisibility {
+	switch visibility {
+	case "":
+		return filepb.AssetVisibility_ASSET_VISIBILITY_UNSPECIFIED
+	default:
+		return VisibilityToProto(visibility)
+	}
+}
+
+func StatusToProto(status string) filepb.AssetStatus {
+	switch status {
+	case "pending":
+		return filepb.AssetStatus_ASSET_STATUS_PENDING
+	case "uploaded":
+		return filepb.AssetStatus_ASSET_STATUS_UPLOADED
+	case "deleted":
+		return filepb.AssetStatus_ASSET_STATUS_DELETED
+	default:
+		return filepb.AssetStatus_ASSET_STATUS_UNSPECIFIED
+	}
+}
+
 func ScopeFromProto(scope filepb.FileScope) string {
 	switch scope {
 	case filepb.FileScope_FILE_SCOPE_AVATAR:

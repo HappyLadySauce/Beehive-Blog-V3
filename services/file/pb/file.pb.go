@@ -641,6 +641,106 @@ func (x *CompleteUploadRequest) GetUploadId() string {
 	return ""
 }
 
+type ListAssetsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ActorUserId   string                 `protobuf:"bytes,1,opt,name=actor_user_id,json=actorUserId,proto3" json:"actor_user_id,omitempty"`
+	Scope         FileScope              `protobuf:"varint,2,opt,name=scope,proto3,enum=file.FileScope" json:"scope,omitempty"`
+	Status        AssetStatus            `protobuf:"varint,3,opt,name=status,proto3,enum=file.AssetStatus" json:"status,omitempty"`
+	Visibility    AssetVisibility        `protobuf:"varint,4,opt,name=visibility,proto3,enum=file.AssetVisibility" json:"visibility,omitempty"`
+	OwnerUserId   string                 `protobuf:"bytes,5,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"`
+	Keyword       string                 `protobuf:"bytes,6,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	Page          int32                  `protobuf:"varint,7,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,8,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAssetsRequest) Reset() {
+	*x = ListAssetsRequest{}
+	mi := &file_file_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAssetsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAssetsRequest) ProtoMessage() {}
+
+func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAssetsRequest.ProtoReflect.Descriptor instead.
+func (*ListAssetsRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ListAssetsRequest) GetActorUserId() string {
+	if x != nil {
+		return x.ActorUserId
+	}
+	return ""
+}
+
+func (x *ListAssetsRequest) GetScope() FileScope {
+	if x != nil {
+		return x.Scope
+	}
+	return FileScope_FILE_SCOPE_UNSPECIFIED
+}
+
+func (x *ListAssetsRequest) GetStatus() AssetStatus {
+	if x != nil {
+		return x.Status
+	}
+	return AssetStatus_ASSET_STATUS_UNSPECIFIED
+}
+
+func (x *ListAssetsRequest) GetVisibility() AssetVisibility {
+	if x != nil {
+		return x.Visibility
+	}
+	return AssetVisibility_ASSET_VISIBILITY_UNSPECIFIED
+}
+
+func (x *ListAssetsRequest) GetOwnerUserId() string {
+	if x != nil {
+		return x.OwnerUserId
+	}
+	return ""
+}
+
+func (x *ListAssetsRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ListAssetsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListAssetsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
 type GetAssetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorUserId   string                 `protobuf:"bytes,1,opt,name=actor_user_id,json=actorUserId,proto3" json:"actor_user_id,omitempty"`
@@ -651,7 +751,7 @@ type GetAssetRequest struct {
 
 func (x *GetAssetRequest) Reset() {
 	*x = GetAssetRequest{}
-	mi := &file_file_proto_msgTypes[6]
+	mi := &file_file_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -663,7 +763,7 @@ func (x *GetAssetRequest) String() string {
 func (*GetAssetRequest) ProtoMessage() {}
 
 func (x *GetAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[6]
+	mi := &file_file_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -676,7 +776,7 @@ func (x *GetAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAssetRequest.ProtoReflect.Descriptor instead.
 func (*GetAssetRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{6}
+	return file_file_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetAssetRequest) GetActorUserId() string {
@@ -702,7 +802,7 @@ type AssetResponse struct {
 
 func (x *AssetResponse) Reset() {
 	*x = AssetResponse{}
-	mi := &file_file_proto_msgTypes[7]
+	mi := &file_file_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -714,7 +814,7 @@ func (x *AssetResponse) String() string {
 func (*AssetResponse) ProtoMessage() {}
 
 func (x *AssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[7]
+	mi := &file_file_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -727,7 +827,7 @@ func (x *AssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetResponse.ProtoReflect.Descriptor instead.
 func (*AssetResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{7}
+	return file_file_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AssetResponse) GetAsset() *Asset {
@@ -735,6 +835,74 @@ func (x *AssetResponse) GetAsset() *Asset {
 		return x.Asset
 	}
 	return nil
+}
+
+type ListAssetsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*Asset               `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAssetsResponse) Reset() {
+	*x = ListAssetsResponse{}
+	mi := &file_file_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAssetsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAssetsResponse) ProtoMessage() {}
+
+func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAssetsResponse.ProtoReflect.Descriptor instead.
+func (*ListAssetsResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListAssetsResponse) GetItems() []*Asset {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListAssetsResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListAssetsResponse) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListAssetsResponse) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
 }
 
 type DeleteAssetRequest struct {
@@ -747,7 +915,7 @@ type DeleteAssetRequest struct {
 
 func (x *DeleteAssetRequest) Reset() {
 	*x = DeleteAssetRequest{}
-	mi := &file_file_proto_msgTypes[8]
+	mi := &file_file_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -759,7 +927,7 @@ func (x *DeleteAssetRequest) String() string {
 func (*DeleteAssetRequest) ProtoMessage() {}
 
 func (x *DeleteAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[8]
+	mi := &file_file_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -772,7 +940,7 @@ func (x *DeleteAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAssetRequest.ProtoReflect.Descriptor instead.
 func (*DeleteAssetRequest) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{8}
+	return file_file_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeleteAssetRequest) GetActorUserId() string {
@@ -798,7 +966,7 @@ type DeleteAssetResponse struct {
 
 func (x *DeleteAssetResponse) Reset() {
 	*x = DeleteAssetResponse{}
-	mi := &file_file_proto_msgTypes[9]
+	mi := &file_file_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -810,7 +978,7 @@ func (x *DeleteAssetResponse) String() string {
 func (*DeleteAssetResponse) ProtoMessage() {}
 
 func (x *DeleteAssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[9]
+	mi := &file_file_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -823,7 +991,7 @@ func (x *DeleteAssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAssetResponse.ProtoReflect.Descriptor instead.
 func (*DeleteAssetResponse) Descriptor() ([]byte, []int) {
-	return file_file_proto_rawDescGZIP(), []int{9}
+	return file_file_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DeleteAssetResponse) GetOk() bool {
@@ -891,12 +1059,28 @@ const file_file_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"X\n" +
 	"\x15CompleteUploadRequest\x12\"\n" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x1b\n" +
-	"\tupload_id\x18\x02 \x01(\tR\buploadId\"P\n" +
+	"\tupload_id\x18\x02 \x01(\tR\buploadId\"\xaf\x02\n" +
+	"\x11ListAssetsRequest\x12\"\n" +
+	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12%\n" +
+	"\x05scope\x18\x02 \x01(\x0e2\x0f.file.FileScopeR\x05scope\x12)\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x11.file.AssetStatusR\x06status\x125\n" +
+	"\n" +
+	"visibility\x18\x04 \x01(\x0e2\x15.file.AssetVisibilityR\n" +
+	"visibility\x12\"\n" +
+	"\rowner_user_id\x18\x05 \x01(\tR\vownerUserId\x12\x18\n" +
+	"\akeyword\x18\x06 \x01(\tR\akeyword\x12\x12\n" +
+	"\x04page\x18\a \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\b \x01(\x05R\bpageSize\"P\n" +
 	"\x0fGetAssetRequest\x12\"\n" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x19\n" +
 	"\basset_id\x18\x02 \x01(\tR\aassetId\"2\n" +
 	"\rAssetResponse\x12!\n" +
-	"\x05asset\x18\x01 \x01(\v2\v.file.AssetR\x05asset\"S\n" +
+	"\x05asset\x18\x01 \x01(\v2\v.file.AssetR\x05asset\"~\n" +
+	"\x12ListAssetsResponse\x12!\n" +
+	"\x05items\x18\x01 \x03(\v2\v.file.AssetR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"S\n" +
 	"\x12DeleteAssetRequest\x12\"\n" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x19\n" +
 	"\basset_id\x18\x02 \x01(\tR\aassetId\"%\n" +
@@ -916,11 +1100,13 @@ const file_file_proto_rawDesc = "" +
 	"\x18ASSET_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ASSET_STATUS_PENDING\x10\x01\x12\x19\n" +
 	"\x15ASSET_STATUS_UPLOADED\x10\x02\x12\x18\n" +
-	"\x14ASSET_STATUS_DELETED\x10\x032\xc3\x02\n" +
+	"\x14ASSET_STATUS_DELETED\x10\x032\x84\x03\n" +
 	"\vFileService\x12-\n" +
 	"\x04Ping\x12\x11.file.PingRequest\x1a\x12.file.PingResponse\x12E\n" +
 	"\fCreateUpload\x12\x19.file.CreateUploadRequest\x1a\x1a.file.CreateUploadResponse\x12B\n" +
-	"\x0eCompleteUpload\x12\x1b.file.CompleteUploadRequest\x1a\x13.file.AssetResponse\x126\n" +
+	"\x0eCompleteUpload\x12\x1b.file.CompleteUploadRequest\x1a\x13.file.AssetResponse\x12?\n" +
+	"\n" +
+	"ListAssets\x12\x17.file.ListAssetsRequest\x1a\x18.file.ListAssetsResponse\x126\n" +
 	"\bGetAsset\x12\x15.file.GetAssetRequest\x1a\x13.file.AssetResponse\x12B\n" +
 	"\vDeleteAsset\x12\x18.file.DeleteAssetRequest\x1a\x19.file.DeleteAssetResponseB\x12Z\x10services/file/pbb\x06proto3"
 
@@ -937,7 +1123,7 @@ func file_file_proto_rawDescGZIP() []byte {
 }
 
 var file_file_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_file_proto_goTypes = []any{
 	(FileScope)(0),                // 0: file.FileScope
 	(AssetVisibility)(0),          // 1: file.AssetVisibility
@@ -948,11 +1134,13 @@ var file_file_proto_goTypes = []any{
 	(*CreateUploadRequest)(nil),   // 6: file.CreateUploadRequest
 	(*CreateUploadResponse)(nil),  // 7: file.CreateUploadResponse
 	(*CompleteUploadRequest)(nil), // 8: file.CompleteUploadRequest
-	(*GetAssetRequest)(nil),       // 9: file.GetAssetRequest
-	(*AssetResponse)(nil),         // 10: file.AssetResponse
-	(*DeleteAssetRequest)(nil),    // 11: file.DeleteAssetRequest
-	(*DeleteAssetResponse)(nil),   // 12: file.DeleteAssetResponse
-	nil,                           // 13: file.CreateUploadResponse.HeadersEntry
+	(*ListAssetsRequest)(nil),     // 9: file.ListAssetsRequest
+	(*GetAssetRequest)(nil),       // 10: file.GetAssetRequest
+	(*AssetResponse)(nil),         // 11: file.AssetResponse
+	(*ListAssetsResponse)(nil),    // 12: file.ListAssetsResponse
+	(*DeleteAssetRequest)(nil),    // 13: file.DeleteAssetRequest
+	(*DeleteAssetResponse)(nil),   // 14: file.DeleteAssetResponse
+	nil,                           // 15: file.CreateUploadResponse.HeadersEntry
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: file.Asset.scope:type_name -> file.FileScope
@@ -961,23 +1149,29 @@ var file_file_proto_depIdxs = []int32{
 	0,  // 3: file.CreateUploadRequest.scope:type_name -> file.FileScope
 	1,  // 4: file.CreateUploadRequest.visibility:type_name -> file.AssetVisibility
 	5,  // 5: file.CreateUploadResponse.asset:type_name -> file.Asset
-	13, // 6: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
-	5,  // 7: file.AssetResponse.asset:type_name -> file.Asset
-	3,  // 8: file.FileService.Ping:input_type -> file.PingRequest
-	6,  // 9: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
-	8,  // 10: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
-	9,  // 11: file.FileService.GetAsset:input_type -> file.GetAssetRequest
-	11, // 12: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
-	4,  // 13: file.FileService.Ping:output_type -> file.PingResponse
-	7,  // 14: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
-	10, // 15: file.FileService.CompleteUpload:output_type -> file.AssetResponse
-	10, // 16: file.FileService.GetAsset:output_type -> file.AssetResponse
-	12, // 17: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	15, // 6: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
+	0,  // 7: file.ListAssetsRequest.scope:type_name -> file.FileScope
+	2,  // 8: file.ListAssetsRequest.status:type_name -> file.AssetStatus
+	1,  // 9: file.ListAssetsRequest.visibility:type_name -> file.AssetVisibility
+	5,  // 10: file.AssetResponse.asset:type_name -> file.Asset
+	5,  // 11: file.ListAssetsResponse.items:type_name -> file.Asset
+	3,  // 12: file.FileService.Ping:input_type -> file.PingRequest
+	6,  // 13: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
+	8,  // 14: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
+	9,  // 15: file.FileService.ListAssets:input_type -> file.ListAssetsRequest
+	10, // 16: file.FileService.GetAsset:input_type -> file.GetAssetRequest
+	13, // 17: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
+	4,  // 18: file.FileService.Ping:output_type -> file.PingResponse
+	7,  // 19: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
+	11, // 20: file.FileService.CompleteUpload:output_type -> file.AssetResponse
+	12, // 21: file.FileService.ListAssets:output_type -> file.ListAssetsResponse
+	11, // 22: file.FileService.GetAsset:output_type -> file.AssetResponse
+	14, // 23: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
+	18, // [18:24] is the sub-list for method output_type
+	12, // [12:18] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -991,7 +1185,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
