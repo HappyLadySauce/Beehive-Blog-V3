@@ -3,12 +3,21 @@ package service
 import (
 	"mime"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/config"
 )
+
+var hardcodedContentTypes = []string{
+	"image/png", "image/jpeg", "image/webp", "image/avif", "application/pdf",
+}
+
+const hardcodedMaxBytes int64 = 20 * 1024 * 1024
+
+var validNamespaceRE = regexp.MustCompile(`^[a-z0-9_:.-]+$`)
 
 func parseActorUserID(actorUserID string) (int64, error) {
 	value, err := strconv.ParseInt(strings.TrimSpace(actorUserID), 10, 64)
@@ -18,13 +27,13 @@ func parseActorUserID(actorUserID string) (int64, error) {
 	return value, nil
 }
 
-func normalizeNamespace(conf config.StorageConf, namespace string) (string, error) {
+func normalizeNamespace(namespace string) (string, error) {
 	namespace = strings.ToLower(strings.TrimSpace(namespace))
 	if namespace == "" || len(namespace) > 64 {
 		return "", errs.New(errs.CodeFileInvalidScope, "namespace is invalid")
 	}
-	if _, ok := conf.NamespaceRule(namespace); !ok {
-		return "", errs.New(errs.CodeFileInvalidScope, "namespace is not configured")
+	if !validNamespaceRE.MatchString(namespace) {
+		return "", errs.New(errs.CodeFileInvalidScope, "namespace contains invalid characters")
 	}
 	return namespace, nil
 }
@@ -40,11 +49,11 @@ func normalizeVisibility(visibility string) (string, error) {
 	}
 }
 
-func normalizeOptionalNamespace(conf config.StorageConf, namespace string) (string, error) {
+func normalizeOptionalNamespace(namespace string) (string, error) {
 	if strings.TrimSpace(namespace) == "" {
 		return "", nil
 	}
-	return normalizeNamespace(conf, namespace)
+	return normalizeNamespace(namespace)
 }
 
 func normalizeOptionalStatus(status string) (string, error) {
@@ -73,37 +82,7 @@ func normalizeContentType(contentType string) string {
 	return strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
 }
 
-func maxBytesForNamespace(conf config.StorageConf, namespace string) int64 {
-	if rule, ok := conf.NamespaceRule(namespace); ok && rule.MaxBytes > 0 {
-		return rule.MaxBytes
-	}
-	if conf.MaxBytesByScope != nil && conf.MaxBytesByScope[namespace] > 0 {
-		return conf.MaxBytesByScope[namespace]
-	}
-	return 0
-}
-
-func allowedContentTypesForNamespace(conf config.StorageConf, namespace string) map[string]struct{} {
-	var values []string
-	if rule, ok := conf.NamespaceRule(namespace); ok && len(rule.AllowedContentTypes) > 0 {
-		values = rule.AllowedContentTypes
-	} else if conf.AllowedContentTypesByScope != nil && len(conf.AllowedContentTypesByScope[namespace]) > 0 {
-		values = conf.AllowedContentTypesByScope[namespace]
-	}
-	if len(values) == 0 {
-		return nil
-	}
-	allowlist := make(map[string]struct{}, len(values))
-	for _, value := range values {
-		normalized := normalizeContentType(value)
-		if normalized != "" {
-			allowlist[normalized] = struct{}{}
-		}
-	}
-	return allowlist
-}
-
-func validateUploadFile(conf config.StorageConf, namespace string, fileName string, contentType string, byteSize int64) (string, int64, error) {
+func validateUploadFile(conf config.StorageConf, fileName string, contentType string, byteSize int64) (string, int64, error) {
 	fileName = strings.TrimSpace(fileName)
 	if fileName == "" || len(fileName) > 255 {
 		return "", 0, invalidArgument("file_name is invalid")
@@ -112,14 +91,24 @@ func validateUploadFile(conf config.StorageConf, namespace string, fileName stri
 	if normalizedContentType == "" || len(normalizedContentType) > 128 {
 		return "", 0, invalidArgument("content_type is invalid")
 	}
-	if allowed := allowedContentTypesForNamespace(conf, namespace); allowed != nil {
-		if _, ok := allowed[normalizedContentType]; !ok {
-			return "", 0, errs.New(errs.CodeFileInvalidContentType, "content_type is not allowed")
+
+	types := conf.AllowedContentTypes
+	if len(types) == 0 {
+		types = hardcodedContentTypes
+	}
+	allowed := make(map[string]struct{}, len(types))
+	for _, ct := range types {
+		if n := normalizeContentType(ct); n != "" {
+			allowed[n] = struct{}{}
 		}
 	}
-	maxBytes := maxBytesForNamespace(conf, namespace)
+	if _, ok := allowed[normalizedContentType]; !ok {
+		return "", 0, errs.New(errs.CodeFileInvalidContentType, "content_type is not allowed")
+	}
+
+	maxBytes := conf.MaxUploadBytes
 	if maxBytes <= 0 {
-		maxBytes = 5 * 1024 * 1024
+		maxBytes = hardcodedMaxBytes
 	}
 	if byteSize <= 0 || byteSize > maxBytes {
 		return "", 0, errs.New(errs.CodeFileTooLarge, "file byte_size is invalid")

@@ -21,7 +21,7 @@ func (m *Manager) ListAssets(ctx context.Context, in ListAssetsInput) (*AssetLis
 		return nil, errs.New(errs.CodeFileAccessForbidden, "owner_user_id is forbidden")
 	}
 
-	namespace, err := normalizeOptionalNamespace(m.conf.Storage, in.Namespace)
+	namespace, err := normalizeOptionalNamespace(in.Namespace)
 	if err != nil {
 		return nil, err
 	}

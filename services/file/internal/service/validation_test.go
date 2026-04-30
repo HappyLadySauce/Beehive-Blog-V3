@@ -9,23 +9,10 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/config"
 )
 
-func mkNamespacesConf() config.StorageConf {
-	return config.StorageConf{
-		Namespaces: map[string]config.NamespaceRule{
-			"content_cover": {MaxBytes: 5 * 1024 * 1024, AllowedContentTypes: []string{"image/png", "image/jpeg", "image/webp", "image/avif"}, StoragePrefix: "content/covers"},
-			"content_image": {MaxBytes: 5 * 1024 * 1024, AllowedContentTypes: []string{"image/png", "image/jpeg", "image/webp", "image/avif"}, StoragePrefix: "content/images"},
-			"avatar":        {MaxBytes: 128, AllowedContentTypes: []string{"image/png"}, StoragePrefix: "avatars"},
-			"*":             {MaxBytes: 5 * 1024 * 1024, AllowedContentTypes: []string{"image/png", "image/jpeg"}, StoragePrefix: "misc"},
-		},
-	}
-}
-
 func TestNormalizeNamespace(t *testing.T) {
 	t.Parallel()
 
-	conf := mkNamespacesConf()
-
-	ns, err := normalizeNamespace(conf, "content_cover")
+	ns, err := normalizeNamespace("content_cover")
 	if err != nil {
 		t.Fatalf("expected content_cover to pass, got %v", err)
 	}
@@ -33,32 +20,40 @@ func TestNormalizeNamespace(t *testing.T) {
 		t.Fatalf("expected content_cover, got %s", ns)
 	}
 
-	// Unknown namespace without wildcard fallback
-	confNoWildcard := config.StorageConf{
-		Namespaces: map[string]config.NamespaceRule{
-			"avatar": {},
-		},
-	}
-	if _, err := normalizeNamespace(confNoWildcard, "profile_banner"); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
-		t.Fatalf("expected invalid namespace error, got %v", err)
+	// Empty namespace
+	if _, err := normalizeNamespace(""); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
+		t.Fatalf("expected empty namespace error, got %v", err)
 	}
 
-	// Unknown namespace with wildcard fallback should pass
-	ns2, err := normalizeNamespace(conf, "banner")
-	if err != nil {
-		t.Fatalf("expected banner to pass via wildcard, got %v", err)
+	// Too long namespace
+	if _, err := normalizeNamespace(strings.Repeat("a", 65)); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
+		t.Fatalf("expected too-long namespace error, got %v", err)
 	}
-	if ns2 != "banner" {
-		t.Fatalf("expected banner, got %s", ns2)
+
+	// Invalid characters
+	if _, err := normalizeNamespace("bad namespace!"); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
+		t.Fatalf("expected invalid char error, got %v", err)
+	}
+
+	// Valid: any alphanumeric + separator string passes
+	ns2, err := normalizeNamespace("banner_homepage:en")
+	if err != nil {
+		t.Fatalf("expected banner_homepage:en to pass, got %v", err)
+	}
+	if ns2 != "banner_homepage:en" {
+		t.Fatalf("expected banner_homepage:en, got %s", ns2)
 	}
 }
 
-func TestValidateUploadFileNamespace(t *testing.T) {
+func TestValidateUploadFile(t *testing.T) {
 	t.Parallel()
 
-	conf := mkNamespacesConf()
+	conf := config.StorageConf{
+		AllowedContentTypes: []string{"image/png", "image/jpeg"},
+		MaxUploadBytes:      128,
+	}
 
-	contentType, maxBytes, err := validateUploadFile(conf, "avatar", "avatar.png", "image/png", 100)
+	contentType, maxBytes, err := validateUploadFile(conf, "avatar.png", "image/png", 100)
 	if err != nil {
 		t.Fatalf("expected upload file validation to pass, got %v", err)
 	}
@@ -66,30 +61,45 @@ func TestValidateUploadFileNamespace(t *testing.T) {
 		t.Fatalf("unexpected normalized values: contentType=%s maxBytes=%d", contentType, maxBytes)
 	}
 
-	if _, _, err := validateUploadFile(conf, "avatar", "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidContentType)) {
+	if _, _, err := validateUploadFile(conf, "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidContentType)) {
 		t.Fatalf("expected invalid content type error, got %v", err)
 	}
-	if _, _, err := validateUploadFile(conf, "avatar", "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
+	if _, _, err := validateUploadFile(conf, "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
 		t.Fatalf("expected file too large error, got %v", err)
+	}
+
+	// Empty config uses hardcoded fallback
+	emptyConf := config.StorageConf{}
+	_, fallbackMaxBytes, err := validateUploadFile(emptyConf, "file.pdf", "application/pdf", 100)
+	if err != nil {
+		t.Fatalf("expected PDF to pass with hardcoded fallback, got %v", err)
+	}
+	if fallbackMaxBytes != hardcodedMaxBytes {
+		t.Fatalf("expected hardcoded max bytes %d, got %d", hardcodedMaxBytes, fallbackMaxBytes)
 	}
 }
 
-func TestObjectKeyUsesNamespacePrefix(t *testing.T) {
+func TestObjectKeyUsesNamespaceAsPrefix(t *testing.T) {
 	t.Parallel()
 
-	conf := mkNamespacesConf()
-	key := objectKey(conf, "content_image", 42, "cover.jpeg", "image/jpeg")
-	if !strings.HasPrefix(key, "content/images/42/") {
-		t.Fatalf("expected content image prefix, got %s", key)
+	key := objectKey("content_image", 42, "cover.jpeg", "image/jpeg")
+	if !strings.HasPrefix(key, "content_image/42/") {
+		t.Fatalf("expected content_image prefix, got %s", key)
 	}
 	if !strings.HasSuffix(key, ".jpg") {
 		t.Fatalf("expected jpeg extension normalization, got %s", key)
 	}
 
-	// Wildcard namespace uses "misc" prefix
-	key2 := objectKey(conf, "banner", 42, "hero.png", "image/png")
-	if !strings.HasPrefix(key2, "misc/42/") {
-		t.Fatalf("expected misc prefix for wildcard namespace, got %s", key2)
+	// Any namespace string becomes the path prefix
+	key2 := objectKey("banner", 42, "hero.png", "image/png")
+	if !strings.HasPrefix(key2, "banner/42/") {
+		t.Fatalf("expected banner prefix, got %s", key2)
+	}
+
+	// Empty namespace defaults to "files"
+	key3 := objectKey("", 42, "file.txt", "application/pdf")
+	if !strings.HasPrefix(key3, "files/42/") {
+		t.Fatalf("expected files prefix for empty namespace, got %s", key3)
 	}
 }
 

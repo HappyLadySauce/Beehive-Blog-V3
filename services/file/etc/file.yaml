@@ -28,6 +28,13 @@ Storage:
   Driver: local
   PublicBaseURL: ""
   PresignTTLSeconds: 300
+  MaxUploadBytes: 2147483648
+  AllowedContentTypes:
+    - image/png
+    - image/jpeg
+    - image/webp
+    - image/avif
+    - application/pdf
   Local:
     RootDir: "var/file/assets"
     TempDir: "var/file/pending"
@@ -38,45 +45,3 @@ Storage:
     Bucket: "beehive"
     AccessKeyID: ""
     SecretAccessKey: ""
-  Namespaces:
-    avatar:
-      MaxBytes: 2097152
-      AllowedContentTypes:
-        - image/png
-        - image/jpeg
-        - image/webp
-        - image/avif
-      StoragePrefix: "avatars"
-    content_cover:
-      MaxBytes: 5242880
-      AllowedContentTypes:
-        - image/png
-        - image/jpeg
-        - image/webp
-        - image/avif
-      StoragePrefix: "content/covers"
-    content_image:
-      MaxBytes: 5242880
-      AllowedContentTypes:
-        - image/png
-        - image/jpeg
-        - image/webp
-        - image/avif
-      StoragePrefix: "content/images"
-    attachment:
-      MaxBytes: 20971520
-      AllowedContentTypes:
-        - image/png
-        - image/jpeg
-        - image/webp
-        - image/avif
-        - application/pdf
-      StoragePrefix: "attachments"
-    "*":
-      MaxBytes: 5242880
-      AllowedContentTypes:
-        - image/png
-        - image/jpeg
-        - image/webp
-        - image/avif
-      StoragePrefix: "misc"

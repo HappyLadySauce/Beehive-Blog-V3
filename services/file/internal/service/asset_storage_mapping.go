@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func objectKey(conf config.StorageConf, namespace string, ownerUserID int64, fileName string, contentType string) string {
-	prefix := "misc"
-	if rule, ok := conf.NamespaceRule(namespace); ok && rule.StoragePrefix != "" {
-		prefix = strings.Trim(rule.StoragePrefix, "/")
+func objectKey(namespace string, ownerUserID int64, fileName string, contentType string) string {
+	prefix := strings.ToLower(strings.TrimSpace(namespace))
+	if prefix == "" {
+		prefix = "files"
 	}
 	return prefix + "/" + strconv.FormatInt(ownerUserID, 10) + "/" + uuid.NewString() + extensionFor(fileName, contentType)
 }
