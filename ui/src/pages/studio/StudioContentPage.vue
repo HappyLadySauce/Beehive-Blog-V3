@@ -621,7 +621,11 @@ function readTabQuery(value: unknown): StudioTab {
 </template>
 
 <style scoped>
-.content-page,
+.content-page {
+  display: grid;
+  gap: 16px;
+}
+
 .content-page__drawer,
 .content-page__subsection {
   display: grid;
@@ -695,7 +699,7 @@ function readTabQuery(value: unknown): StudioTab {
 .content-page__table th,
 .content-page__table td {
   border-bottom: 1px solid var(--bb-color-line);
-  padding: 12px;
+  padding: 10px 12px;
   text-align: left;
   vertical-align: middle;
 }
@@ -721,12 +725,12 @@ function readTabQuery(value: unknown): StudioTab {
 }
 
 .content-page__empty-state {
-  min-height: 232px;
+  min-height: 200px;
   justify-items: center;
   text-align: center;
   border: 0;
   border-radius: 0;
-  padding: 32px 24px;
+  padding: 24px 20px;
   background: transparent;
   box-shadow: none;
 }

@@ -565,7 +565,7 @@ function readBooleanQuery(value: unknown): boolean {
 <style scoped>
 .users-page {
   display: grid;
-  gap: 22px;
+  gap: 16px;
 }
 
 .users-page__filters {

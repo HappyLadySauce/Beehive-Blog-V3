@@ -159,7 +159,7 @@ summary {
 .studio-list-table th,
 .studio-list-table td {
   border-bottom: 1px solid var(--bb-color-line);
-  padding: 12px;
+  padding: 10px 12px;
   text-align: left;
   vertical-align: middle;
 }
@@ -188,12 +188,12 @@ summary {
 }
 
 .studio-list-empty-state {
-  min-height: 232px;
+  min-height: 200px;
   justify-items: center;
   text-align: center;
   border: 0;
   border-radius: 0;
-  padding: 32px 24px;
+  padding: 24px 20px;
   background: transparent;
   box-shadow: none;
 }

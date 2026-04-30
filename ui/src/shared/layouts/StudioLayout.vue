@@ -214,7 +214,7 @@ async function handleLogout() {
 .studio-shell__main {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 20px;
 }
 
 @media (max-width: 820px) {

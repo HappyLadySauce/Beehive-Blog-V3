@@ -104,7 +104,7 @@ const { t } = useI18n()
 th,
 td {
   border-bottom: 1px solid var(--bb-color-line);
-  padding: 12px;
+  padding: 10px 12px;
   text-align: left;
 }
 
@@ -134,12 +134,12 @@ td {
 }
 
 .data-table__empty-state {
-  min-height: 216px;
+  min-height: 180px;
   justify-items: center;
   text-align: center;
   border: 0;
   border-radius: 0;
-  padding: 28px 20px;
+  padding: 24px 16px;
   background: transparent;
   box-shadow: none;
 }

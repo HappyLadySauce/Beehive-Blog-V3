@@ -20,7 +20,7 @@ const { t } = useI18n()
 <style scoped>
 .studio-page {
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
 </style>

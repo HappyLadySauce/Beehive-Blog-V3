@@ -185,7 +185,7 @@ function readQueryString(value: unknown): string {
 <style scoped>
 .audits-page {
   display: grid;
-  gap: 24px;
+  gap: 16px;
 }
 
 .audits-page__filters {

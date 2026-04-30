@@ -30,7 +30,7 @@ const { t } = useI18n()
 <style scoped>
 .settings-page {
   display: grid;
-  gap: 24px;
+  gap: 16px;
 }
 
 .settings-page__form {
