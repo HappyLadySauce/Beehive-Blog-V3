@@ -104,7 +104,7 @@ async function startProvider(provider: AuthProvider): Promise<void> {
 
 async function handleLoginMessage(message: SsoLoginMessage): Promise<void> {
   const payload = message.payload
-  authStore.applySession(payload.access_token, payload.refresh_token, payload.session_id, payload.user)
+  authStore.applySession(payload.access_token, payload.refresh_token, payload.session_id, payload.user, payload.expires_in)
   activeProvider.value = null
   activeAuthUrl.value = ''
   pushToast({ tone: 'success', title: String(t('sso.signedInTitle')), message: String(t('sso.welcomeBack', { email: payload.user.email })) })

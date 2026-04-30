@@ -22,6 +22,14 @@ export interface AuthSessionView {
   expires_at?: number
 }
 
+export interface AuthSessionSnapshot {
+  accessToken: string
+  refreshToken: string
+  accessTokenExpiresAt: number
+  sessionId: string
+  currentUser: AuthUserProfile | null
+}
+
 export interface AuthRegisterRequest {
   username: string
   email: string

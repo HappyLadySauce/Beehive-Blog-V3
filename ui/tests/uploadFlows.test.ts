@@ -34,7 +34,7 @@ function installSession() {
     avatar_url: '',
     role: 'admin',
     status: 'active',
-  })
+  }, 900)
   return authStore
 }
 

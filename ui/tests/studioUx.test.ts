@@ -43,7 +43,7 @@ async function mountWithApp(component: object, initialPath = '/') {
     avatar_url: '',
     role: 'admin',
     status: 'active',
-  })
+  }, 900)
   const wrapper = mount(component, {
     attachTo: document.body,
     global: {

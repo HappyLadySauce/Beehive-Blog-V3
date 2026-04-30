@@ -4,7 +4,9 @@ import { defineStore } from 'pinia'
 import { tokenStorage } from '@/shared/storage/tokenStorage'
 
 import { authApi } from '../api/authApi'
-import type { AuthLoginRequest, AuthRegisterRequest, AuthUserProfile } from '../types'
+import type { AuthLoginRequest, AuthRegisterRequest, AuthSessionSnapshot, AuthUserProfile } from '../types'
+
+const accessTokenRefreshThresholdMs = 60_000
 
 function normalizeError(error: unknown): string {
   if (error instanceof Error) {
@@ -19,6 +21,7 @@ export function normalizeAuthRole(role: string | undefined): string {
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = shallowRef('')
+  const accessTokenExpiresAt = shallowRef(0)
   const sessionId = shallowRef('')
   const currentUser = shallowRef<AuthUserProfile | null>(null)
   const storedRefreshTokenValue = shallowRef(tokenStorage.getRefreshToken())
@@ -37,20 +40,29 @@ export const useAuthStore = defineStore('auth', () => {
     nextRefreshToken: string,
     nextSessionId: string,
     nextUser: AuthUserProfile | null,
+    expiresInSeconds = 0,
   ): void {
     accessToken.value = nextAccessToken
+    accessTokenExpiresAt.value = expiresInSeconds > 0 ? Date.now() + expiresInSeconds * 1000 : 0
     sessionId.value = nextSessionId
     currentUser.value = nextUser
     storedRefreshTokenValue.value = nextRefreshToken
-    tokenStorage.setRefreshToken(nextRefreshToken)
+    tokenStorage.setSnapshot({
+      accessToken: nextAccessToken,
+      refreshToken: nextRefreshToken,
+      accessTokenExpiresAt: accessTokenExpiresAt.value,
+      sessionId: nextSessionId,
+      currentUser: nextUser,
+    })
   }
 
   function clearSession(): void {
     accessToken.value = ''
+    accessTokenExpiresAt.value = 0
     sessionId.value = ''
     currentUser.value = null
     storedRefreshTokenValue.value = null
-    tokenStorage.clearRefreshToken()
+    tokenStorage.clearSnapshot()
   }
 
   function setCurrentUser(user: AuthUserProfile): void {
@@ -76,14 +88,40 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(payload: AuthRegisterRequest): Promise<void> {
     await runLoadingAction(async () => {
       const response = await authApi.register(payload)
-      applySession(response.access_token, response.refresh_token, response.session_id, response.user)
+      applySession(response.access_token, response.refresh_token, response.session_id, response.user, response.expires_in)
     })
   }
 
   async function login(payload: AuthLoginRequest): Promise<void> {
     await runLoadingAction(async () => {
       const response = await authApi.login(payload)
-      applySession(response.access_token, response.refresh_token, response.session_id, response.user)
+      applySession(response.access_token, response.refresh_token, response.session_id, response.user, response.expires_in)
+    })
+  }
+
+  function hydrateSession(snapshot: AuthSessionSnapshot): void {
+    accessToken.value = snapshot.accessToken
+    accessTokenExpiresAt.value = snapshot.accessTokenExpiresAt
+    sessionId.value = snapshot.sessionId
+    currentUser.value = snapshot.currentUser
+    storedRefreshTokenValue.value = snapshot.refreshToken
+  }
+
+  function canReuseAccessToken(snapshot: AuthSessionSnapshot): boolean {
+    return snapshot.accessToken.length > 0 && snapshot.accessTokenExpiresAt - Date.now() > accessTokenRefreshThresholdMs
+  }
+
+  function persistCurrentSnapshot(): void {
+    if (!accessToken.value || !storedRefreshTokenValue.value || !sessionId.value || accessTokenExpiresAt.value <= 0) {
+      return
+    }
+
+    tokenStorage.setSnapshot({
+      accessToken: accessToken.value,
+      refreshToken: storedRefreshTokenValue.value,
+      accessTokenExpiresAt: accessTokenExpiresAt.value,
+      sessionId: sessionId.value,
+      currentUser: currentUser.value,
     })
   }
 
@@ -95,9 +133,47 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authApi.me({ accessToken: accessToken.value })
       currentUser.value = response.user
+      persistCurrentSnapshot()
       return true
     }
     catch {
+      return false
+    }
+  }
+
+  async function runRefreshWithToken(
+    refreshTokenValue: string,
+    allowRecoveryRetry: boolean,
+  ): Promise<boolean> {
+    try {
+      const response = await authApi.refresh({
+        refresh_token: refreshTokenValue,
+        user_agent: typeof navigator === 'undefined' ? undefined : navigator.userAgent,
+      })
+      applySession(
+        response.access_token,
+        response.refresh_token,
+        response.session_id,
+        response.user ?? currentUser.value,
+        response.expires_in,
+      )
+
+      if (!response.user) {
+        const profile = await authApi.me({ accessToken: response.access_token })
+        currentUser.value = profile.user
+      }
+
+      return currentUser.value !== null
+    }
+    catch {
+      const latestRefreshToken = tokenStorage.getRefreshToken()
+      storedRefreshTokenValue.value = latestRefreshToken
+
+      if (allowRecoveryRetry && latestRefreshToken && latestRefreshToken !== refreshTokenValue) {
+        return runRefreshWithToken(latestRefreshToken, false)
+      }
+
+      clearSession()
       return false
     }
   }
@@ -109,29 +185,7 @@ export const useAuthStore = defineStore('auth', () => {
       return false
     }
 
-    try {
-      const response = await authApi.refresh({
-        refresh_token: storedRefreshToken,
-        user_agent: typeof navigator === 'undefined' ? undefined : navigator.userAgent,
-      })
-      applySession(
-        response.access_token,
-        response.refresh_token,
-        response.session_id,
-        response.user ?? currentUser.value,
-      )
-
-      if (!response.user) {
-        const profile = await authApi.me({ accessToken: response.access_token })
-        currentUser.value = profile.user
-      }
-
-      return currentUser.value !== null
-    }
-    catch {
-      clearSession()
-      return false
-    }
+    return runRefreshWithToken(storedRefreshToken, true)
   }
 
   function refreshSession(): Promise<boolean> {
@@ -152,6 +206,14 @@ export const useAuthStore = defineStore('auth', () => {
 
     isRestoring.value = true
     try {
+      const snapshot = tokenStorage.getSnapshot()
+      if (snapshot && canReuseAccessToken(snapshot)) {
+        hydrateSession(snapshot)
+        if (currentUser.value !== null || (await loadCurrentUser())) {
+          return true
+        }
+      }
+
       if (accessToken.value && (await loadCurrentUser())) {
         return true
       }

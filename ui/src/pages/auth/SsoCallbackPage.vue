@@ -83,7 +83,7 @@ async function finishCallback(): Promise<void> {
     client_type: 'web',
     user_agent: navigator.userAgent,
   })
-  authStore.applySession(response.access_token, response.refresh_token, response.session_id, response.user)
+  authStore.applySession(response.access_token, response.refresh_token, response.session_id, response.user, response.expires_in)
   notifyLogin(response, stored.return_to)
   clearStoredSsoFlow()
   if (window.opener) {
