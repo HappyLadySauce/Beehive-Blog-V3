@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 Error And Logging"
+  short_description: "Apply the project's shared error and logging standards"
+  default_prompt: "Use $v3-error-and-logging to keep this change aligned with pkg/errs, pkg/logs, and safe error-response rules."

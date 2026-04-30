@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 Coding Standards"
+  short_description: "Apply repository-wide coding, layering, config, and comment standards"
+  default_prompt: "Use $v3-coding-standards to keep this change inside the repository's coding and layering conventions."

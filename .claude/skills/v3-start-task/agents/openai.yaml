@@ -1,0 +1,4 @@
+interface:
+  display_name: "v3 Start Task"
+  short_description: "Classify a v3 task at the start and route to the right follow-up skills"
+  default_prompt: "Use $v3-start-task to classify this task, identify whether contracts or codegen are involved, and route to the correct next skills."

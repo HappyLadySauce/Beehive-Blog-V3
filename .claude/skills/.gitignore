@@ -1,0 +1,6 @@
+plans/
+
+**/__pycache__/
+*.pyc
+.coverage
+coverage*.json
