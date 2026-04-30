@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -17,24 +16,21 @@ func TestExampleConfigLoadsAndValidates(t *testing.T) {
 	if err := c.Validate(); err != nil {
 		t.Fatalf("expected example config to validate, got %v", err)
 	}
-	if len(c.Storage.Local.AllowedOrigins) == 0 {
-		t.Fatal("expected local upload CORS allowed origins in example config")
+	if c.Storage.Local.Bucket != "beehive-local" {
+		t.Fatal("expected local bucket in example config")
 	}
 }
 
-func TestLocalStorageValidateRequiresUploadSecret(t *testing.T) {
+func TestLocalStorageValidateRequiresRootDir(t *testing.T) {
 	t.Parallel()
 
 	conf := LocalStorageConf{
-		ListenOn:      "127.0.0.1:8084",
-		RootDir:       t.TempDir(),
-		TempDir:       t.TempDir(),
-		Bucket:        "beehive",
-		UploadBaseURL: "http://127.0.0.1:8084/files/uploads",
-		UploadSecret:  " ",
+		RootDir: "",
+		TempDir: t.TempDir(),
+		Bucket:  "beehive",
 	}
 
-	if err := conf.Validate(); err == nil || fmt.Sprint(err) != "Storage.Local.UploadSecret is required" {
-		t.Fatalf("expected UploadSecret validation error, got %v", err)
+	if err := conf.Validate(); err == nil {
+		t.Fatal("expected RootDir validation error")
 	}
 }

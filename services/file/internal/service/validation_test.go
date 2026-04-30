@@ -86,9 +86,9 @@ func TestPublicURLForVisibility(t *testing.T) {
 
 	localURL := publicURLForVisibility(config.StorageConf{
 		Driver:        "local",
-		PublicBaseURL: "https://files.example.com/assets",
+		PublicBaseURL: "",
 	}, VisibilityPublic, "asset_1", "avatars/42/avatar.png")
-	if localURL != "https://files.example.com/assets/asset_1" {
-		t.Fatalf("unexpected local public URL: %s", localURL)
+	if localURL != "" {
+		t.Fatalf("expected local public URL to be empty when PublicBaseURL is empty, got %s", localURL)
 	}
 }

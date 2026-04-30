@@ -42,13 +42,9 @@ type StorageConf struct {
 }
 
 type LocalStorageConf struct {
-	ListenOn       string   `json:"ListenOn"`
-	RootDir        string   `json:"RootDir"`
-	TempDir        string   `json:"TempDir"`
-	Bucket         string   `json:"Bucket"`
-	UploadBaseURL  string   `json:"UploadBaseURL"`
-	UploadSecret   string   `json:"UploadSecret"`
-	AllowedOrigins []string `json:"AllowedOrigins"`
+	RootDir string `json:"RootDir"`
+	TempDir string `json:"TempDir"`
+	Bucket  string `json:"Bucket"`
 }
 
 type S3StorageConf struct {
@@ -89,9 +85,6 @@ func (c Config) Validate() error {
 func (c StorageConf) Validate() error {
 	switch strings.ToLower(strings.TrimSpace(c.Driver)) {
 	case "", "local":
-		if strings.TrimSpace(c.PublicBaseURL) == "" {
-			return fmt.Errorf("Storage.PublicBaseURL is required for local storage")
-		}
 		return c.Local.Validate()
 	case "s3":
 		if strings.TrimSpace(c.PublicBaseURL) == "" {
@@ -104,9 +97,6 @@ func (c StorageConf) Validate() error {
 }
 
 func (c LocalStorageConf) Validate() error {
-	if strings.TrimSpace(c.ListenOn) == "" {
-		return fmt.Errorf("Storage.Local.ListenOn is required")
-	}
 	if strings.TrimSpace(c.RootDir) == "" {
 		return fmt.Errorf("Storage.Local.RootDir is required")
 	}
@@ -115,12 +105,6 @@ func (c LocalStorageConf) Validate() error {
 	}
 	if strings.TrimSpace(c.Bucket) == "" {
 		return fmt.Errorf("Storage.Local.Bucket is required")
-	}
-	if strings.TrimSpace(c.UploadBaseURL) == "" {
-		return fmt.Errorf("Storage.Local.UploadBaseURL is required")
-	}
-	if strings.TrimSpace(c.UploadSecret) == "" {
-		return fmt.Errorf("Storage.Local.UploadSecret is required")
 	}
 	return nil
 }

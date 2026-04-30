@@ -1,12 +1,9 @@
 package storage
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"io"
-	"net/url"
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/config"
@@ -18,115 +15,84 @@ func TestLocalStorageLifecycle(t *testing.T) {
 	root := t.TempDir()
 	temp := t.TempDir()
 	store, err := NewLocalStorage(config.LocalStorageConf{
-		RootDir:       root,
-		TempDir:       temp,
-		Bucket:        "local-test",
-		UploadBaseURL: "http://127.0.0.1:8084/files/uploads",
-		UploadSecret:  "test-secret",
+		RootDir: root,
+		TempDir: temp,
+		Bucket:  "local-test",
 	})
 	if err != nil {
 		t.Fatalf("expected local storage to initialize, got %v", err)
 	}
 
-	presign, err := store.PresignPut(context.Background(), PresignPutInput{
+	objectKey := "avatars/42/avatar.png"
+
+	// PresignPut returns ErrStorageDisabled for local storage without HTTP server.
+	_, err = store.PresignPut(context.Background(), PresignPutInput{
 		UploadID:    "upload_1",
 		Bucket:      "local-test",
-		ObjectKey:   "avatars/42/avatar.png",
+		ObjectKey:   objectKey,
 		ContentType: "image/png",
 		ByteSize:    4,
 	})
-	if err != nil {
-		t.Fatalf("expected presign to pass, got %v", err)
-	}
-	parsedUploadURL, err := url.Parse(presign.UploadURL)
-	if err != nil {
-		t.Fatalf("expected upload URL to parse, got %v", err)
-	}
-	if !strings.HasSuffix(parsedUploadURL.Path, "/upload_1") {
-		t.Fatalf("unexpected upload URL path: %s", presign.UploadURL)
-	}
-	if parsedUploadURL.RawQuery != "" {
-		t.Fatalf("expected upload URL not to expose query credentials, got %q", parsedUploadURL.RawQuery)
-	}
-	token := presign.Headers[UploadTokenHeader]
-	if token == "" {
-		t.Fatal("expected presigned local upload token header")
-	}
-	if !store.VerifyUploadToken("upload_1", "avatars/42/avatar.png", token) {
-		t.Fatal("expected presigned local upload token to verify")
-	}
-	if store.VerifyUploadToken("upload_1", "avatars/42/other.png", token) {
-		t.Fatal("expected token to be bound to the object key")
+	if err != ErrStorageDisabled {
+		t.Fatalf("expected PresignPut to return ErrStorageDisabled, got %v", err)
 	}
 
-	info, err := store.PutPending(context.Background(), "avatars/42/avatar.png", bytes.NewBufferString("data"), 4)
+	// Write file to temp dir manually (simulating external upload).
+	pendingPath := filepath.Join(temp, objectKey)
+	if err := os.MkdirAll(filepath.Dir(pendingPath), 0o755); err != nil {
+		t.Fatalf("expected mkdir for pending to pass, got %v", err)
+	}
+	if err := os.WriteFile(pendingPath, []byte("data"), 0o644); err != nil {
+		t.Fatalf("expected pending file write to pass, got %v", err)
+	}
+
+	// Head finds file in pending dir.
+	info, err := store.Head(context.Background(), "local-test", objectKey)
 	if err != nil {
-		t.Fatalf("expected pending write to pass, got %v", err)
+		t.Fatalf("expected head of pending file to pass, got %v", err)
 	}
 	if info.ByteSize != 4 {
 		t.Fatalf("expected 4 bytes, got %d", info.ByteSize)
 	}
-	if err := store.Commit(context.Background(), "local-test", "avatars/42/avatar.png"); err != nil {
+
+	// Commit moves from temp to root.
+	if err := store.Commit(context.Background(), "local-test", objectKey); err != nil {
 		t.Fatalf("expected commit to pass, got %v", err)
 	}
 
-	reader, uploaded, err := store.OpenUploaded(context.Background(), "avatars/42/avatar.png")
-	if err != nil {
-		t.Fatalf("expected uploaded object to open, got %v", err)
-	}
-	body, err := io.ReadAll(reader)
-	if err != nil {
-		t.Fatalf("expected uploaded object to read, got %v", err)
-	}
-	if string(body) != "data" || uploaded.ByteSize != 4 {
-		t.Fatalf("unexpected uploaded object: body=%q info=%+v", string(body), uploaded)
-	}
-	if err := reader.Close(); err != nil {
-		t.Fatalf("expected uploaded reader to close, got %v", err)
+	// File should now be in root.
+	uploadedPath := filepath.Join(root, objectKey)
+	if _, err := os.Stat(uploadedPath); err != nil {
+		t.Fatalf("expected committed file in root, got %v", err)
 	}
 
-	if err := store.Delete(context.Background(), "local-test", "avatars/42/avatar.png"); err != nil {
+	// Commit is idempotent.
+	if err := store.Commit(context.Background(), "local-test", objectKey); err != nil {
+		t.Fatalf("expected second commit to pass, got %v", err)
+	}
+
+	// Delete removes from both dirs.
+	if err := store.Delete(context.Background(), "local-test", objectKey); err != nil {
 		t.Fatalf("expected delete to pass, got %v", err)
 	}
-	if _, _, err := store.OpenUploaded(context.Background(), "avatars/42/avatar.png"); err == nil {
+	if _, err := os.Stat(uploadedPath); !os.IsNotExist(err) {
 		t.Fatal("expected deleted object to be unavailable")
 	}
 }
 
-func TestLocalStorageRejectsTraversal(t *testing.T) {
+func TestLocalStorageHealth(t *testing.T) {
 	t.Parallel()
 
 	store, err := NewLocalStorage(config.LocalStorageConf{
-		RootDir:       t.TempDir(),
-		TempDir:       t.TempDir(),
-		Bucket:        "local-test",
-		UploadBaseURL: "http://127.0.0.1:8084/files/uploads",
-		UploadSecret:  "test-secret",
+		RootDir: t.TempDir(),
+		TempDir: t.TempDir(),
+		Bucket:  "local-test",
 	})
 	if err != nil {
 		t.Fatalf("expected local storage to initialize, got %v", err)
 	}
 
-	if _, err := store.PutPending(context.Background(), "../escape.png", bytes.NewBufferString("data"), 4); !errors.Is(err, ErrStorageInvalidInput) {
-		t.Fatalf("expected traversal to be rejected, got %v", err)
-	}
-}
-
-func TestLocalStorageRejectsOversizedWrite(t *testing.T) {
-	t.Parallel()
-
-	store, err := NewLocalStorage(config.LocalStorageConf{
-		RootDir:       t.TempDir(),
-		TempDir:       t.TempDir(),
-		Bucket:        "local-test",
-		UploadBaseURL: "http://127.0.0.1:8084/files/uploads",
-		UploadSecret:  "test-secret",
-	})
-	if err != nil {
-		t.Fatalf("expected local storage to initialize, got %v", err)
-	}
-
-	if _, err := store.PutPending(context.Background(), "attachments/42/file.txt", bytes.NewBufferString("toolarge"), 4); !errors.Is(err, ErrStorageObjectTooLarge) {
-		t.Fatalf("expected oversized write to be rejected, got %v", err)
+	if err := store.Health(context.Background()); err != nil {
+		t.Fatalf("expected health to pass, got %v", err)
 	}
 }

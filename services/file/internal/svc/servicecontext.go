@@ -17,13 +17,12 @@ import (
 )
 
 type ServiceContext struct {
-	Config       config.Config
-	DB           *gorm.DB
-	SQLDB        *sql.DB
-	Store        *repo.Store
-	Services     *fileservice.Manager
-	Storage      storage.ObjectStorage
-	LocalStorage storage.LocalObjectStorage
+	Config   config.Config
+	DB       *gorm.DB
+	SQLDB    *sql.DB
+	Store    *repo.Store
+	Services *fileservice.Manager
+	Storage  storage.ObjectStorage
 }
 
 func NewServiceContext(c config.Config) (*ServiceContext, error) {
@@ -35,7 +34,7 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize PostgreSQL failed: %w", err)
 	}
-	objectStorage, localStorage, err := newObjectStorage(c.Storage)
+	objectStorage, err := newObjectStorage(c.Storage)
 	if err != nil {
 		_ = sqlDB.Close()
 		return nil, fmt.Errorf("initialize file storage failed: %w", err)
@@ -66,13 +65,12 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	)
 
 	return &ServiceContext{
-		Config:       c,
-		DB:           db,
-		SQLDB:        sqlDB,
-		Store:        store,
-		Services:     services,
-		Storage:      objectStorage,
-		LocalStorage: localStorage,
+		Config:   c,
+		DB:       db,
+		SQLDB:    sqlDB,
+		Store:    store,
+		Services: services,
+		Storage:  objectStorage,
 	}, nil
 }
 
@@ -146,17 +144,12 @@ func withPostgresDefaults(c config.PostgresConf) config.PostgresConf {
 	return c
 }
 
-func newObjectStorage(c config.StorageConf) (storage.ObjectStorage, storage.LocalObjectStorage, error) {
+func newObjectStorage(c config.StorageConf) (storage.ObjectStorage, error) {
 	switch storageDriver(c) {
 	case "s3":
-		objectStorage, err := storage.NewS3Storage(context.Background(), c.S3)
-		return objectStorage, nil, err
+		return storage.NewS3Storage(context.Background(), c.S3)
 	default:
-		localStorage, err := storage.NewLocalStorage(c.Local)
-		if err != nil {
-			return nil, nil, err
-		}
-		return localStorage, localStorage, nil
+		return storage.NewLocalStorage(c.Local)
 	}
 }
 
