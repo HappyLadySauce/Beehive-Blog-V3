@@ -5,6 +5,7 @@ import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
+import { useQueryClient } from '@tanstack/vue-query'
 import StarterKit from '@tiptap/starter-kit'
 import { type Editor, useEditor } from '@tiptap/vue-3'
 import { marked } from 'marked'
@@ -13,6 +14,7 @@ import { computed, onBeforeUnmount, reactive, shallowRef, watch } from 'vue'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio/api/studioApi'
+import { useProgressiveQuery } from '@/shared/composables'
 import { i18n } from '@/shared/i18n'
 import type {
   ContentAIAccess,
@@ -76,11 +78,11 @@ export function createEmptyContentEditorForm(): ContentEditorForm {
 
 export function useContentEditor(contentId?: string) {
   const authStore = useAuthStore()
+  const queryClient = useQueryClient()
   const { uploadImage } = useAvatarUpload()
   const mode = shallowRef<ContentEditorMode>(contentId ? 'edit' : 'create')
   const sourceMode = shallowRef<ContentEditorSourceMode>('visual')
   const sourceContent = shallowRef('')
-  const isLoading = shallowRef(false)
   const isSaving = shallowRef(false)
   const isSidebarOpen = shallowRef(true)
   const isFocusMode = shallowRef(false)
@@ -90,10 +92,30 @@ export function useContentEditor(contentId?: string) {
   const cleanSnapshot = shallowRef('')
   const currentContentId = shallowRef(contentId ?? '')
   const tags = shallowRef<ContentTag[]>([])
+  const hasInitialized = shallowRef(false)
   const canEditStatus = computed(() => mode.value !== 'create')
   const form = reactive(createEmptyContentEditorForm())
   let isHydrating = false
   let isSyncingSourceContent = false
+
+  const tagsQuery = useProgressiveQuery({
+    queryKey: ['editor-tags'],
+    queryFn: () => studioApi.listTags({ page: 1, page_size: 100 }, { accessToken: authStore.accessToken }),
+  })
+
+  const contentQuery = useProgressiveQuery({
+    queryKey: computed(() => ['editor-content', currentContentId.value]),
+    queryFn: () => studioApi.getContent(currentContentId.value, { accessToken: authStore.accessToken }),
+    enabled: computed(() => Boolean(currentContentId.value)),
+  })
+
+  const isLoading = computed(() => {
+    if (mode.value === 'create') {
+      return tagsQuery.showBlockingLoading.value && !hasInitialized.value
+    }
+    return (tagsQuery.showBlockingLoading.value || contentQuery.showBlockingLoading.value) && !hasInitialized.value
+  })
+  const isRefreshing = computed(() => tagsQuery.showRefreshingHint.value || contentQuery.showRefreshingHint.value)
 
   const editor = useEditor({
     extensions: [
@@ -172,24 +194,54 @@ export function useContentEditor(contentId?: string) {
     refreshSaveState()
   })
 
-  async function initialize(): Promise<void> {
-    isLoading.value = true
-    errorMessage.value = ''
-    try {
-      const tagResponse = await studioApi.listTags({ page: 1, page_size: 100 }, { accessToken: authStore.accessToken })
-      tags.value = tagResponse.items
-      if (contentId) {
-        const response = await studioApi.getContent(contentId, { accessToken: authStore.accessToken })
-        hydrate(response.content)
-      } else {
-        hydrate(createBlankContent())
+  watch(
+    () => tagsQuery.data.value,
+    (value) => {
+      if (!value) {
+        return
       }
+      tags.value = value.items
+      if (mode.value === 'create' && !hasInitialized.value) {
+        hydrate(createBlankContent())
+        commitCleanSnapshot('idle')
+        hasInitialized.value = true
+      }
+    },
+    { immediate: true },
+  )
+
+  watch(
+    () => contentQuery.data.value,
+    (value) => {
+      if (!value) {
+        return
+      }
+      hydrate(value.content)
       commitCleanSnapshot('idle')
-    } catch (error) {
+      hasInitialized.value = true
+    },
+    { immediate: true },
+  )
+
+  watch(
+    () => [tagsQuery.error.value, contentQuery.error.value],
+    ([tagsError, contentError]) => {
+      const error = tagsError ?? contentError
+      if (!error) {
+        return
+      }
       errorMessage.value = error instanceof Error ? error.message : String(i18n.global.t('editor.toast.unableToLoad'))
       saveState.value = 'error'
-    } finally {
-      isLoading.value = false
+    },
+    { immediate: true },
+  )
+
+  async function initialize(): Promise<void> {
+    if (!tagsQuery.data.value) {
+      await tagsQuery.refetch()
+    }
+    if (currentContentId.value && !contentQuery.data.value) {
+      await contentQuery.refetch()
     }
   }
 
@@ -208,6 +260,8 @@ export function useContentEditor(contentId?: string) {
       mode.value = 'edit'
       hydrate(response.content)
       commitCleanSnapshot('saved')
+      queryClient.setQueryData(['editor-content', response.content.content_id], response)
+      await queryClient.invalidateQueries({ queryKey: ['studio-contents'] })
       return { content: response.content, wasCreated }
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : String(i18n.global.t('editor.toast.unableToSave'))
@@ -336,6 +390,7 @@ export function useContentEditor(contentId?: string) {
     sourceContent,
     currentContentId,
     isLoading,
+    isRefreshing,
     isSaving,
     isSidebarOpen,
     isFocusMode,

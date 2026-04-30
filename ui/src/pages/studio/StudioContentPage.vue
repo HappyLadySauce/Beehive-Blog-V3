@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Archive, Eye, PackageOpen, Pencil, Tag, Trash2 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -22,13 +22,14 @@ import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelec
 import EmptyState from '@/shared/components/EmptyState.vue'
 import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
+import InlineLoadingState from '@/shared/components/InlineLoadingState.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 import SideDrawer from '@/shared/components/SideDrawer.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
-import { useConfirm, useToast } from '@/shared/composables'
+import { useConfirm, useProgressiveQuery, useToast } from '@/shared/composables'
 import { useLocale } from '@/shared/i18n'
 
 type StudioTab = 'content' | 'tags'
@@ -45,20 +46,11 @@ const { confirm } = useConfirm()
 const { pushToast } = useToast()
 
 const activeTab = shallowRef<StudioTab>('content')
-const contents = shallowRef<ContentSummary[]>([])
-const tags = shallowRef<ContentTag[]>([])
-const relations = shallowRef<ContentRelation[]>([])
-const revisions = shallowRef<ContentRevisionSummary[]>([])
-const selectedContent = shallowRef<ContentDetail | null>(null)
+const selectedContentId = shallowRef('')
 const selectedTag = shallowRef<ContentTag | null>(null)
-const isLoading = shallowRef(true)
-const isTagsLoading = shallowRef(false)
-const isDetailLoading = shallowRef(false)
 const isMutating = shallowRef(false)
 const isTagDrawerOpen = shallowRef(false)
 const errorMessage = shallowRef('')
-const total = shallowRef(0)
-const tagTotal = shallowRef(0)
 let filterTimer: number | undefined
 let tagFilterTimer: number | undefined
 
@@ -68,7 +60,16 @@ const filters = reactive({
   status: '',
   visibility: '',
 })
+const appliedFilters = reactive({
+  keyword: '',
+  type: '',
+  status: '',
+  visibility: '',
+})
 const tagFilters = reactive({
+  keyword: '',
+})
+const appliedTagFilters = reactive({
   keyword: '',
 })
 
@@ -92,66 +93,88 @@ const tagForm = reactive({
   color: '',
 })
 
-async function loadContents(): Promise<void> {
-  isLoading.value = true
-  errorMessage.value = ''
-  try {
-    const response = await studioApi.listContents(
-      {
-        keyword: filters.keyword.trim(),
-        type: filters.type,
-        status: filters.status,
-        visibility: filters.visibility,
-        page: 1,
-        page_size: 50,
-      },
-      { accessToken: authStore.accessToken },
-    )
-    contents.value = response.items
-    total.value = response.total
-  }
-  catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('content.unavailableTitle')
-    pushToast({ tone: 'danger', title: t('content.unavailableTitle'), message: errorMessage.value })
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+const contentQuery = useProgressiveQuery({
+  queryKey: computed(() => ['studio-contents', { ...appliedFilters }]),
+  queryFn: () => studioApi.listContents(
+    {
+      keyword: appliedFilters.keyword.trim(),
+      type: appliedFilters.type,
+      status: appliedFilters.status,
+      visibility: appliedFilters.visibility,
+      page: 1,
+      page_size: 50,
+    },
+    { accessToken: authStore.accessToken },
+  ),
+})
 
-async function loadTags(): Promise<void> {
-  isTagsLoading.value = true
-  try {
-    const response = await studioApi.listTags(
-      { keyword: tagFilters.keyword.trim(), page: 1, page_size: 100 },
-      { accessToken: authStore.accessToken },
-    )
-    tags.value = response.items
-    tagTotal.value = response.total
-  }
-  catch (error) {
-    pushToast({
-      tone: 'danger',
-      title: t('content.tags.unavailableTitle'),
-      message: error instanceof Error ? error.message : t('content.tags.unavailableMessage'),
-    })
-  }
-  finally {
-    isTagsLoading.value = false
-  }
-}
+const tagsQuery = useProgressiveQuery({
+  queryKey: computed(() => ['studio-tags', { ...appliedTagFilters }]),
+  queryFn: () => studioApi.listTags(
+    {
+      keyword: appliedTagFilters.keyword.trim(),
+      page: 1,
+      page_size: 100,
+    },
+    { accessToken: authStore.accessToken },
+  ),
+})
+
+const detailQuery = useProgressiveQuery({
+  queryKey: computed(() => ['studio-content-detail', selectedContentId.value]),
+  queryFn: () => studioApi.getContent(selectedContentId.value, { accessToken: authStore.accessToken }),
+  enabled: computed(() => Boolean(selectedContentId.value)),
+})
+
+const relationsQuery = useProgressiveQuery({
+  queryKey: computed(() => ['studio-content-relations', selectedContentId.value]),
+  queryFn: () => studioApi.listRelations(selectedContentId.value, { page: 1, page_size: 50 }, { accessToken: authStore.accessToken }),
+  enabled: computed(() => Boolean(selectedContentId.value)),
+})
+
+const revisionsQuery = useProgressiveQuery({
+  queryKey: computed(() => ['studio-content-revisions', selectedContentId.value]),
+  queryFn: () => studioApi.listRevisions(selectedContentId.value, { page: 1, page_size: 20 }, { accessToken: authStore.accessToken }),
+  enabled: computed(() => Boolean(selectedContentId.value)),
+})
+
+const contents = computed<ContentSummary[]>(() => contentQuery.data.value?.items ?? [])
+const total = computed(() => contentQuery.data.value?.total ?? 0)
+const tags = computed<ContentTag[]>(() => tagsQuery.data.value?.items ?? [])
+const tagTotal = computed(() => tagsQuery.data.value?.total ?? 0)
+const selectedContent = computed<ContentDetail | null>(() => detailQuery.data.value?.content ?? null)
+const relations = computed<ContentRelation[]>(() => relationsQuery.data.value?.items ?? [])
+const revisions = computed<ContentRevisionSummary[]>(() => revisionsQuery.data.value?.items ?? [])
+const contentErrorMessage = computed(() => {
+  const error = contentQuery.error.value
+  return error instanceof Error ? error.message : ''
+})
+const tagsErrorMessage = computed(() => {
+  const error = tagsQuery.error.value
+  return error instanceof Error ? error.message : ''
+})
+const hasContents = computed(() => contents.value.length > 0)
+const hasTags = computed(() => tags.value.length > 0)
+const detailRefreshing = computed(() =>
+  detailQuery.showRefreshingHint.value
+  || relationsQuery.showRefreshingHint.value
+  || revisionsQuery.showRefreshingHint.value,
+)
 
 function scheduleLoadContents(): void {
   window.clearTimeout(filterTimer)
   filterTimer = window.setTimeout(() => {
-    void loadContents()
+    appliedFilters.keyword = filters.keyword
+    appliedFilters.type = filters.type
+    appliedFilters.status = filters.status
+    appliedFilters.visibility = filters.visibility
   }, 300)
 }
 
 function scheduleLoadTags(): void {
   window.clearTimeout(tagFilterTimer)
   tagFilterTimer = window.setTimeout(() => {
-    void loadTags()
+    appliedTagFilters.keyword = tagFilters.keyword
   }, 300)
 }
 
@@ -173,24 +196,11 @@ function openCreateTag(): void {
 }
 
 async function viewContent(content: ContentSummary): Promise<void> {
-  isDetailLoading.value = true
-  try {
-    const response = await studioApi.getContent(content.content_id, { accessToken: authStore.accessToken })
-    selectedContent.value = response.content
-    await Promise.all([loadRelations(response.content.content_id), loadRevisions(response.content.content_id)])
-  }
-  catch (error) {
-    pushToast({ tone: 'danger', title: t('content.unavailableTitle'), message: error instanceof Error ? error.message : t('content.unavailableTitle') })
-  }
-  finally {
-    isDetailLoading.value = false
-  }
+  selectedContentId.value = content.content_id
 }
 
 function closeContentDrawer(): void {
-  selectedContent.value = null
-  relations.value = []
-  revisions.value = []
+  selectedContentId.value = ''
 }
 
 async function archiveContent(content: ContentSummary): Promise<void> {
@@ -205,7 +215,7 @@ async function archiveContent(content: ContentSummary): Promise<void> {
   }
   await runMutation(async () => {
     await studioApi.archiveContent(content.content_id, { accessToken: authStore.accessToken })
-    await loadContents()
+    await contentQuery.refetch()
     pushToast({ tone: 'success', title: t('content.archivedTitle'), message: t('content.archivedMessage', { title: content.title }) })
   })
 }
@@ -238,7 +248,7 @@ async function saveTag(): Promise<void> {
       pushToast({ tone: 'success', title: t('content.tags.createTitle') })
     }
     closeTagDrawer()
-    await loadTags()
+    await tagsQuery.refetch()
   })
 }
 
@@ -254,19 +264,9 @@ async function deleteTag(tag: ContentTag): Promise<void> {
   }
   await runMutation(async () => {
     await studioApi.deleteTag(tag.tag_id, { accessToken: authStore.accessToken })
-    await loadTags()
+    await tagsQuery.refetch()
     pushToast({ tone: 'success', title: t('content.tags.deleteTitle') })
   })
-}
-
-async function loadRelations(contentId: string): Promise<void> {
-  const response = await studioApi.listRelations(contentId, { page: 1, page_size: 50 }, { accessToken: authStore.accessToken })
-  relations.value = response.items
-}
-
-async function loadRevisions(contentId: string): Promise<void> {
-  const response = await studioApi.listRevisions(contentId, { page: 1, page_size: 20 }, { accessToken: authStore.accessToken })
-  revisions.value = response.items
 }
 
 async function runMutation(action: () => Promise<void>): Promise<void> {
@@ -293,11 +293,6 @@ const tagDrawerTitle = computed(() => (selectedTag.value ? t('content.tags.editT
 
 watch(() => [filters.keyword, filters.type, filters.status, filters.visibility], scheduleLoadContents)
 watch(() => tagFilters.keyword, scheduleLoadTags)
-
-onMounted(() => {
-  void loadContents()
-  void loadTags()
-})
 onBeforeUnmount(() => {
   window.clearTimeout(filterTimer)
   window.clearTimeout(tagFilterTimer)
@@ -338,10 +333,13 @@ onBeforeUnmount(() => {
         </FormField>
       </div>
 
-      <StatusAlert v-if="errorMessage" tone="danger" :title="t('content.unavailableTitle')">{{ errorMessage }}</StatusAlert>
-      <PageLoadingState v-else-if="isLoading" :title="t('content.loadingTitle')" :rows="5" />
+      <StatusAlert v-if="contentErrorMessage && !hasContents" tone="danger" :title="t('content.unavailableTitle')">{{ contentErrorMessage }}</StatusAlert>
+      <PageLoadingState v-else-if="contentQuery.showBlockingLoading.value && !hasContents" :title="t('content.loadingTitle')" :rows="5" />
 
-      <div v-else class="content-page__table" role="region" aria-label="Studio content" tabindex="0">
+      <div v-else-if="contentQuery.hasResolvedOnce.value" class="content-page__table" role="region" aria-label="Studio content" tabindex="0">
+        <div v-if="contentQuery.showRefreshingHint.value && hasContents" class="content-page__refreshing">
+          <InlineLoadingState />
+        </div>
         <table class="content-page__grid">
           <thead>
             <tr>
@@ -411,8 +409,12 @@ onBeforeUnmount(() => {
             <BaseInput id="tag-search" v-model="tagFilters.keyword" :placeholder="t('content.tags.searchPlaceholder')" />
           </FormField>
         </div>
-        <PageLoadingState v-if="isTagsLoading" :title="t('content.tags.loadingTitle')" :rows="3" />
-        <div v-else class="studio-list-table content-page__tag-table" role="region" :aria-label="t('content.tabs.tags')" tabindex="0">
+        <StatusAlert v-if="tagsErrorMessage && !hasTags" tone="danger" :title="t('content.tags.unavailableTitle')">{{ tagsErrorMessage }}</StatusAlert>
+        <PageLoadingState v-else-if="tagsQuery.showBlockingLoading.value && !hasTags" :title="t('content.tags.loadingTitle')" :rows="3" />
+        <div v-else-if="tagsQuery.hasResolvedOnce.value" class="studio-list-table content-page__tag-table" role="region" :aria-label="t('content.tabs.tags')" tabindex="0">
+          <div v-if="tagsQuery.showRefreshingHint.value && hasTags" class="content-page__refreshing">
+            <InlineLoadingState />
+          </div>
           <table class="studio-list-grid content-page__tag-grid">
             <thead>
               <tr>
@@ -464,9 +466,10 @@ onBeforeUnmount(() => {
       </div>
     </template>
 
-    <SideDrawer :open="selectedContent !== null" :title="t('content.detailTitle')" :description="selectedContent?.slug" size="lg" @close="closeContentDrawer">
-      <PageLoadingState v-if="isDetailLoading" title="Loading content detail" :rows="4" />
+    <SideDrawer :open="Boolean(selectedContentId)" :title="t('content.detailTitle')" :description="selectedContent?.slug" size="lg" @close="closeContentDrawer">
+      <PageLoadingState v-if="detailQuery.showBlockingLoading.value && !selectedContent" :title="t('content.drawer.loadingTitle')" :rows="4" />
       <div v-else-if="selectedContent" class="content-page__drawer">
+        <InlineLoadingState v-if="detailRefreshing" :title="t('common.refreshing')" />
         <div class="content-page__detail-grid">
           <ReadonlyField :label="t('content.columns.title')" :value="selectedContent.title" />
           <ReadonlyField :label="t('content.columns.slug')" :value="selectedContent.slug" />
@@ -477,23 +480,23 @@ onBeforeUnmount(() => {
         </div>
 
         <section class="content-page__subsection">
-          <h3>Relations</h3>
+          <h3>{{ t('content.drawer.relationsTitle') }}</h3>
           <div class="content-page__mini-list">
             <article v-for="relation in relations" :key="relation.relation_id">
               <span>{{ relation.relation_type }} -> {{ relation.to_content_id }}</span>
             </article>
-            <p v-if="relations.length === 0">No relations.</p>
+            <p v-if="relations.length === 0">{{ t('content.drawer.relationsEmpty') }}</p>
           </div>
         </section>
 
         <section class="content-page__subsection">
-          <h3>Revisions</h3>
+          <h3>{{ t('content.drawer.revisionsTitle') }}</h3>
           <div class="content-page__mini-list">
             <article v-for="revision in revisions" :key="revision.revision_id">
-              <span>#{{ revision.revision_no }} {{ revision.change_summary || 'No summary' }}</span>
+              <span>#{{ revision.revision_no }} {{ revision.change_summary || t('content.drawer.noSummary') }}</span>
               <small>{{ formatUnixTime(revision.created_at) }}</small>
             </article>
-            <p v-if="revisions.length === 0">No revisions.</p>
+            <p v-if="revisions.length === 0">{{ t('content.drawer.revisionsEmpty') }}</p>
           </div>
         </section>
       </div>
@@ -580,6 +583,12 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   background: var(--bb-color-surface);
   box-shadow: var(--bb-shadow-soft);
+}
+
+.content-page__refreshing {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 12px 0;
 }
 
 .content-page__grid {

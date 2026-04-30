@@ -82,6 +82,7 @@ function backToContent(): void {
       <ContentEditorCanvas
         :editor="editorState.editor.value"
         :loading="editorState.isLoading.value"
+        :refreshing="editorState.isRefreshing.value"
         :source-mode="editorState.sourceMode.value"
         :source-content="editorState.sourceContent.value"
         :word-count="editorState.wordCount.value"

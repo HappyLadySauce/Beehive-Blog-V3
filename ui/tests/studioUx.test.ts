@@ -1,3 +1,4 @@
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -33,6 +34,14 @@ async function mountWithApp(component: object, initialPath = '/') {
   router.push(initialPath)
   await router.isReady()
   const pinia = createPinia()
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        refetchOnWindowFocus: false,
+      },
+    },
+  })
   setActivePinia(pinia)
   const authStore = useAuthStore()
   authStore.applySession('access', 'refresh', 'session', {
@@ -47,7 +56,7 @@ async function mountWithApp(component: object, initialPath = '/') {
   const wrapper = mount(component, {
     attachTo: document.body,
     global: {
-      plugins: [pinia, i18n, router],
+      plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]],
     },
   })
   return { wrapper, router }

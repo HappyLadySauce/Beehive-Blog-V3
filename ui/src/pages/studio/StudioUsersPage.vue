@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, shallowRef, watch } from 'vue'
 import { Eye, KeyRound, Pencil, Trash2, Users } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
@@ -14,6 +14,7 @@ import ChangePasswordDialog from '@/shared/components/ChangePasswordDialog.vue'
 import EmptyState from '@/shared/components/EmptyState.vue'
 import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
+import InlineLoadingState from '@/shared/components/InlineLoadingState.vue'
 import ModalDialog from '@/shared/components/ModalDialog.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
@@ -21,7 +22,7 @@ import PasswordInput from '@/shared/components/PasswordInput.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
-import { useConfirm, useToast } from '@/shared/composables'
+import { useConfirm, useProgressiveQuery, useToast } from '@/shared/composables'
 import { useLocale } from '@/shared/i18n'
 
 type UserMode = 'view' | 'edit'
@@ -35,9 +36,6 @@ const { locale } = useLocale()
 const { confirm } = useConfirm()
 const { pushToast } = useToast()
 
-const users = shallowRef<StudioUser[]>([])
-const total = shallowRef(0)
-const isLoading = shallowRef(true)
 const isMutating = shallowRef(false)
 const errorMessage = shallowRef('')
 const selectedUser = shallowRef<StudioUser | null>(null)
@@ -48,6 +46,12 @@ const isSelfPasswordDialogOpen = shallowRef(false)
 let filterTimer: number | undefined
 
 const filters = reactive({
+  keyword: '',
+  role: '',
+  status: '',
+  includeDeleted: false,
+})
+const appliedFilters = reactive({
   keyword: '',
   role: '',
   status: '',
@@ -64,6 +68,29 @@ const profileForm = reactive({
   email: '',
   nickname: '',
   avatar_url: '',
+})
+
+const usersQuery = useProgressiveQuery({
+  queryKey: computed(() => ['studio-users', { ...appliedFilters }, authStore.currentUser?.user_id ?? 'anonymous']),
+  queryFn: () => studioApi.listUsers(
+    {
+      keyword: appliedFilters.keyword.trim(),
+      role: appliedFilters.role,
+      status: appliedFilters.status,
+      include_deleted: appliedFilters.includeDeleted,
+      page: 1,
+      page_size: 50,
+    },
+    { accessToken: authStore.accessToken },
+  ),
+})
+
+const users = computed(() => usersQuery.data.value?.items ?? [])
+const total = computed(() => usersQuery.data.value?.total ?? 0)
+const hasUsers = computed(() => users.value.length > 0)
+const queryErrorMessage = computed(() => {
+  const error = usersQuery.error.value
+  return error instanceof Error ? error.message : ''
 })
 
 const displayUsers = computed(() =>
@@ -113,36 +140,16 @@ function formatUnixTime(value?: number): string {
 }
 
 async function loadUsers(): Promise<void> {
-  isLoading.value = true
-  errorMessage.value = ''
-  try {
-    const response = await studioApi.listUsers(
-      {
-        keyword: filters.keyword.trim(),
-        role: filters.role,
-        status: filters.status,
-        include_deleted: filters.includeDeleted,
-        page: 1,
-        page_size: 50,
-      },
-      { accessToken: authStore.accessToken },
-    )
-    users.value = response.items
-    total.value = response.total
-  }
-  catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('users.unavailableTitle')
-    pushToast({ tone: 'danger', title: t('users.unavailableTitle'), message: errorMessage.value })
-  }
-  finally {
-    isLoading.value = false
-  }
+  await usersQuery.refetch()
 }
 
 function scheduleLoadUsers(): void {
   window.clearTimeout(filterTimer)
   filterTimer = window.setTimeout(() => {
-    void loadUsers()
+    appliedFilters.keyword = filters.keyword
+    appliedFilters.role = filters.role
+    appliedFilters.status = filters.status
+    appliedFilters.includeDeleted = filters.includeDeleted
   }, 300)
 }
 
@@ -194,7 +201,7 @@ async function saveUserEdits(): Promise<void> {
     if (!selectedUserIsSelf.value && isEditableStatus(editForm.status) && editForm.status !== nextUser.status) {
       nextUser = (await studioApi.updateUserStatus(target.user_id, { status: editForm.status }, { accessToken: authStore.accessToken })).user
     }
-    replaceUser(nextUser)
+    await usersQuery.refetch()
     selectedUser.value = nextUser
     updateCurrentUserSnapshot(nextUser)
     pushToast({ tone: 'success', title: t('users.toast.savedTitle'), message: t('users.toast.savedMessage') })
@@ -246,7 +253,7 @@ async function deleteUser(user: StudioUser): Promise<void> {
     if (passwordTarget.value?.user_id === user.user_id) {
       closePasswordReset()
     }
-    await loadUsers()
+    await usersQuery.refetch()
     pushToast({ tone: 'success', title: t('users.toast.deletedTitle'), message: t('users.toast.deletedMessage', { email: user.email }) })
   })
 }
@@ -264,10 +271,6 @@ async function runUserMutation(action: () => Promise<void>): Promise<void> {
   finally {
     isMutating.value = false
   }
-}
-
-function replaceUser(nextUser: StudioUser): void {
-  users.value = users.value.map((user) => (user.user_id === nextUser.user_id ? nextUser : user))
 }
 
 function buildProfilePatch(target: StudioUser): StudioUpdateUserProfileRequest {
@@ -330,8 +333,6 @@ watch(() => filters.includeDeleted, (includeDeleted) => {
 })
 
 watch(() => [filters.keyword, filters.role, filters.status, filters.includeDeleted], scheduleLoadUsers)
-
-onMounted(loadUsers)
 onBeforeUnmount(() => window.clearTimeout(filterTimer))
 </script>
 
@@ -360,10 +361,13 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
     </div>
     <p class="users-page__filter-hint">{{ t('users.filters.includeDeletedHint') }}</p>
 
-    <StatusAlert v-if="errorMessage" tone="danger" :title="t('users.unavailableTitle')">{{ errorMessage }}</StatusAlert>
-    <PageLoadingState v-else-if="isLoading" :title="t('users.loadingTitle')" :rows="5" />
+    <StatusAlert v-if="queryErrorMessage && !hasUsers" tone="danger" :title="t('users.unavailableTitle')">{{ queryErrorMessage }}</StatusAlert>
+    <PageLoadingState v-else-if="usersQuery.showBlockingLoading.value && !hasUsers" :title="t('users.loadingTitle')" :rows="5" />
 
-    <div v-else class="studio-list-table users-page__table" role="region" :aria-label="t('users.regionLabel')" tabindex="0">
+    <div v-else-if="usersQuery.hasResolvedOnce.value" class="studio-list-table users-page__table" role="region" :aria-label="t('users.regionLabel')" tabindex="0">
+      <div v-if="usersQuery.showRefreshingHint.value && hasUsers" class="users-page__refreshing">
+        <InlineLoadingState />
+      </div>
       <table class="studio-list-grid users-page__grid">
         <thead class="users-page__head">
           <tr class="users-page__row">
@@ -429,7 +433,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       </div>
     </div>
 
-    <p v-if="!isLoading" class="studio-list-count">{{ t('users.count', { count: total }) }}</p>
+    <p v-if="usersQuery.data.value" class="studio-list-count">{{ t('users.count', { count: total }) }}</p>
 
     <ModalDialog :open="selectedUser !== null" :title="dialogTitle" :description="selectedUser?.email" size="lg" @close="closeDialog">
       <div v-if="selectedUser" class="users-page__modal">
@@ -543,6 +547,12 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 
 .users-page__grid {
   min-width: 900px;
+}
+
+.users-page__refreshing {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 12px 0;
 }
 
 .users-page__cell {

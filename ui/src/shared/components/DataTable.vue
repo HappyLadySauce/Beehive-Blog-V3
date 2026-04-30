@@ -3,6 +3,8 @@ import { PackageOpen } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 import EmptyState from './EmptyState.vue'
+import InlineLoadingState from './InlineLoadingState.vue'
+import PageLoadingState from './PageLoadingState.vue'
 
 export interface DataTableColumn {
   key: string
@@ -14,6 +16,10 @@ defineProps<{
   rows: Record<string, string | number | boolean | null | undefined>[]
   emptyText?: string
   emptyDescription?: string
+  loading?: boolean
+  loadingMode?: 'blocking' | 'refreshing'
+  loadingTitle?: string
+  loadingRows?: number
 }>()
 
 const { t } = useI18n()
@@ -21,33 +27,44 @@ const { t } = useI18n()
 
 <template>
   <div class="data-table" role="region" :aria-label="t('accessibility.dataTable')" tabindex="0">
-    <table class="data-table__grid">
-      <thead>
-        <tr>
-          <th v-for="column in columns" :key="column.key" scope="col">{{ column.label }}</th>
-        </tr>
-      </thead>
-      <tbody v-if="rows.length > 0">
-        <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
-          <td v-for="column in columns" :key="column.key">{{ row[column.key] }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <div v-if="rows.length === 0" class="data-table__empty-panel">
-      <EmptyState
-        class="data-table__empty-state"
-        align="center"
-        :title="emptyText ?? t('accessibility.dataTableEmpty')"
-        :description="emptyDescription"
-      >
-        <template #visual>
-          <slot name="emptyVisual">
-            <PackageOpen :size="44" aria-hidden="true" />
-          </slot>
-        </template>
-        <slot name="emptyActions" />
-      </EmptyState>
-    </div>
+    <PageLoadingState
+      v-if="loading && (loadingMode ?? 'blocking') === 'blocking'"
+      class="data-table__loading"
+      :title="loadingTitle ?? t('common.loading')"
+      :rows="loadingRows ?? 4"
+    />
+    <template v-else>
+      <div v-if="loading && loadingMode === 'refreshing' && rows.length > 0" class="data-table__refreshing">
+        <InlineLoadingState :title="loadingTitle ?? t('common.refreshing')" />
+      </div>
+      <table class="data-table__grid">
+        <thead>
+          <tr>
+            <th v-for="column in columns" :key="column.key" scope="col">{{ column.label }}</th>
+          </tr>
+        </thead>
+        <tbody v-if="rows.length > 0">
+          <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
+            <td v-for="column in columns" :key="column.key">{{ row[column.key] }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="rows.length === 0" class="data-table__empty-panel">
+        <EmptyState
+          class="data-table__empty-state"
+          align="center"
+          :title="emptyText ?? t('accessibility.dataTableEmpty')"
+          :description="emptyDescription"
+        >
+          <template #visual>
+            <slot name="emptyVisual">
+              <PackageOpen :size="44" aria-hidden="true" />
+            </slot>
+          </template>
+          <slot name="emptyActions" />
+        </EmptyState>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -63,6 +80,18 @@ const { t } = useI18n()
 .data-table:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--bb-color-focus);
+}
+
+.data-table__loading {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.data-table__refreshing {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 12px 0;
 }
 
 .data-table__grid {

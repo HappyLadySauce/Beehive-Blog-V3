@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
@@ -12,17 +12,19 @@ import DataTable from '@/shared/components/DataTable.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import type { DataTableColumn } from '@/shared/components/DataTable.vue'
+import { useProgressiveQuery } from '@/shared/composables'
 import { useLocale } from '@/shared/i18n'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
 const { locale } = useLocale()
-const events = shallowRef<StudioAuditEvent[]>([])
-const total = shallowRef(0)
-const isLoading = shallowRef(true)
-const errorMessage = shallowRef('')
 let filterTimer: number | undefined
 const filters = reactive({
+  eventType: '',
+  result: '',
+  userId: '',
+})
+const appliedFilters = reactive({
   eventType: '',
   result: '',
   userId: '',
@@ -41,6 +43,27 @@ const columns = computed<DataTableColumn[]>(() => [
   { key: 'clientIp', label: t('audits.columns.ip') },
   { key: 'detail', label: t('audits.columns.detail') },
 ])
+
+const auditsQuery = useProgressiveQuery({
+  queryKey: computed(() => ['studio-audits', { ...appliedFilters }, authStore.currentUser?.user_id ?? 'anonymous']),
+  queryFn: () => studioApi.listAudits(
+    {
+      event_type: appliedFilters.eventType.trim(),
+      result: appliedFilters.result,
+      user_id: appliedFilters.userId.trim(),
+      page: 1,
+      page_size: 50,
+    },
+    { accessToken: authStore.accessToken },
+  ),
+})
+
+const events = computed<StudioAuditEvent[]>(() => auditsQuery.data.value?.items ?? [])
+const total = computed(() => auditsQuery.data.value?.total ?? 0)
+const errorMessage = computed(() => {
+  const error = auditsQuery.error.value
+  return error instanceof Error ? error.message : ''
+})
 
 const rows = computed(() =>
   events.value.map((event) => ({
@@ -63,41 +86,16 @@ function formatUnixTime(value?: number): string {
   }).format(new Date(value * 1000))
 }
 
-async function loadAudits(): Promise<void> {
-  isLoading.value = true
-  errorMessage.value = ''
-  try {
-    const response = await studioApi.listAudits(
-      {
-        event_type: filters.eventType.trim(),
-        result: filters.result,
-        user_id: filters.userId.trim(),
-        page: 1,
-        page_size: 50,
-      },
-      { accessToken: authStore.accessToken },
-    )
-    events.value = response.items
-    total.value = response.total
-  }
-  catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('audits.unavailableTitle')
-  }
-  finally {
-    isLoading.value = false
-  }
-}
-
 function scheduleLoadAudits(): void {
   window.clearTimeout(filterTimer)
   filterTimer = window.setTimeout(() => {
-    void loadAudits()
+    appliedFilters.eventType = filters.eventType
+    appliedFilters.userId = filters.userId
+    appliedFilters.result = filters.result
   }, 300)
 }
 
 watch(() => [filters.eventType, filters.userId, filters.result], scheduleLoadAudits)
-
-onMounted(loadAudits)
 onBeforeUnmount(() => window.clearTimeout(filterTimer))
 </script>
 
@@ -124,11 +122,16 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
     <StatusAlert v-if="errorMessage" tone="danger" :title="t('audits.unavailableTitle')">
       {{ errorMessage }}
     </StatusAlert>
-    <StatusAlert v-else-if="isLoading" tone="info" :title="t('audits.loadingTitle')">
-      {{ t('audits.loadingMessage') }}
-    </StatusAlert>
 
-    <DataTable :columns="columns" :rows="rows" :empty-text="t('audits.empty')" />
+    <DataTable
+      v-if="auditsQuery.hasResolvedOnce.value || auditsQuery.showBlockingLoading.value"
+      :columns="columns"
+      :rows="rows"
+      :empty-text="t('audits.empty')"
+      :loading="auditsQuery.showBlockingLoading.value || auditsQuery.showRefreshingHint.value"
+      :loading-mode="auditsQuery.showBlockingLoading.value ? 'blocking' : 'refreshing'"
+      :loading-title="auditsQuery.showBlockingLoading.value ? t('audits.loadingTitle') : t('common.refreshing')"
+    />
     <p class="studio-list-count">{{ t('audits.count', { count: total }) }}</p>
   </section>
 </template>

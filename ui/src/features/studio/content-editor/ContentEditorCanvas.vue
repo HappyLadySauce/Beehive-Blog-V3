@@ -6,10 +6,13 @@ import { useI18n } from 'vue-i18n'
 
 import ContentEditorBubbleMenu from './ContentEditorBubbleMenu.vue'
 import type { ContentEditorSourceMode } from './useContentEditor'
+import InlineLoadingState from '@/shared/components/InlineLoadingState.vue'
+import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 
 const props = defineProps<{
   editor: Editor | null | undefined
   loading?: boolean
+  refreshing?: boolean
   sourceMode: ContentEditorSourceMode
   sourceContent: string
   wordCount: number
@@ -28,8 +31,9 @@ const wordCountLabel = computed(() => t('editor.wordCount', { count: props.wordC
 
 <template>
   <section class="content-editor-canvas" :aria-label="t('editor.writingCanvas')">
-    <div v-if="loading || !editor" class="content-editor-canvas__loading">{{ t('editor.loadingEditor') }}</div>
+    <PageLoadingState v-if="loading || !editor" class="content-editor-canvas__loading" :title="t('editor.loadingEditor')" :rows="4" />
     <template v-else-if="sourceMode === 'visual'">
+      <InlineLoadingState v-if="refreshing" class="content-editor-canvas__refreshing" />
       <ContentEditorBubbleMenu :editor="editor" />
       <EditorContent :editor="editor" />
     </template>
@@ -50,6 +54,7 @@ const wordCountLabel = computed(() => t('editor.wordCount', { count: props.wordC
 
 <style scoped>
 .content-editor-canvas {
+  position: relative;
   min-width: 0;
   min-height: 0;
   display: grid;
@@ -59,11 +64,21 @@ const wordCountLabel = computed(() => t('editor.wordCount', { count: props.wordC
 }
 
 .content-editor-canvas__loading {
-  display: grid;
-  min-height: 420px;
-  place-items: center;
-  color: var(--bb-color-muted);
-  font-weight: 700;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.content-editor-canvas__refreshing {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--bb-color-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bb-color-surface) 94%, transparent);
+  box-shadow: var(--bb-shadow-soft);
 }
 
 :deep(.content-editor-canvas__surface) {

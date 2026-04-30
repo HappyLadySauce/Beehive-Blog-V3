@@ -107,6 +107,42 @@ describe('shared components', () => {
     expect(wrapper.text()).toContain('Nothing here')
   })
 
+  it('renders blocking table loading state', () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        columns: [{ key: 'title', label: 'Title' }],
+        rows: [],
+        loading: true,
+        loadingMode: 'blocking',
+        loadingTitle: 'Loading table',
+      },
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.find('.page-loading').exists()).toBe(true)
+    expect(wrapper.find('.page-loading').attributes('aria-label')).toBe('Loading table')
+  })
+
+  it('keeps table rows visible while showing a refreshing hint', () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        columns: [{ key: 'title', label: 'Title' }],
+        rows: [{ title: 'Admin' }],
+        loading: true,
+        loadingMode: 'refreshing',
+      },
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.text()).toContain('Admin')
+    expect(wrapper.text()).toContain('Refreshing')
+    expect(wrapper.find('.data-table__refreshing').exists()).toBe(true)
+  })
+
   it('renders custom visuals in empty state slots', () => {
     const wrapper = mount(DataTable, {
       props: {
