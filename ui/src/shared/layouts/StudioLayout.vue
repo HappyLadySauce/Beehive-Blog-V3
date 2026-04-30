@@ -87,14 +87,15 @@ async function handleLogout() {
 
 <style scoped>
 .studio-shell {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   background: var(--bb-gradient-page);
 }
 
 .studio-shell__sidebar {
-  min-height: 100vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -154,12 +155,13 @@ async function handleLogout() {
 
 .studio-shell__workspace {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .studio-shell__topbar {
-  position: sticky;
-  z-index: 10;
-  top: 0;
+  flex-shrink: 0;
   min-height: 64px;
   display: flex;
   align-items: center;
@@ -210,17 +212,21 @@ async function handleLogout() {
 }
 
 .studio-shell__main {
+  flex: 1;
+  overflow-y: auto;
   padding: 24px;
 }
 
 @media (max-width: 820px) {
   .studio-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
     grid-template-columns: 1fr;
   }
 
   .studio-shell__sidebar {
-    position: static;
-    min-height: auto;
+    overflow-y: visible;
     border-right: 0;
     border-bottom: 1px solid var(--bb-color-line);
   }
@@ -237,6 +243,15 @@ async function handleLogout() {
   .studio-shell__nav-link {
     justify-content: center;
     white-space: nowrap;
+  }
+
+  .studio-shell__workspace {
+    overflow: visible;
+  }
+
+  .studio-shell__main {
+    flex: none;
+    overflow-y: visible;
   }
 
   .studio-shell__topbar {
