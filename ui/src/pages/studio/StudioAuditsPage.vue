@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
 import type { StudioAuditEvent } from '@/features/studio'
-import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
 import FormField from '@/shared/components/FormField.vue'
@@ -22,6 +21,7 @@ const events = shallowRef<StudioAuditEvent[]>([])
 const total = shallowRef(0)
 const isLoading = shallowRef(true)
 const errorMessage = shallowRef('')
+let filterTimer: number | undefined
 const filters = reactive({
   eventType: '',
   result: '',
@@ -88,7 +88,17 @@ async function loadAudits(): Promise<void> {
   }
 }
 
+function scheduleLoadAudits(): void {
+  window.clearTimeout(filterTimer)
+  filterTimer = window.setTimeout(() => {
+    void loadAudits()
+  }, 300)
+}
+
+watch(() => [filters.eventType, filters.userId, filters.result], scheduleLoadAudits)
+
 onMounted(loadAudits)
+onBeforeUnmount(() => window.clearTimeout(filterTimer))
 </script>
 
 <template>
@@ -99,7 +109,7 @@ onMounted(loadAudits)
       :description="t('audits.description')"
     />
 
-    <form class="audits-page__filters" @submit.prevent="loadAudits">
+    <div class="studio-list-filters audits-page__filters">
       <FormField :label="t('audits.eventType')" for-id="audit-event-type">
         <BaseInput id="audit-event-type" v-model="filters.eventType" :placeholder="t('audits.placeholders.eventType')" />
       </FormField>
@@ -109,8 +119,7 @@ onMounted(loadAudits)
       <FormField :label="t('audits.result')" for-id="audit-result">
         <BaseSelect id="audit-result" v-model="filters.result" :options="resultOptions" :aria-label="t('audits.result')" />
       </FormField>
-      <BaseButton type="submit" :busy="isLoading">{{ t('common.apply') }}</BaseButton>
-    </form>
+    </div>
 
     <StatusAlert v-if="errorMessage" tone="danger" :title="t('audits.unavailableTitle')">
       {{ errorMessage }}
@@ -120,7 +129,7 @@ onMounted(loadAudits)
     </StatusAlert>
 
     <DataTable :columns="columns" :rows="rows" :empty-text="t('audits.empty')" />
-    <p class="audits-page__count">{{ t('audits.count', { count: total }) }}</p>
+    <p class="studio-list-count">{{ t('audits.count', { count: total }) }}</p>
   </section>
 </template>
 
@@ -131,14 +140,7 @@ onMounted(loadAudits)
 }
 
 .audits-page__filters {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(140px, 180px) minmax(140px, 180px) auto;
-  align-items: end;
-  gap: 12px;
-}
-
-.audits-page__count {
-  color: var(--bb-color-muted);
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(160px, 180px));
 }
 
 @media (max-width: 760px) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
-import { Eye, KeyRound, Pencil, Trash2 } from 'lucide-vue-next'
+import { Eye, KeyRound, Pencil, Trash2, Users } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
@@ -11,6 +11,7 @@ import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
 import ChangePasswordDialog from '@/shared/components/ChangePasswordDialog.vue'
+import EmptyState from '@/shared/components/EmptyState.vue'
 import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
 import ModalDialog from '@/shared/components/ModalDialog.vue'
@@ -342,7 +343,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       :description="t('users.description')"
     />
 
-    <div class="users-page__filters">
+    <div class="studio-list-filters users-page__filters">
       <FormField class="users-page__search" :label="t('common.search')" for-id="user-search">
         <BaseInput id="user-search" v-model="filters.keyword" :placeholder="t('users.searchPlaceholder')" />
       </FormField>
@@ -362,8 +363,8 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
     <StatusAlert v-if="errorMessage" tone="danger" :title="t('users.unavailableTitle')">{{ errorMessage }}</StatusAlert>
     <PageLoadingState v-else-if="isLoading" :title="t('users.loadingTitle')" :rows="5" />
 
-    <div v-else class="users-page__table" role="region" :aria-label="t('users.regionLabel')" tabindex="0">
-      <table class="users-page__grid">
+    <div v-else class="studio-list-table users-page__table" role="region" :aria-label="t('users.regionLabel')" tabindex="0">
+      <table class="studio-list-grid users-page__grid">
         <thead class="users-page__head">
           <tr class="users-page__row">
             <th class="users-page__cell users-page__cell--user" scope="col">{{ t('users.columns.user') }}</th>
@@ -373,11 +374,8 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             <th class="users-page__cell users-page__cell--actions" scope="col">{{ t('common.actions') }}</th>
           </tr>
         </thead>
-        <tbody class="users-page__body">
-          <tr v-if="displayUsers.length === 0" class="users-page__row">
-            <td class="users-page__cell users-page__empty" colspan="5">{{ t('users.empty') }}</td>
-          </tr>
-          <tr v-for="user in displayUsers" v-else :key="user.user_id" class="users-page__row">
+        <tbody v-if="displayUsers.length > 0" class="users-page__body">
+          <tr v-for="user in displayUsers" :key="user.user_id" class="users-page__row">
             <td class="users-page__cell users-page__cell--user">
               <strong>{{ user.displayName }}</strong>
               <span>{{ user.email }}</span>
@@ -422,9 +420,16 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
           </tr>
         </tbody>
       </table>
+      <div v-if="displayUsers.length === 0" class="studio-list-empty-panel">
+        <EmptyState align="center" class="studio-list-empty-state" :title="t('users.empty')" :description="t('users.emptyDescription')">
+          <template #visual>
+            <Users :size="52" aria-hidden="true" />
+          </template>
+        </EmptyState>
+      </div>
     </div>
 
-    <p v-if="!isLoading" class="users-page__count">{{ t('users.count', { count: total }) }}</p>
+    <p v-if="!isLoading" class="studio-list-count">{{ t('users.count', { count: total }) }}</p>
 
     <ModalDialog :open="selectedUser !== null" :title="dialogTitle" :description="selectedUser?.email" size="lg" @close="closeDialog">
       <div v-if="selectedUser" class="users-page__modal">
@@ -508,10 +513,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 }
 
 .users-page__filters {
-  display: grid;
   grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(150px, 180px)) minmax(180px, 220px);
-  align-items: end;
-  gap: 14px;
 }
 
 .users-page__search {
@@ -539,49 +541,17 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   font-size: 0.92rem;
 }
 
-.users-page__table:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--bb-color-focus);
-}
-
-.users-page__table {
-  overflow-x: auto;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 10px;
-  background: var(--bb-color-surface);
-  box-shadow: var(--bb-shadow-soft);
-}
-
 .users-page__grid {
-  width: 100%;
   min-width: 900px;
-  border-collapse: collapse;
 }
 
 .users-page__cell {
-  border-bottom: 1px solid var(--bb-color-line);
-  padding: 13px 12px;
-  text-align: left;
-  vertical-align: middle;
+  padding-top: 13px;
+  padding-bottom: 13px;
 }
 
 .users-page__head .users-page__cell {
-  color: var(--bb-color-muted);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  background: var(--bb-color-surface);
-}
-
-.users-page__body .users-page__row:nth-child(even) {
-  background: var(--bb-color-subtle);
-}
-
-.users-page__body .users-page__row:hover {
-  background: var(--bb-color-primary-soft);
-}
-
-.users-page__body .users-page__row:last-child .users-page__cell {
-  border-bottom: 0;
+  font-size: 0.8rem;
 }
 
 .users-page__cell--user {
@@ -598,7 +568,6 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 }
 
 .users-page__cell--user span,
-.users-page__count,
 .users-page__empty {
   color: var(--bb-color-muted);
 }

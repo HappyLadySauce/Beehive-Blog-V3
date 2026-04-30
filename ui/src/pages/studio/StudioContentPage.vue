@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Eye, Pencil, Trash2 } from 'lucide-vue-next'
+import { Archive, Eye, PackageOpen, Pencil, Tag, Trash2 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -19,6 +19,7 @@ import type {
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
+import EmptyState from '@/shared/components/EmptyState.vue'
 import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
@@ -54,15 +55,21 @@ const isLoading = shallowRef(true)
 const isTagsLoading = shallowRef(false)
 const isDetailLoading = shallowRef(false)
 const isMutating = shallowRef(false)
+const isTagDrawerOpen = shallowRef(false)
 const errorMessage = shallowRef('')
 const total = shallowRef(0)
+const tagTotal = shallowRef(0)
 let filterTimer: number | undefined
+let tagFilterTimer: number | undefined
 
 const filters = reactive({
   keyword: '',
   type: '',
   status: '',
   visibility: '',
+})
+const tagFilters = reactive({
+  keyword: '',
 })
 
 const typeOptions = computed<BaseSelectOption[]>(() => [
@@ -115,11 +122,19 @@ async function loadContents(): Promise<void> {
 async function loadTags(): Promise<void> {
   isTagsLoading.value = true
   try {
-    const response = await studioApi.listTags({ page: 1, page_size: 100 }, { accessToken: authStore.accessToken })
+    const response = await studioApi.listTags(
+      { keyword: tagFilters.keyword.trim(), page: 1, page_size: 100 },
+      { accessToken: authStore.accessToken },
+    )
     tags.value = response.items
+    tagTotal.value = response.total
   }
   catch (error) {
-    pushToast({ tone: 'danger', title: 'Tags unavailable', message: error instanceof Error ? error.message : 'Unable to load tags.' })
+    pushToast({
+      tone: 'danger',
+      title: t('content.tags.unavailableTitle'),
+      message: error instanceof Error ? error.message : t('content.tags.unavailableMessage'),
+    })
   }
   finally {
     isTagsLoading.value = false
@@ -133,12 +148,28 @@ function scheduleLoadContents(): void {
   }, 300)
 }
 
+function scheduleLoadTags(): void {
+  window.clearTimeout(tagFilterTimer)
+  tagFilterTimer = window.setTimeout(() => {
+    void loadTags()
+  }, 300)
+}
+
 function openNewDraft(): void {
   void router.push('/studio/content/new')
 }
 
 function editContent(content: ContentSummary): void {
   void router.push(`/studio/content/${encodeURIComponent(content.content_id)}/edit`)
+}
+
+function openCreateTag(): void {
+  selectedTag.value = null
+  tagForm.name = ''
+  tagForm.slug = ''
+  tagForm.description = ''
+  tagForm.color = ''
+  isTagDrawerOpen.value = true
 }
 
 async function viewContent(content: ContentSummary): Promise<void> {
@@ -179,41 +210,52 @@ async function archiveContent(content: ContentSummary): Promise<void> {
   })
 }
 
-function editTag(tag: ContentTag | null): void {
+function editTag(tag: ContentTag): void {
   selectedTag.value = tag
-  tagForm.name = tag?.name ?? ''
-  tagForm.slug = tag?.slug ?? ''
-  tagForm.description = tag?.description ?? ''
-  tagForm.color = tag?.color ?? ''
+  tagForm.name = tag.name
+  tagForm.slug = tag.slug
+  tagForm.description = tag.description ?? ''
+  tagForm.color = tag.color ?? ''
+  isTagDrawerOpen.value = true
+}
+
+function closeTagDrawer(): void {
+  isTagDrawerOpen.value = false
+  selectedTag.value = null
+  tagForm.name = ''
+  tagForm.slug = ''
+  tagForm.description = ''
+  tagForm.color = ''
 }
 
 async function saveTag(): Promise<void> {
   await runMutation(async () => {
     if (selectedTag.value) {
       await studioApi.updateTag(selectedTag.value.tag_id, tagForm, { accessToken: authStore.accessToken })
-      pushToast({ tone: 'success', title: 'Tag updated' })
+      pushToast({ tone: 'success', title: t('content.tags.updateTitle') })
     } else {
       await studioApi.createTag(tagForm, { accessToken: authStore.accessToken })
-      pushToast({ tone: 'success', title: 'Tag created' })
+      pushToast({ tone: 'success', title: t('content.tags.createTitle') })
     }
-    selectedTag.value = null
-    tagForm.name = ''
-    tagForm.slug = ''
-    tagForm.description = ''
-    tagForm.color = ''
+    closeTagDrawer()
     await loadTags()
   })
 }
 
 async function deleteTag(tag: ContentTag): Promise<void> {
-  const approved = await confirm({ title: 'Delete tag?', message: `${tag.name} will be removed if it is not in use.`, confirmText: 'Delete tag', tone: 'danger' })
+  const approved = await confirm({
+    title: t('content.tags.deleteConfirmTitle'),
+    message: t('content.tags.deleteConfirmMessage', { name: tag.name }),
+    confirmText: t('content.tags.deleteConfirmAction'),
+    tone: 'danger',
+  })
   if (!approved) {
     return
   }
   await runMutation(async () => {
     await studioApi.deleteTag(tag.tag_id, { accessToken: authStore.accessToken })
     await loadTags()
-    pushToast({ tone: 'success', title: 'Tag deleted' })
+    pushToast({ tone: 'success', title: t('content.tags.deleteTitle') })
   })
 }
 
@@ -247,13 +289,19 @@ function formatUnixTime(value?: number): string {
   return new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value * 1000))
 }
 
+const tagDrawerTitle = computed(() => (selectedTag.value ? t('content.tags.editTitle') : t('content.tags.createDrawerTitle')))
+
 watch(() => [filters.keyword, filters.type, filters.status, filters.visibility], scheduleLoadContents)
+watch(() => tagFilters.keyword, scheduleLoadTags)
 
 onMounted(() => {
   void loadContents()
   void loadTags()
 })
-onBeforeUnmount(() => window.clearTimeout(filterTimer))
+onBeforeUnmount(() => {
+  window.clearTimeout(filterTimer)
+  window.clearTimeout(tagFilterTimer)
+})
 </script>
 
 <template>
@@ -264,7 +312,8 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       :description="t('content.description')"
     >
       <template #actions>
-        <BaseButton @click="openNewDraft">{{ t('content.newDraft') }}</BaseButton>
+        <BaseButton v-if="activeTab === 'content'" @click="openNewDraft">{{ t('content.newDraft') }}</BaseButton>
+        <BaseButton v-else @click="openCreateTag">{{ t('content.tags.createAction') }}</BaseButton>
       </template>
     </PageHeader>
 
@@ -293,7 +342,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       <PageLoadingState v-else-if="isLoading" :title="t('content.loadingTitle')" :rows="5" />
 
       <div v-else class="content-page__table" role="region" aria-label="Studio content" tabindex="0">
-        <table>
+        <table class="content-page__grid">
           <thead>
             <tr>
               <th scope="col">{{ t('content.columns.title') }}</th>
@@ -304,11 +353,8 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
               <th scope="col">{{ t('common.actions') }}</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-if="contents.length === 0">
-              <td colspan="6">{{ t('content.empty') }}</td>
-            </tr>
-            <tr v-for="content in contents" v-else :key="content.content_id">
+          <tbody v-if="contents.length > 0">
+            <tr v-for="content in contents" :key="content.content_id">
               <td>
                 <strong>{{ content.title }}</strong>
                 <span>{{ content.slug }}</span>
@@ -339,42 +385,82 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
             </tr>
           </tbody>
         </table>
+        <div v-if="contents.length === 0" class="content-page__empty-panel">
+          <EmptyState
+            class="content-page__empty-state"
+            align="center"
+            :title="t('content.empty')"
+            :description="t('content.emptyDescription')"
+          >
+            <template #visual>
+              <PackageOpen :size="52" aria-hidden="true" />
+            </template>
+            <BaseButton class="content-page__empty-action" @click="openNewDraft">
+              {{ t('content.emptyAction') }}
+            </BaseButton>
+          </EmptyState>
+        </div>
       </div>
       <p class="content-page__count">{{ t('content.count', { count: total }) }}</p>
     </template>
 
     <template v-else>
-      <form class="content-page__tag-form" @submit.prevent="saveTag">
-        <FormField label="Name" for-id="tag-name">
-          <BaseInput id="tag-name" v-model="tagForm.name" />
-        </FormField>
-        <FormField label="Slug" for-id="tag-slug">
-          <BaseInput id="tag-slug" v-model="tagForm.slug" />
-        </FormField>
-        <FormField label="Color" for-id="tag-color">
-          <BaseInput id="tag-color" v-model="tagForm.color" placeholder="#0f8f83" />
-        </FormField>
-        <FormField label="Description" for-id="tag-description">
-          <BaseInput id="tag-description" v-model="tagForm.description" />
-        </FormField>
-        <BaseButton type="submit" :busy="isMutating">{{ selectedTag ? t('common.save') : t('common.save') }}</BaseButton>
-      </form>
-      <PageLoadingState v-if="isTagsLoading" title="Loading tags" :rows="3" />
-      <div v-else class="content-page__tag-list">
-        <article v-for="tag in tags" :key="tag.tag_id" class="content-page__tag-card">
-          <div>
-            <strong>{{ tag.name }}</strong>
-            <span>{{ tag.slug }}</span>
+      <div class="studio-list-shell">
+        <div class="studio-list-filters content-page__tag-filters">
+          <FormField :label="t('common.search')" for-id="tag-search">
+            <BaseInput id="tag-search" v-model="tagFilters.keyword" :placeholder="t('content.tags.searchPlaceholder')" />
+          </FormField>
+        </div>
+        <PageLoadingState v-if="isTagsLoading" :title="t('content.tags.loadingTitle')" :rows="3" />
+        <div v-else class="studio-list-table content-page__tag-table" role="region" :aria-label="t('content.tabs.tags')" tabindex="0">
+          <table class="studio-list-grid content-page__tag-grid">
+            <thead>
+              <tr>
+                <th scope="col">{{ t('content.columns.name') }}</th>
+                <th scope="col">{{ t('content.columns.slug') }}</th>
+                <th scope="col">{{ t('content.tags.fields.color') }}</th>
+                <th scope="col">{{ t('content.tags.fields.description') }}</th>
+                <th scope="col">{{ t('content.columns.updated') }}</th>
+                <th scope="col">{{ t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody v-if="tags.length > 0">
+              <tr v-for="tag in tags" :key="tag.tag_id">
+                <td>
+                  <strong>{{ tag.name }}</strong>
+                </td>
+                <td>{{ tag.slug }}</td>
+                <td>
+                  <span class="content-page__tag-color">
+                    <span class="content-page__tag-swatch" :style="{ backgroundColor: tag.color || 'transparent' }" />
+                    {{ tag.color || t('common.none') }}
+                  </span>
+                </td>
+                <td>{{ tag.description || t('common.none') }}</td>
+                <td>{{ formatUnixTime(tag.updated_at) }}</td>
+                <td>
+                  <div class="content-page__actions">
+                    <IconActionButton :aria-label="t('content.actions.editTag', { name: tag.name })" :title="t('content.actions.editTag', { name: tag.name })" @click="editTag(tag)">
+                      <Pencil :size="17" aria-hidden="true" />
+                    </IconActionButton>
+                    <IconActionButton tone="danger" :aria-label="t('content.actions.deleteTag', { name: tag.name })" :title="t('content.actions.deleteTag', { name: tag.name })" @click="deleteTag(tag)">
+                      <Trash2 :size="17" aria-hidden="true" />
+                    </IconActionButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="tags.length === 0" class="studio-list-empty-panel">
+            <EmptyState align="center" class="studio-list-empty-state" :title="t('content.tagsEmpty')" :description="t('content.tags.emptyDescription')">
+              <template #visual>
+                <Tag :size="52" aria-hidden="true" />
+              </template>
+              <BaseButton @click="openCreateTag">{{ t('content.tags.createAction') }}</BaseButton>
+            </EmptyState>
           </div>
-          <div class="content-page__actions">
-            <IconActionButton :aria-label="t('content.actions.editTag', { name: tag.name })" :title="t('content.actions.editTag', { name: tag.name })" @click="editTag(tag)">
-              <Pencil :size="17" aria-hidden="true" />
-            </IconActionButton>
-            <IconActionButton tone="danger" :aria-label="t('content.actions.deleteTag', { name: tag.name })" :title="t('content.actions.deleteTag', { name: tag.name })" @click="deleteTag(tag)">
-              <Trash2 :size="17" aria-hidden="true" />
-            </IconActionButton>
-          </div>
-        </article>
+        </div>
+        <p class="studio-list-count">{{ t('content.tags.count', { count: tagTotal }) }}</p>
       </div>
     </template>
 
@@ -413,6 +499,32 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
       </div>
       <template #footer>
         <BaseButton variant="ghost" @click="closeContentDrawer">{{ t('common.close') }}</BaseButton>
+      </template>
+    </SideDrawer>
+
+    <SideDrawer
+      :open="isTagDrawerOpen"
+      :title="tagDrawerTitle"
+      :description="selectedTag?.slug || t('content.tags.drawerDescription')"
+      @close="closeTagDrawer"
+    >
+      <form class="content-page__tag-drawer" @submit.prevent="saveTag">
+        <FormField :label="t('content.tags.fields.name')" for-id="tag-name">
+          <BaseInput id="tag-name" v-model="tagForm.name" />
+        </FormField>
+        <FormField :label="t('content.tags.fields.slug')" for-id="tag-slug">
+          <BaseInput id="tag-slug" v-model="tagForm.slug" />
+        </FormField>
+        <FormField :label="t('content.tags.fields.color')" for-id="tag-color">
+          <BaseInput id="tag-color" v-model="tagForm.color" placeholder="#0f8f83" />
+        </FormField>
+        <FormField :label="t('content.tags.fields.description')" for-id="tag-description">
+          <BaseInput id="tag-description" v-model="tagForm.description" />
+        </FormField>
+      </form>
+      <template #footer>
+        <BaseButton :busy="isMutating" @click="saveTag">{{ t('common.save') }}</BaseButton>
+        <BaseButton variant="ghost" @click="closeTagDrawer">{{ t('common.close') }}</BaseButton>
       </template>
     </SideDrawer>
   </section>
@@ -470,7 +582,7 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   box-shadow: var(--bb-shadow-soft);
 }
 
-.content-page__table table {
+.content-page__grid {
   width: 100%;
   min-width: 920px;
   border-collapse: collapse;
@@ -499,6 +611,26 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   background: var(--bb-color-primary-soft);
 }
 
+.content-page__empty-panel {
+  min-width: 920px;
+  border-top: 1px solid var(--bb-color-line);
+}
+
+.content-page__empty-state {
+  min-height: 232px;
+  justify-items: center;
+  text-align: center;
+  border: 0;
+  border-radius: 0;
+  padding: 32px 24px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.content-page__empty-action {
+  margin-top: 4px;
+}
+
 .content-page__table tbody tr:last-child td {
   border-bottom: 0;
 }
@@ -509,9 +641,16 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
 }
 
 .content-page__table td:first-child span,
-.content-page__count,
-.content-page__tag-card span {
+.content-page__count {
   color: var(--bb-color-muted);
+}
+
+.content-page__empty-state :deep(.empty-state__visual) {
+  color: var(--bb-color-muted);
+}
+
+.content-page__empty-state :deep(.empty-state__actions) {
+  justify-content: center;
 }
 
 .content-page__actions {
@@ -533,20 +672,12 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   gap: 12px;
 }
 
-.content-page__tag-form {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(140px, 1fr)) auto;
-  align-items: end;
-  gap: 12px;
-}
-
-.content-page__tag-list,
+.content-page__tag-drawer,
 .content-page__mini-list {
   display: grid;
   gap: 10px;
 }
 
-.content-page__tag-card,
 .content-page__mini-list article {
   display: flex;
   justify-content: space-between;
@@ -557,9 +688,43 @@ onBeforeUnmount(() => window.clearTimeout(filterTimer))
   background: var(--bb-color-surface);
 }
 
+.content-page__tag-filters {
+  grid-template-columns: minmax(220px, 420px);
+}
+
+.content-page__tag-table {
+  min-width: 0;
+}
+
+.content-page__tag-grid {
+  min-width: 920px;
+}
+
+.content-page__tag-table th:last-child,
+.content-page__tag-table td:last-child {
+  text-align: right;
+}
+
+.content-page__tag-table td:first-child strong {
+  color: var(--bb-color-text-strong);
+}
+
+.content-page__tag-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.content-page__tag-swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--bb-color-line);
+  border-radius: 999px;
+}
+
 @media (max-width: 900px) {
   .content-page__filters,
-  .content-page__tag-form,
+  .content-page__tag-filters,
   .content-page__detail-grid {
     grid-template-columns: 1fr;
   }

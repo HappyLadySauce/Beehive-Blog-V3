@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import HomePage from '@/pages/public/HomePage.vue'
+import StudioAuditsPage from '@/pages/studio/StudioAuditsPage.vue'
 import ContentEditorPage from '@/pages/studio/ContentEditorPage.vue'
 import StudioContentPage from '@/pages/studio/StudioContentPage.vue'
 import StudioUsersPage from '@/pages/studio/StudioUsersPage.vue'
@@ -105,6 +106,90 @@ describe('studio UX flows', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.fullPath).toBe('/studio/content/new')
+  })
+
+  it('shows the tags tab as a searchable table layout', async () => {
+    const { wrapper } = await mountWithApp(StudioContentPage)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((button) => button.text().includes('Tags'))!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('New tag')
+    expect(wrapper.text()).toContain('Name')
+    expect(wrapper.text()).toContain('Slug')
+    expect(wrapper.text()).toContain('Color')
+    expect(wrapper.text()).toContain('Description')
+    expect(wrapper.text()).toContain('Gateway')
+  })
+
+  it('filters tags from the search field', async () => {
+    const { wrapper } = await mountWithApp(StudioContentPage)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((button) => button.text().includes('Tags'))!.trigger('click')
+    await flushPromises()
+
+    await wrapper.get('#tag-search').setValue('identity')
+    await new Promise((resolve) => window.setTimeout(resolve, 350))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Identity')
+    expect(wrapper.text()).not.toContain('Gateway')
+  })
+
+  it('opens the same tag drawer for creating and editing tags', async () => {
+    const { wrapper } = await mountWithApp(StudioContentPage)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((button) => button.text().includes('Tags'))!.trigger('click')
+    await flushPromises()
+
+    await wrapper.findAll('button').find((button) => button.text().includes('New tag'))!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('Create tag')
+    expect(document.body.querySelector('#tag-name')).not.toBeNull()
+
+    document.body.querySelector<HTMLButtonElement>('.side-drawer__close')?.click()
+    await flushPromises()
+
+    await wrapper.find('[aria-label="Edit tag Gateway"]').trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('Edit tag')
+    expect((document.body.querySelector('#tag-name') as HTMLInputElement | null)?.value).toBe('Gateway')
+  })
+
+  it('shows the content empty state and routes its CTA to the editor', async () => {
+    const { wrapper, router } = await mountWithApp(StudioContentPage)
+    await flushPromises()
+
+    await wrapper.get('#content-search').setValue('missing-content')
+    await new Promise((resolve) => window.setTimeout(resolve, 350))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('No content yet.')
+    expect(wrapper.text()).toContain('Create the first content item to start this workspace.')
+
+    await wrapper.findAll('button').find((button) => button.text().includes('New draft'))!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/studio/content/new')
+  })
+
+  it('filters audits automatically without an apply button', async () => {
+    const { wrapper } = await mountWithApp(StudioAuditsPage)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Apply')
+
+    await wrapper.get('#audit-event-type').setValue('admin_update_user_status')
+    await new Promise((resolve) => window.setTimeout(resolve, 350))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('admin_update_user_status')
+    expect(wrapper.text()).not.toContain('login')
   })
 
   it('creates a draft from the full-screen content editor', async () => {

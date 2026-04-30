@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { PackageOpen } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+
+import EmptyState from './EmptyState.vue'
 
 export interface DataTableColumn {
   key: string
@@ -10,6 +13,7 @@ defineProps<{
   columns: DataTableColumn[]
   rows: Record<string, string | number | boolean | null | undefined>[]
   emptyText?: string
+  emptyDescription?: string
 }>()
 
 const { t } = useI18n()
@@ -17,21 +21,33 @@ const { t } = useI18n()
 
 <template>
   <div class="data-table" role="region" :aria-label="t('accessibility.dataTable')" tabindex="0">
-    <table>
+    <table class="data-table__grid">
       <thead>
         <tr>
           <th v-for="column in columns" :key="column.key" scope="col">{{ column.label }}</th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-if="rows.length === 0">
-          <td :colspan="columns.length">{{ emptyText ?? t('accessibility.dataTableEmpty') }}</td>
-        </tr>
-        <tr v-for="(row, rowIndex) in rows" v-else :key="rowIndex">
+      <tbody v-if="rows.length > 0">
+        <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
           <td v-for="column in columns" :key="column.key">{{ row[column.key] }}</td>
         </tr>
       </tbody>
     </table>
+    <div v-if="rows.length === 0" class="data-table__empty-panel">
+      <EmptyState
+        class="data-table__empty-state"
+        align="center"
+        :title="emptyText ?? t('accessibility.dataTableEmpty')"
+        :description="emptyDescription"
+      >
+        <template #visual>
+          <slot name="emptyVisual">
+            <PackageOpen :size="44" aria-hidden="true" />
+          </slot>
+        </template>
+        <slot name="emptyActions" />
+      </EmptyState>
+    </div>
   </div>
 </template>
 
@@ -49,7 +65,7 @@ const { t } = useI18n()
   box-shadow: 0 0 0 3px var(--bb-color-focus);
 }
 
-table {
+.data-table__grid {
   width: 100%;
   min-width: 560px;
   border-collapse: collapse;
@@ -73,15 +89,35 @@ td {
   color: var(--bb-color-text);
 }
 
-tbody tr {
+.data-table tbody tr {
   transition: background-color 140ms ease;
 }
 
-tbody tr:hover {
+.data-table tbody tr:hover {
   background: var(--bb-color-subtle);
 }
 
-tr:last-child td {
+.data-table__empty-panel {
+  min-width: 560px;
+  border-top: 1px solid var(--bb-color-line);
+}
+
+.data-table__empty-state {
+  min-height: 216px;
+  justify-items: center;
+  text-align: center;
+  border: 0;
+  border-radius: 0;
+  padding: 28px 20px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.data-table__empty-state :deep(.empty-state__actions) {
+  justify-content: center;
+}
+
+.data-table tbody tr:last-child td {
   border-bottom: 0;
 }
 </style>

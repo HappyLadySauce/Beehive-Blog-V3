@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import DataTable from '@/shared/components/DataTable.vue'
+import EmptyState from '@/shared/components/EmptyState.vue'
 import FormField from '@/shared/components/FormField.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import BaseSelect from '@/shared/components/BaseSelect.vue'
@@ -87,6 +88,67 @@ describe('shared components', () => {
     })
 
     expect(wrapper.text()).toContain('Nothing here')
+  })
+
+  it('renders the default empty table visual when no rows are present', () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        columns: [{ key: 'title', label: 'Title' }],
+        rows: [],
+        emptyText: 'Nothing here',
+      },
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.find('.data-table__empty-state').exists()).toBe(true)
+    expect(wrapper.find('svg').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Nothing here')
+  })
+
+  it('renders custom visuals in empty state slots', () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        columns: [{ key: 'title', label: 'Title' }],
+        rows: [],
+        emptyText: 'Nothing here',
+      },
+      slots: {
+        emptyVisual: '<div class="custom-empty-visual">custom visual</div>',
+      },
+      global: {
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.find('.custom-empty-visual').exists()).toBe(true)
+  })
+
+  it('renders empty state visual slots in the shared empty state component', () => {
+    const wrapper = mount(EmptyState, {
+      props: {
+        title: 'No content yet',
+        description: 'Create your first record.',
+      },
+      slots: {
+        visual: '<div class="empty-state-visual">visual</div>',
+      },
+    })
+
+    expect(wrapper.find('.empty-state-visual').exists()).toBe(true)
+  })
+
+  it('supports a centered empty state alignment mode', () => {
+    const wrapper = mount(EmptyState, {
+      props: {
+        title: 'No content yet',
+        description: 'Create your first record.',
+        align: 'center',
+      },
+    })
+
+    expect(wrapper.classes()).toContain('empty-state--center')
   })
 
   it('renders page loading skeleton rows', () => {
