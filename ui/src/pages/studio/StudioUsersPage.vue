@@ -17,7 +17,6 @@ import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
 import InlineLoadingState from '@/shared/components/InlineLoadingState.vue'
 import ModalDialog from '@/shared/components/ModalDialog.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import PasswordInput from '@/shared/components/PasswordInput.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
@@ -388,12 +387,6 @@ function readBooleanQuery(value: unknown): boolean {
 
 <template>
   <section class="users-page">
-    <PageHeader
-      :eyebrow="t('users.eyebrow')"
-      :title="t('users.title')"
-      :description="t('users.description')"
-    />
-
     <div class="studio-list-filters users-page__filters">
       <FormField class="users-page__search" :label="t('common.search')" for-id="user-search">
         <BaseInput id="user-search" v-model="filters.keyword" :placeholder="t('users.searchPlaceholder')" />

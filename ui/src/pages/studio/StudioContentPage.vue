@@ -23,7 +23,6 @@ import EmptyState from '@/shared/components/EmptyState.vue'
 import FormField from '@/shared/components/FormField.vue'
 import IconActionButton from '@/shared/components/IconActionButton.vue'
 import InlineLoadingState from '@/shared/components/InlineLoadingState.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import ReadonlyField from '@/shared/components/ReadonlyField.vue'
 import SideDrawer from '@/shared/components/SideDrawer.vue'
@@ -378,20 +377,13 @@ function readTabQuery(value: unknown): StudioTab {
 
 <template>
   <section class="content-page">
-    <PageHeader
-      :eyebrow="t('content.eyebrow')"
-      :title="t('content.title')"
-      :description="t('content.description')"
-    >
-      <template #actions>
-        <BaseButton v-if="activeTab === 'content'" @click="openNewDraft">{{ t('content.newDraft') }}</BaseButton>
-        <BaseButton v-else @click="openCreateTag">{{ t('content.tags.createAction') }}</BaseButton>
-      </template>
-    </PageHeader>
-
-    <div class="content-page__tabs" role="tablist" aria-label="Content workspace">
-      <button type="button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">{{ t('content.tabs.content') }}</button>
-      <button type="button" :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'">{{ t('content.tabs.tags') }}</button>
+    <div class="content-page__toolbar">
+      <div class="content-page__tabs" role="tablist" aria-label="Content workspace">
+        <button type="button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">{{ t('content.tabs.content') }}</button>
+        <button type="button" :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'">{{ t('content.tabs.tags') }}</button>
+      </div>
+      <BaseButton v-if="activeTab === 'content'" @click="openNewDraft">{{ t('content.newDraft') }}</BaseButton>
+      <BaseButton v-else @click="openCreateTag">{{ t('content.tags.createAction') }}</BaseButton>
     </div>
 
     <template v-if="activeTab === 'content'">
@@ -634,6 +626,14 @@ function readTabQuery(value: unknown): StudioTab {
 .content-page__subsection {
   display: grid;
   gap: 20px;
+}
+
+.content-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .content-page__tabs {

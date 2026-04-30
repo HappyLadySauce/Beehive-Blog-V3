@@ -5,7 +5,6 @@ import { appConfig } from '@/shared/config/env'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import FormField from '@/shared/components/FormField.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 
 const { t } = useI18n()
@@ -13,11 +12,6 @@ const { t } = useI18n()
 
 <template>
   <section class="settings-page">
-    <PageHeader
-      :eyebrow="t('settings.eyebrow')"
-      :title="t('settings.title')"
-      :description="t('settings.description')"
-    />
     <StatusAlert v-if="appConfig.apiMode === 'mock'" tone="info" :title="t('settings.mockModeTitle')">
       {{ t('settings.mockModeMessage') }}
     </StatusAlert>

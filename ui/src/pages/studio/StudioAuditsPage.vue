@@ -10,7 +10,6 @@ import BaseInput from '@/shared/components/BaseInput.vue'
 import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
 import DataTable from '@/shared/components/DataTable.vue'
 import FormField from '@/shared/components/FormField.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 import TablePagination from '@/shared/components/TablePagination.vue'
 import type { DataTableColumn } from '@/shared/components/DataTable.vue'
@@ -145,12 +144,6 @@ function readQueryString(value: unknown): string {
 
 <template>
   <section class="audits-page">
-    <PageHeader
-      :eyebrow="t('audits.eyebrow')"
-      :title="t('audits.title')"
-      :description="t('audits.description')"
-    />
-
     <div class="studio-list-filters audits-page__filters">
       <FormField :label="t('audits.eventType')" for-id="audit-event-type">
         <BaseInput id="audit-event-type" v-model="filters.eventType" :placeholder="t('audits.placeholders.eventType')" />

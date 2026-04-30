@@ -2,7 +2,7 @@
 import { FileText, LayoutDashboard, ScrollText, Settings, Users } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import LocaleToggle from '@/shared/components/LocaleToggle.vue'
@@ -11,6 +11,7 @@ import UserAccountMenu from '@/shared/components/UserAccountMenu.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+const route = useRoute()
 const router = useRouter()
 const navItems = computed(() => [
   { label: t('nav.dashboard'), to: '/studio', icon: LayoutDashboard },
@@ -19,6 +20,17 @@ const navItems = computed(() => [
   { label: t('nav.audits'), to: '/studio/audits', icon: ScrollText },
   { label: t('nav.settings'), to: '/studio/settings', icon: Settings },
 ])
+
+const pageMeta = computed(() => {
+  const meta = route.meta.pageMeta
+  if (!meta) return null
+  const prefix = meta.i18nPrefix as string
+  return {
+    eyebrow: t(`${prefix}.eyebrow`),
+    title: t(`${prefix}.title`),
+    description: t(`${prefix}.description`),
+  }
+})
 
 async function handleLogout() {
   await authStore.logout()
@@ -56,7 +68,11 @@ async function handleLogout() {
     </aside>
     <div class="studio-shell__workspace">
       <header class="studio-shell__topbar">
-        <div class="studio-shell__topbar-title">{{ t('app.adminWorkspace') }}</div>
+        <div v-if="pageMeta" class="studio-shell__topbar-page">
+          <span class="studio-shell__topbar-eyebrow">{{ pageMeta.eyebrow }}</span>
+          <h1 class="studio-shell__topbar-title">{{ pageMeta.title }}</h1>
+          <span class="studio-shell__topbar-desc">{{ pageMeta.description }}</span>
+        </div>
         <div class="studio-shell__topbar-actions">
           <LocaleToggle />
           <ThemeToggle />
@@ -155,9 +171,36 @@ async function handleLogout() {
   backdrop-filter: blur(16px);
 }
 
-.studio-shell__topbar-title {
-  color: var(--bb-color-muted);
+.studio-shell__topbar-page {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.studio-shell__topbar-eyebrow {
+  color: var(--bb-color-primary);
+  font-size: 0.78rem;
   font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.studio-shell__topbar-title {
+  color: var(--bb-color-text-strong);
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.studio-shell__topbar-desc {
+  color: var(--bb-color-muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .studio-shell__topbar-actions {

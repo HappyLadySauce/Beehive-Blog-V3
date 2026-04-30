@@ -97,6 +97,7 @@ const { t } = useI18n()
 .data-table__grid {
   width: 100%;
   min-width: 560px;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -116,6 +117,7 @@ th {
 
 td {
   color: var(--bb-color-text);
+  overflow-wrap: break-word;
 }
 
 .data-table tbody tr {
