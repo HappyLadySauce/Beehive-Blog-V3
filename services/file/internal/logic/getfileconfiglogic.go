@@ -19,9 +19,8 @@ func (l *GetFileConfigLogic) GetFileConfig(in *pb.GetFileConfigRequest) (*pb.Get
 	snapshot := l.svcCtx.ConfigCache.Snapshot()
 	return &pb.GetFileConfigResponse{
 		Config: &pb.FileConfig{
-			MaxUploadBytes:      snapshot.MaxUploadBytes,
-			AllowedContentTypes: snapshot.AllowedContentTypes,
-			PresignTtlSeconds:   int32(snapshot.PresignTTLSeconds),
+			MaxUploadBytes:    snapshot.MaxUploadBytes,
+			PresignTtlSeconds: int32(snapshot.PresignTTLSeconds),
 		},
 	}, nil
 }

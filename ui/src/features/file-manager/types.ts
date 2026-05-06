@@ -1,12 +1,62 @@
-export type FileUploadNamespace = string
+export type FileCategoryKey = string
 export type FileUploadVisibility = 'public' | 'private'
 export type FileAssetStatus = 'pending' | 'uploaded' | 'deleted'
+
+export interface FileCategory {
+  category_key: string
+  display_name: string
+  description: string
+  enabled: boolean
+  is_default: boolean
+  sort_order: number
+  allowed_extensions: string[]
+  created_at: number
+  updated_at: number
+}
+
+export interface FileCategoryListResponse {
+  items: FileCategory[]
+}
+
+export interface FileCategoryResponse {
+  category: FileCategory
+}
+
+export interface FileCategoryCreateRequest {
+  category_key: string
+  display_name: string
+  description?: string
+  enabled?: boolean
+  is_default?: boolean
+  sort_order?: number
+  allowed_extensions: string[]
+}
+
+export interface FileCategoryUpdateRequest {
+  display_name: string
+  description?: string
+  enabled?: boolean
+  sort_order?: number
+}
+
+export interface FileCategoryExtensionsUpdateRequest {
+  allowed_extensions: string[]
+}
+
+export interface FileConfig {
+  max_upload_bytes: number
+  presign_ttl_seconds: number
+}
+
+export interface FileConfigResponse {
+  config: FileConfig
+}
 
 export interface FileAsset {
   asset_id: string
   upload_id: string
   owner_user_id: string
-  namespace: string
+  category_key: string
   visibility: FileUploadVisibility
   status: FileAssetStatus
   bucket: string
@@ -25,9 +75,9 @@ export type FileAssetSummary = FileAsset
 export type FileAssetDetail = FileAsset
 
 export interface FileUploadCreateRequest {
-  namespace: string
+  category_key: string
   file_name: string
-  content_type: string
+  content_type?: string
   byte_size: number
   visibility?: FileUploadVisibility
 }
@@ -45,7 +95,7 @@ export interface FileAssetResponse {
 }
 
 export interface FileAssetListParams {
-  namespace?: string
+  category_key?: string
   status?: string
   visibility?: string
   owner_user_id?: string

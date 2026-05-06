@@ -167,6 +167,9 @@ const (
 	// CodeFileTooLarge identifies uploads exceeding configured size limits.
 	// CodeFileTooLarge 标识超过配置大小限制的上传。
 	CodeFileTooLarge Code = 130104
+	// CodeFileInvalidExtension identifies disallowed file extensions.
+	// CodeFileInvalidExtension 标识不允许的文件后缀。
+	CodeFileInvalidExtension Code = 130105
 	// CodeFileInternalCallerUnauthorized identifies unauthorized internal callers.
 	// CodeFileInternalCallerUnauthorized 标识未通过认证的内部调用方。
 	CodeFileInternalCallerUnauthorized Code = 130201
@@ -182,6 +185,9 @@ const (
 	// CodeFileUploadNotFound identifies missing upload sessions.
 	// CodeFileUploadNotFound 标识上传会话不存在。
 	CodeFileUploadNotFound Code = 130502
+	// CodeFileCategoryNotFound identifies missing file categories.
+	// CodeFileCategoryNotFound 标识文件分类不存在。
+	CodeFileCategoryNotFound Code = 130503
 	// CodeFileDependencyUnavailable identifies object storage readiness failures.
 	// CodeFileDependencyUnavailable 标识对象存储依赖不可用。
 	CodeFileDependencyUnavailable Code = 130601

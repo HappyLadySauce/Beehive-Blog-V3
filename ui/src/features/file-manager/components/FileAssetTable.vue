@@ -37,7 +37,7 @@ function formatUnixTime(value?: number): string {
     <thead>
       <tr>
         <th scope="col">{{ t('files.columns.file') }}</th>
-        <th scope="col">{{ t('files.columns.scope') }}</th>
+        <th scope="col">{{ t('files.columns.category') }}</th>
         <th scope="col">{{ t('files.columns.type') }}</th>
         <th scope="col">{{ t('files.columns.size') }}</th>
         <th scope="col">{{ t('files.columns.status') }}</th>
@@ -52,7 +52,7 @@ function formatUnixTime(value?: number): string {
           <strong>{{ asset.file_name }}</strong>
           <span>{{ asset.object_key }}</span>
         </td>
-        <td><StatusBadge :value="asset.namespace" /></td>
+        <td><StatusBadge :value="asset.category_key" /></td>
         <td>{{ asset.content_type }}</td>
         <td>{{ formatFileSize(asset.byte_size) }}</td>
         <td><StatusBadge :value="asset.status" /></td>

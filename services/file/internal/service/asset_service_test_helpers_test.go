@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -74,12 +75,19 @@ func newAssetServiceTestStore(t *testing.T) *repo.Store {
 		_ = sqlDB.Close()
 	})
 
-	migration, err := os.ReadFile(filepath.Join(repoRootDir(), "sql", "migrations", "v3", "file", "040_v3_file_assets.sql"))
-	if err != nil {
-		t.Fatalf("failed to read file migration: %v", err)
+	migrationFiles := []string{
+		"040_v3_file_assets.sql",
+		"041_v3_file_assets_relax_scope.sql",
+		"042_v3_file_categories.sql",
 	}
-	if _, err := sqlDB.ExecContext(ctx, string(migration)); err != nil {
-		t.Fatalf("failed to apply file migration: %v", err)
+	for _, migrationFile := range migrationFiles {
+		migration, err := os.ReadFile(filepath.Join(repoRootDir(), "sql", "migrations", "v3", "file", migrationFile))
+		if err != nil {
+			t.Fatalf("failed to read file migration %s: %v", migrationFile, err)
+		}
+		if _, err := sqlDB.ExecContext(ctx, migrationUpSQL(string(migration))); err != nil {
+			t.Fatalf("failed to apply file migration %s: %v", migrationFile, err)
+		}
 	}
 
 	return repo.NewStore(db)
@@ -118,4 +126,11 @@ func openPostgresWithRetry(t *testing.T, ctx context.Context, dsn string) (*gorm
 func repoRootDir() string {
 	_, file, _, _ := runtime.Caller(0)
 	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", "..", "..", ".."))
+}
+
+func migrationUpSQL(content string) string {
+	if index := strings.Index(content, "-- +migrate Down"); index >= 0 {
+		return content[:index]
+	}
+	return content
 }

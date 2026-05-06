@@ -6,7 +6,7 @@ type FileAsset struct {
 	AssetID     string     `gorm:"column:asset_id;primaryKey"`
 	UploadID    string     `gorm:"column:upload_id"`
 	OwnerUserID int64      `gorm:"column:owner_user_id"`
-	Namespace   string     `gorm:"column:scope"`
+	CategoryKey string     `gorm:"column:category_key"`
 	Visibility  string     `gorm:"column:visibility"`
 	Status      string     `gorm:"column:status"`
 	Bucket      string     `gorm:"column:bucket"`

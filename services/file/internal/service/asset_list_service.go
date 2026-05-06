@@ -21,7 +21,7 @@ func (m *Manager) ListAssets(ctx context.Context, in ListAssetsInput) (*AssetLis
 		return nil, errs.New(errs.CodeFileAccessForbidden, "owner_user_id is forbidden")
 	}
 
-	namespace, err := normalizeOptionalNamespace(in.Namespace)
+	categoryKey, err := normalizeOptionalCategoryKey(in.CategoryKey)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (m *Manager) ListAssets(ctx context.Context, in ListAssetsInput) (*AssetLis
 		return nil, err
 	}
 
-	assets, total, err := m.store.Assets.List(ctx, repoAssetFilter(ownerUserID, namespace, status, visibility, in.Keyword, in.Page, in.PageSize))
+	assets, total, err := m.store.Assets.List(ctx, repoAssetFilter(ownerUserID, categoryKey, status, visibility, in.Keyword, in.Page, in.PageSize))
 	if err != nil {
 		return nil, errs.Wrap(err, errs.CodeFileInternal, "list file assets failed")
 	}
@@ -52,10 +52,10 @@ func (m *Manager) ListAssets(ctx context.Context, in ListAssetsInput) (*AssetLis
 	}, nil
 }
 
-func repoAssetFilter(ownerUserID int64, namespace string, status string, visibility string, keyword string, page int, pageSize int) repo.AssetListFilter {
+func repoAssetFilter(ownerUserID int64, categoryKey string, status string, visibility string, keyword string, page int, pageSize int) repo.AssetListFilter {
 	return repo.AssetListFilter{
 		OwnerUserID: ownerUserID,
-		Namespace:   namespace,
+		CategoryKey: categoryKey,
 		Status:      status,
 		Visibility:  visibility,
 		Keyword:     strings.TrimSpace(keyword),

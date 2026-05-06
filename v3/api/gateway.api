@@ -257,7 +257,7 @@ type (
 		AssetId     string `json:"asset_id,example=asset_01J8FILEEXAMPLE"`
 		UploadId    string `json:"upload_id,example=upload_01J8FILEEXAMPLE"`
 		OwnerUserId string `json:"owner_user_id,example=1"`
-		Scope       string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar"`
+		CategoryKey string `json:"category_key,example=default"`
 		Visibility  string `json:"visibility,options=public|private,example=public"`
 		Status      string `json:"status,options=pending|uploaded|deleted,example=pending"`
 		Bucket      string `json:"bucket,example=beehive"`
@@ -273,9 +273,9 @@ type (
 	}
 	FileUploadCreateReq {
 		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-		Scope         string `json:"scope,options=avatar|content_cover|content_image|attachment,example=avatar" validate:"required"`
+		CategoryKey   string `json:"category_key,example=default" validate:"required"`
 		FileName      string `json:"file_name,example=avatar.png" validate:"required,min=1,max=255"`
-		ContentType   string `json:"content_type,example=image/png" validate:"required,max=128"`
+		ContentType   string `json:"content_type,optional,example=image/png" validate:"omitempty,max=128"`
 		ByteSize      int64  `json:"byte_size,example=153600" validate:"required,min=1"`
 		Visibility    string `json:"visibility,optional,options=public|private,default=public,example=public"`
 	}
@@ -292,7 +292,7 @@ type (
 	}
 	FileAssetListReq {
 		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-		Scope         string `form:"scope,optional,options=avatar|content_cover|content_image|attachment,example=avatar" validate:"omitempty"`
+		CategoryKey   string `form:"category_key,optional,example=default" validate:"omitempty"`
 		Status        string `form:"status,optional,options=pending|uploaded|deleted,example=uploaded" validate:"omitempty"`
 		Visibility    string `form:"visibility,optional,options=public|private,example=public" validate:"omitempty"`
 		OwnerUserId   string `form:"owner_user_id,optional,example=1" validate:"omitempty"`
@@ -315,6 +315,65 @@ type (
 	}
 	FileAssetDeleteResp {
 		Ok bool `json:"ok,example=true"`
+	}
+	FileConfigView {
+		MaxUploadBytes    int64 `json:"max_upload_bytes,example=2147483648"`
+		PresignTtlSeconds int32 `json:"presign_ttl_seconds,example=300"`
+	}
+	FileConfigGetResp {
+		Config FileConfigView `json:"config"`
+	}
+	FileConfigUpdateReq {
+		Authorization     string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		MaxUploadBytes    int64  `json:"max_upload_bytes,optional,example=2147483648"`
+		PresignTtlSeconds int32  `json:"presign_ttl_seconds,optional,example=300"`
+	}
+	FileConfigUpdateResp {
+		Config FileConfigView `json:"config"`
+	}
+	FileCategoryView {
+		CategoryKey       string   `json:"category_key,example=default"`
+		DisplayName       string   `json:"display_name,example=默认类型"`
+		Description       string   `json:"description,optional,example=System default file category."`
+		Enabled           bool     `json:"enabled,example=true"`
+		IsDefault         bool     `json:"is_default,example=true"`
+		SortOrder         int32    `json:"sort_order,example=0"`
+		AllowedExtensions []string `json:"allowed_extensions,example=[\".png\",\".jpg\"]"`
+		CreatedAt         int64    `json:"created_at,example=1713772800"`
+		UpdatedAt         int64    `json:"updated_at,example=1713776400"`
+	}
+	FileCategoryListResp {
+		Items []FileCategoryView `json:"items"`
+	}
+	FileCategoryCreateReq {
+		Authorization     string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		CategoryKey       string   `json:"category_key,example=default" validate:"required"`
+		DisplayName       string   `json:"display_name,example=默认类型" validate:"required,min=1,max=128"`
+		Description       string   `json:"description,optional,example=System default file category." validate:"omitempty,max=2048"`
+		Enabled           bool     `json:"enabled,optional,example=true"`
+		IsDefault         bool     `json:"is_default,optional,example=false"`
+		SortOrder         int32    `json:"sort_order,optional,example=0"`
+		AllowedExtensions []string `json:"allowed_extensions,example=[\".png\",\".jpg\"]" validate:"required,min=1"`
+	}
+	FileCategoryUpdateReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		CategoryKey   string `path:"category_key,example=default" validate:"required"`
+		DisplayName   string `json:"display_name,example=默认类型" validate:"required,min=1,max=128"`
+		Description   string `json:"description,optional,example=System default file category." validate:"omitempty,max=2048"`
+		Enabled       bool   `json:"enabled,optional,example=true"`
+		SortOrder     int32  `json:"sort_order,optional,example=0"`
+	}
+	FileCategoryExtensionsUpdateReq {
+		Authorization     string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		CategoryKey       string   `path:"category_key,example=default" validate:"required"`
+		AllowedExtensions []string `json:"allowed_extensions,example=[\".png\",\".jpg\"]" validate:"required,min=1"`
+	}
+	FileCategoryDefaultSetReq {
+		Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+		CategoryKey   string `path:"category_key,example=default" validate:"required"`
+	}
+	FileCategoryResp {
+		Category FileCategoryView `json:"category"`
 	}
 	ReadyzResp {
 		Status string `json:"status,example=ready"`
@@ -659,15 +718,22 @@ service gateway {
 )
 service gateway {
 	@doc (
+		summary:                "List enabled file categories"
+		description: "100201-authorization required<br>100203-access token invalid<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileCategoryList
+	get /categories returns (FileCategoryListResp)
+
+	@doc (
 		summary:                "List file assets"
-		description: "100201-authorization required<br>100203-access token invalid<br>130101-invalid argument<br>130102-invalid scope<br>130301-access forbidden<br>100604-file service unavailable<br>139901-file internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>130101-invalid argument<br>130102-invalid file category<br>130301-access forbidden<br>100604-file service unavailable<br>139901-file internal error"
 	)
 	@handler FileAssetList
 	get /assets (FileAssetListReq) returns (FileAssetListResp)
 
 	@doc (
 		summary:                "Create direct file upload"
-		description: "100201-authorization required<br>100203-access token invalid<br>130101-invalid argument<br>130102-invalid scope<br>130103-invalid content type<br>130104-file too large<br>100604-file service unavailable<br>139901-file internal error"
+		description: "100201-authorization required<br>100203-access token invalid<br>130101-invalid argument<br>130102-invalid file category<br>130104-file too large<br>130105-invalid extension<br>130503-file category not found<br>100604-file service unavailable<br>139901-file internal error"
 	)
 	@handler FileUploadCreate
 	post /uploads (FileUploadCreateReq) returns (FileUploadCreateResp)
@@ -692,6 +758,63 @@ service gateway {
 	)
 	@handler FileAssetDelete
 	delete /assets/:asset_id (FileAssetIdReq) returns (FileAssetDeleteResp)
+}
+
+@server (
+	prefix:   /api/v3/studio
+	group:    file
+	tags:     "Studio Files"
+	authType: bearerAuth
+)
+service gateway {
+	@doc (
+		summary:                "Get file upload config"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileConfigGet
+	get /file/config returns (FileConfigGetResp)
+
+	@doc (
+		summary:                "Update file upload config"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>130101-invalid argument<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileConfigUpdate
+	put /file/config (FileConfigUpdateReq) returns (FileConfigUpdateResp)
+
+	@doc (
+		summary:                "List studio file categories"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler StudioFileCategoryList
+	get /file/categories returns (FileCategoryListResp)
+
+	@doc (
+		summary:                "Create file category"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>130101-invalid argument<br>130105-invalid extension<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileCategoryCreate
+	post /file/categories (FileCategoryCreateReq) returns (FileCategoryResp)
+
+	@doc (
+		summary:                "Update file category"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>130101-invalid argument<br>130503-file category not found<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileCategoryUpdate
+	put /file/categories/:category_key (FileCategoryUpdateReq) returns (FileCategoryResp)
+
+	@doc (
+		summary:                "Replace file category extensions"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>130101-invalid argument<br>130105-invalid extension<br>130503-file category not found<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileCategoryExtensionsUpdate
+	put /file/categories/:category_key/extensions (FileCategoryExtensionsUpdateReq) returns (FileCategoryResp)
+
+	@doc (
+		summary:                "Set default file category"
+		description: "100201-authorization required<br>100203-access token invalid<br>100301-access forbidden<br>130102-invalid file category<br>130503-file category not found<br>100604-file service unavailable<br>139901-file internal error"
+	)
+	@handler FileCategoryDefaultSet
+	post /file/categories/:category_key/default (FileCategoryDefaultSetReq) returns (FileCategoryResp)
 }
 
 @server (

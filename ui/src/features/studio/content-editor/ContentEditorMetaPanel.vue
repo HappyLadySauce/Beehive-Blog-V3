@@ -57,7 +57,7 @@ const aiAccessOptions = computed<BaseSelectOption[]>(() => [
       </FormField>
       <div class="content-editor-meta__field">
         <span>{{ t('editor.coverImage') }}</span>
-        <ImageUploader v-model="form.cover_image_url" scope="content_cover" :label="t('editor.uploadCover')" />
+        <ImageUploader v-model="form.cover_image_url" category-key="default" :label="t('editor.uploadCover')" />
       </div>
       <FormField :label="t('editor.changeSummary')" for-id="editor-change-summary">
         <BaseInput id="editor-change-summary" v-model="form.change_summary" />

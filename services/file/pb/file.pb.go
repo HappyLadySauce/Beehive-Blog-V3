@@ -215,7 +215,7 @@ type Asset struct {
 	AssetId       string                 `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	UploadId      string                 `protobuf:"bytes,2,opt,name=upload_id,json=uploadId,proto3" json:"upload_id,omitempty"`
 	OwnerUserId   string                 `protobuf:"bytes,3,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"`
-	Namespace     string                 `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	CategoryKey   string                 `protobuf:"bytes,4,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
 	Visibility    AssetVisibility        `protobuf:"varint,5,opt,name=visibility,proto3,enum=file.AssetVisibility" json:"visibility,omitempty"`
 	Status        AssetStatus            `protobuf:"varint,6,opt,name=status,proto3,enum=file.AssetStatus" json:"status,omitempty"`
 	Bucket        string                 `protobuf:"bytes,7,opt,name=bucket,proto3" json:"bucket,omitempty"`
@@ -283,9 +283,9 @@ func (x *Asset) GetOwnerUserId() string {
 	return ""
 }
 
-func (x *Asset) GetNamespace() string {
+func (x *Asset) GetCategoryKey() string {
 	if x != nil {
-		return x.Namespace
+		return x.CategoryKey
 	}
 	return ""
 }
@@ -377,7 +377,7 @@ func (x *Asset) GetDeletedAt() int64 {
 type CreateUploadRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorUserId   string                 `protobuf:"bytes,1,opt,name=actor_user_id,json=actorUserId,proto3" json:"actor_user_id,omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	CategoryKey   string                 `protobuf:"bytes,2,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
 	FileName      string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
 	ContentType   string                 `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
 	ByteSize      int64                  `protobuf:"varint,5,opt,name=byte_size,json=byteSize,proto3" json:"byte_size,omitempty"`
@@ -423,9 +423,9 @@ func (x *CreateUploadRequest) GetActorUserId() string {
 	return ""
 }
 
-func (x *CreateUploadRequest) GetNamespace() string {
+func (x *CreateUploadRequest) GetCategoryKey() string {
 	if x != nil {
-		return x.Namespace
+		return x.CategoryKey
 	}
 	return ""
 }
@@ -589,7 +589,7 @@ func (x *CompleteUploadRequest) GetUploadId() string {
 type ListAssetsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorUserId   string                 `protobuf:"bytes,1,opt,name=actor_user_id,json=actorUserId,proto3" json:"actor_user_id,omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	CategoryKey   string                 `protobuf:"bytes,2,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
 	Status        AssetStatus            `protobuf:"varint,3,opt,name=status,proto3,enum=file.AssetStatus" json:"status,omitempty"`
 	Visibility    AssetVisibility        `protobuf:"varint,4,opt,name=visibility,proto3,enum=file.AssetVisibility" json:"visibility,omitempty"`
 	OwnerUserId   string                 `protobuf:"bytes,5,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"`
@@ -637,9 +637,9 @@ func (x *ListAssetsRequest) GetActorUserId() string {
 	return ""
 }
 
-func (x *ListAssetsRequest) GetNamespace() string {
+func (x *ListAssetsRequest) GetCategoryKey() string {
 	if x != nil {
-		return x.Namespace
+		return x.CategoryKey
 	}
 	return ""
 }
@@ -947,12 +947,11 @@ func (x *DeleteAssetResponse) GetOk() bool {
 }
 
 type FileConfig struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	MaxUploadBytes      int64                  `protobuf:"varint,1,opt,name=max_upload_bytes,json=maxUploadBytes,proto3" json:"max_upload_bytes,omitempty"`
-	AllowedContentTypes []string               `protobuf:"bytes,2,rep,name=allowed_content_types,json=allowedContentTypes,proto3" json:"allowed_content_types,omitempty"`
-	PresignTtlSeconds   int32                  `protobuf:"varint,3,opt,name=presign_ttl_seconds,json=presignTtlSeconds,proto3" json:"presign_ttl_seconds,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	MaxUploadBytes    int64                  `protobuf:"varint,1,opt,name=max_upload_bytes,json=maxUploadBytes,proto3" json:"max_upload_bytes,omitempty"`
+	PresignTtlSeconds int32                  `protobuf:"varint,2,opt,name=presign_ttl_seconds,json=presignTtlSeconds,proto3" json:"presign_ttl_seconds,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *FileConfig) Reset() {
@@ -990,13 +989,6 @@ func (x *FileConfig) GetMaxUploadBytes() int64 {
 		return x.MaxUploadBytes
 	}
 	return 0
-}
-
-func (x *FileConfig) GetAllowedContentTypes() []string {
-	if x != nil {
-		return x.AllowedContentTypes
-	}
-	return nil
 }
 
 func (x *FileConfig) GetPresignTtlSeconds() int32 {
@@ -1087,12 +1079,11 @@ func (x *GetFileConfigResponse) GetConfig() *FileConfig {
 }
 
 type UpdateFileConfigRequest struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	MaxUploadBytes      int64                  `protobuf:"varint,1,opt,name=max_upload_bytes,json=maxUploadBytes,proto3" json:"max_upload_bytes,omitempty"`
-	AllowedContentTypes []string               `protobuf:"bytes,2,rep,name=allowed_content_types,json=allowedContentTypes,proto3" json:"allowed_content_types,omitempty"`
-	PresignTtlSeconds   int32                  `protobuf:"varint,3,opt,name=presign_ttl_seconds,json=presignTtlSeconds,proto3" json:"presign_ttl_seconds,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	MaxUploadBytes    int64                  `protobuf:"varint,1,opt,name=max_upload_bytes,json=maxUploadBytes,proto3" json:"max_upload_bytes,omitempty"`
+	PresignTtlSeconds int32                  `protobuf:"varint,2,opt,name=presign_ttl_seconds,json=presignTtlSeconds,proto3" json:"presign_ttl_seconds,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *UpdateFileConfigRequest) Reset() {
@@ -1130,13 +1121,6 @@ func (x *UpdateFileConfigRequest) GetMaxUploadBytes() int64 {
 		return x.MaxUploadBytes
 	}
 	return 0
-}
-
-func (x *UpdateFileConfigRequest) GetAllowedContentTypes() []string {
-	if x != nil {
-		return x.AllowedContentTypes
-	}
-	return nil
 }
 
 func (x *UpdateFileConfigRequest) GetPresignTtlSeconds() int32 {
@@ -1190,6 +1174,510 @@ func (x *UpdateFileConfigResponse) GetConfig() *FileConfig {
 	return nil
 }
 
+type FileCategory struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	CategoryKey       string                 `protobuf:"bytes,1,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
+	DisplayName       string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Description       string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Enabled           bool                   `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	IsDefault         bool                   `protobuf:"varint,5,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
+	SortOrder         int32                  `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	AllowedExtensions []string               `protobuf:"bytes,7,rep,name=allowed_extensions,json=allowedExtensions,proto3" json:"allowed_extensions,omitempty"`
+	CreatedAt         int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt         int64                  `protobuf:"varint,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *FileCategory) Reset() {
+	*x = FileCategory{}
+	mi := &file_v3_proto_file_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileCategory) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileCategory) ProtoMessage() {}
+
+func (x *FileCategory) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileCategory.ProtoReflect.Descriptor instead.
+func (*FileCategory) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *FileCategory) GetCategoryKey() string {
+	if x != nil {
+		return x.CategoryKey
+	}
+	return ""
+}
+
+func (x *FileCategory) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *FileCategory) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *FileCategory) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *FileCategory) GetIsDefault() bool {
+	if x != nil {
+		return x.IsDefault
+	}
+	return false
+}
+
+func (x *FileCategory) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *FileCategory) GetAllowedExtensions() []string {
+	if x != nil {
+		return x.AllowedExtensions
+	}
+	return nil
+}
+
+func (x *FileCategory) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+func (x *FileCategory) GetUpdatedAt() int64 {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return 0
+}
+
+type ListFileCategoriesRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	IncludeDisabled bool                   `protobuf:"varint,1,opt,name=include_disabled,json=includeDisabled,proto3" json:"include_disabled,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListFileCategoriesRequest) Reset() {
+	*x = ListFileCategoriesRequest{}
+	mi := &file_v3_proto_file_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFileCategoriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFileCategoriesRequest) ProtoMessage() {}
+
+func (x *ListFileCategoriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFileCategoriesRequest.ProtoReflect.Descriptor instead.
+func (*ListFileCategoriesRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ListFileCategoriesRequest) GetIncludeDisabled() bool {
+	if x != nil {
+		return x.IncludeDisabled
+	}
+	return false
+}
+
+type ListFileCategoriesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*FileCategory        `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFileCategoriesResponse) Reset() {
+	*x = ListFileCategoriesResponse{}
+	mi := &file_v3_proto_file_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFileCategoriesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFileCategoriesResponse) ProtoMessage() {}
+
+func (x *ListFileCategoriesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFileCategoriesResponse.ProtoReflect.Descriptor instead.
+func (*ListFileCategoriesResponse) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListFileCategoriesResponse) GetItems() []*FileCategory {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type CreateFileCategoryRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	CategoryKey       string                 `protobuf:"bytes,1,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
+	DisplayName       string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Description       string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Enabled           bool                   `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	IsDefault         bool                   `protobuf:"varint,5,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
+	SortOrder         int32                  `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	AllowedExtensions []string               `protobuf:"bytes,7,rep,name=allowed_extensions,json=allowedExtensions,proto3" json:"allowed_extensions,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CreateFileCategoryRequest) Reset() {
+	*x = CreateFileCategoryRequest{}
+	mi := &file_v3_proto_file_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateFileCategoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateFileCategoryRequest) ProtoMessage() {}
+
+func (x *CreateFileCategoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateFileCategoryRequest.ProtoReflect.Descriptor instead.
+func (*CreateFileCategoryRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *CreateFileCategoryRequest) GetCategoryKey() string {
+	if x != nil {
+		return x.CategoryKey
+	}
+	return ""
+}
+
+func (x *CreateFileCategoryRequest) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *CreateFileCategoryRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateFileCategoryRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *CreateFileCategoryRequest) GetIsDefault() bool {
+	if x != nil {
+		return x.IsDefault
+	}
+	return false
+}
+
+func (x *CreateFileCategoryRequest) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *CreateFileCategoryRequest) GetAllowedExtensions() []string {
+	if x != nil {
+		return x.AllowedExtensions
+	}
+	return nil
+}
+
+type UpdateFileCategoryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CategoryKey   string                 `protobuf:"bytes,1,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Enabled       bool                   `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	SortOrder     int32                  `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateFileCategoryRequest) Reset() {
+	*x = UpdateFileCategoryRequest{}
+	mi := &file_v3_proto_file_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateFileCategoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateFileCategoryRequest) ProtoMessage() {}
+
+func (x *UpdateFileCategoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateFileCategoryRequest.ProtoReflect.Descriptor instead.
+func (*UpdateFileCategoryRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *UpdateFileCategoryRequest) GetCategoryKey() string {
+	if x != nil {
+		return x.CategoryKey
+	}
+	return ""
+}
+
+func (x *UpdateFileCategoryRequest) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *UpdateFileCategoryRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *UpdateFileCategoryRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *UpdateFileCategoryRequest) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+type UpdateFileCategoryExtensionsRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	CategoryKey       string                 `protobuf:"bytes,1,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
+	AllowedExtensions []string               `protobuf:"bytes,2,rep,name=allowed_extensions,json=allowedExtensions,proto3" json:"allowed_extensions,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *UpdateFileCategoryExtensionsRequest) Reset() {
+	*x = UpdateFileCategoryExtensionsRequest{}
+	mi := &file_v3_proto_file_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateFileCategoryExtensionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateFileCategoryExtensionsRequest) ProtoMessage() {}
+
+func (x *UpdateFileCategoryExtensionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateFileCategoryExtensionsRequest.ProtoReflect.Descriptor instead.
+func (*UpdateFileCategoryExtensionsRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *UpdateFileCategoryExtensionsRequest) GetCategoryKey() string {
+	if x != nil {
+		return x.CategoryKey
+	}
+	return ""
+}
+
+func (x *UpdateFileCategoryExtensionsRequest) GetAllowedExtensions() []string {
+	if x != nil {
+		return x.AllowedExtensions
+	}
+	return nil
+}
+
+type SetDefaultFileCategoryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CategoryKey   string                 `protobuf:"bytes,1,opt,name=category_key,json=categoryKey,proto3" json:"category_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetDefaultFileCategoryRequest) Reset() {
+	*x = SetDefaultFileCategoryRequest{}
+	mi := &file_v3_proto_file_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetDefaultFileCategoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetDefaultFileCategoryRequest) ProtoMessage() {}
+
+func (x *SetDefaultFileCategoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetDefaultFileCategoryRequest.ProtoReflect.Descriptor instead.
+func (*SetDefaultFileCategoryRequest) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *SetDefaultFileCategoryRequest) GetCategoryKey() string {
+	if x != nil {
+		return x.CategoryKey
+	}
+	return ""
+}
+
+type FileCategoryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Category      *FileCategory          `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileCategoryResponse) Reset() {
+	*x = FileCategoryResponse{}
+	mi := &file_v3_proto_file_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileCategoryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileCategoryResponse) ProtoMessage() {}
+
+func (x *FileCategoryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v3_proto_file_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileCategoryResponse.ProtoReflect.Descriptor instead.
+func (*FileCategoryResponse) Descriptor() ([]byte, []int) {
+	return file_v3_proto_file_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *FileCategoryResponse) GetCategory() *FileCategory {
+	if x != nil {
+		return x.Category
+	}
+	return nil
+}
+
 var File_v3_proto_file_proto protoreflect.FileDescriptor
 
 const file_v3_proto_file_proto_rawDesc = "" +
@@ -1198,12 +1686,12 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\vPingRequest\"8\n" +
 	"\fPingResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x18\n" +
-	"\aservice\x18\x02 \x01(\tR\aservice\"\x94\x04\n" +
+	"\aservice\x18\x02 \x01(\tR\aservice\"\x99\x04\n" +
 	"\x05Asset\x12\x19\n" +
 	"\basset_id\x18\x01 \x01(\tR\aassetId\x12\x1b\n" +
 	"\tupload_id\x18\x02 \x01(\tR\buploadId\x12\"\n" +
-	"\rowner_user_id\x18\x03 \x01(\tR\vownerUserId\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x125\n" +
+	"\rowner_user_id\x18\x03 \x01(\tR\vownerUserId\x12!\n" +
+	"\fcategory_key\x18\x04 \x01(\tR\vcategoryKey\x125\n" +
 	"\n" +
 	"visibility\x18\x05 \x01(\x0e2\x15.file.AssetVisibilityR\n" +
 	"visibility\x12)\n" +
@@ -1224,10 +1712,10 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\vuploaded_at\x18\x0f \x01(\x03R\n" +
 	"uploadedAt\x12\x1d\n" +
 	"\n" +
-	"deleted_at\x18\x10 \x01(\x03R\tdeletedAt\"\xeb\x01\n" +
+	"deleted_at\x18\x10 \x01(\x03R\tdeletedAt\"\xf0\x01\n" +
 	"\x13CreateUploadRequest\x12\"\n" +
-	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x1c\n" +
-	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1b\n" +
+	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12!\n" +
+	"\fcategory_key\x18\x02 \x01(\tR\vcategoryKey\x12\x1b\n" +
 	"\tfile_name\x18\x03 \x01(\tR\bfileName\x12!\n" +
 	"\fcontent_type\x18\x04 \x01(\tR\vcontentType\x12\x1b\n" +
 	"\tbyte_size\x18\x05 \x01(\x03R\bbyteSize\x125\n" +
@@ -1247,10 +1735,10 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"X\n" +
 	"\x15CompleteUploadRequest\x12\"\n" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x1b\n" +
-	"\tupload_id\x18\x02 \x01(\tR\buploadId\"\xa6\x02\n" +
+	"\tupload_id\x18\x02 \x01(\tR\buploadId\"\xab\x02\n" +
 	"\x11ListAssetsRequest\x12\"\n" +
-	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x1c\n" +
-	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12)\n" +
+	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12!\n" +
+	"\fcategory_key\x18\x02 \x01(\tR\vcategoryKey\x12)\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x11.file.AssetStatusR\x06status\x125\n" +
 	"\n" +
 	"visibility\x18\x04 \x01(\x0e2\x15.file.AssetVisibilityR\n" +
@@ -1273,21 +1761,61 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12\x19\n" +
 	"\basset_id\x18\x02 \x01(\tR\aassetId\"%\n" +
 	"\x13DeleteAssetResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\"\x9a\x01\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"f\n" +
 	"\n" +
 	"FileConfig\x12(\n" +
-	"\x10max_upload_bytes\x18\x01 \x01(\x03R\x0emaxUploadBytes\x122\n" +
-	"\x15allowed_content_types\x18\x02 \x03(\tR\x13allowedContentTypes\x12.\n" +
-	"\x13presign_ttl_seconds\x18\x03 \x01(\x05R\x11presignTtlSeconds\"\x16\n" +
+	"\x10max_upload_bytes\x18\x01 \x01(\x03R\x0emaxUploadBytes\x12.\n" +
+	"\x13presign_ttl_seconds\x18\x02 \x01(\x05R\x11presignTtlSeconds\"\x16\n" +
 	"\x14GetFileConfigRequest\"A\n" +
 	"\x15GetFileConfigResponse\x12(\n" +
-	"\x06config\x18\x01 \x01(\v2\x10.file.FileConfigR\x06config\"\xa7\x01\n" +
+	"\x06config\x18\x01 \x01(\v2\x10.file.FileConfigR\x06config\"s\n" +
 	"\x17UpdateFileConfigRequest\x12(\n" +
-	"\x10max_upload_bytes\x18\x01 \x01(\x03R\x0emaxUploadBytes\x122\n" +
-	"\x15allowed_content_types\x18\x02 \x03(\tR\x13allowedContentTypes\x12.\n" +
-	"\x13presign_ttl_seconds\x18\x03 \x01(\x05R\x11presignTtlSeconds\"D\n" +
+	"\x10max_upload_bytes\x18\x01 \x01(\x03R\x0emaxUploadBytes\x12.\n" +
+	"\x13presign_ttl_seconds\x18\x02 \x01(\x05R\x11presignTtlSeconds\"D\n" +
 	"\x18UpdateFileConfigResponse\x12(\n" +
-	"\x06config\x18\x01 \x01(\v2\x10.file.FileConfigR\x06config*n\n" +
+	"\x06config\x18\x01 \x01(\v2\x10.file.FileConfigR\x06config\"\xbb\x02\n" +
+	"\fFileCategory\x12!\n" +
+	"\fcategory_key\x18\x01 \x01(\tR\vcategoryKey\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x18\n" +
+	"\aenabled\x18\x04 \x01(\bR\aenabled\x12\x1d\n" +
+	"\n" +
+	"is_default\x18\x05 \x01(\bR\tisDefault\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x06 \x01(\x05R\tsortOrder\x12-\n" +
+	"\x12allowed_extensions\x18\a \x03(\tR\x11allowedExtensions\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\b \x01(\x03R\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\t \x01(\x03R\tupdatedAt\"F\n" +
+	"\x19ListFileCategoriesRequest\x12)\n" +
+	"\x10include_disabled\x18\x01 \x01(\bR\x0fincludeDisabled\"F\n" +
+	"\x1aListFileCategoriesResponse\x12(\n" +
+	"\x05items\x18\x01 \x03(\v2\x12.file.FileCategoryR\x05items\"\x8a\x02\n" +
+	"\x19CreateFileCategoryRequest\x12!\n" +
+	"\fcategory_key\x18\x01 \x01(\tR\vcategoryKey\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x18\n" +
+	"\aenabled\x18\x04 \x01(\bR\aenabled\x12\x1d\n" +
+	"\n" +
+	"is_default\x18\x05 \x01(\bR\tisDefault\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x06 \x01(\x05R\tsortOrder\x12-\n" +
+	"\x12allowed_extensions\x18\a \x03(\tR\x11allowedExtensions\"\xbc\x01\n" +
+	"\x19UpdateFileCategoryRequest\x12!\n" +
+	"\fcategory_key\x18\x01 \x01(\tR\vcategoryKey\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x18\n" +
+	"\aenabled\x18\x04 \x01(\bR\aenabled\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x05 \x01(\x05R\tsortOrder\"w\n" +
+	"#UpdateFileCategoryExtensionsRequest\x12!\n" +
+	"\fcategory_key\x18\x01 \x01(\tR\vcategoryKey\x12-\n" +
+	"\x12allowed_extensions\x18\x02 \x03(\tR\x11allowedExtensions\"B\n" +
+	"\x1dSetDefaultFileCategoryRequest\x12!\n" +
+	"\fcategory_key\x18\x01 \x01(\tR\vcategoryKey\"F\n" +
+	"\x14FileCategoryResponse\x12.\n" +
+	"\bcategory\x18\x01 \x01(\v2\x12.file.FileCategoryR\bcategory*n\n" +
 	"\x0fAssetVisibility\x12 \n" +
 	"\x1cASSET_VISIBILITY_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17ASSET_VISIBILITY_PUBLIC\x10\x01\x12\x1c\n" +
@@ -1296,7 +1824,7 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\x18ASSET_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ASSET_STATUS_PENDING\x10\x01\x12\x19\n" +
 	"\x15ASSET_STATUS_UPLOADED\x10\x02\x12\x18\n" +
-	"\x14ASSET_STATUS_DELETED\x10\x032\xa1\x04\n" +
+	"\x14ASSET_STATUS_DELETED\x10\x032\xe2\a\n" +
 	"\vFileService\x12-\n" +
 	"\x04Ping\x12\x11.file.PingRequest\x1a\x12.file.PingResponse\x12E\n" +
 	"\fCreateUpload\x12\x19.file.CreateUploadRequest\x1a\x1a.file.CreateUploadResponse\x12B\n" +
@@ -1306,7 +1834,12 @@ const file_v3_proto_file_proto_rawDesc = "" +
 	"\bGetAsset\x12\x15.file.GetAssetRequest\x1a\x13.file.AssetResponse\x12B\n" +
 	"\vDeleteAsset\x12\x18.file.DeleteAssetRequest\x1a\x19.file.DeleteAssetResponse\x12H\n" +
 	"\rGetFileConfig\x12\x1a.file.GetFileConfigRequest\x1a\x1b.file.GetFileConfigResponse\x12Q\n" +
-	"\x10UpdateFileConfig\x12\x1d.file.UpdateFileConfigRequest\x1a\x1e.file.UpdateFileConfigResponseB\x12Z\x10services/file/pbb\x06proto3"
+	"\x10UpdateFileConfig\x12\x1d.file.UpdateFileConfigRequest\x1a\x1e.file.UpdateFileConfigResponse\x12W\n" +
+	"\x12ListFileCategories\x12\x1f.file.ListFileCategoriesRequest\x1a .file.ListFileCategoriesResponse\x12Q\n" +
+	"\x12CreateFileCategory\x12\x1f.file.CreateFileCategoryRequest\x1a\x1a.file.FileCategoryResponse\x12Q\n" +
+	"\x12UpdateFileCategory\x12\x1f.file.UpdateFileCategoryRequest\x1a\x1a.file.FileCategoryResponse\x12e\n" +
+	"\x1cUpdateFileCategoryExtensions\x12).file.UpdateFileCategoryExtensionsRequest\x1a\x1a.file.FileCategoryResponse\x12Y\n" +
+	"\x16SetDefaultFileCategory\x12#.file.SetDefaultFileCategoryRequest\x1a\x1a.file.FileCategoryResponseB\x12Z\x10services/file/pbb\x06proto3"
 
 var (
 	file_v3_proto_file_proto_rawDescOnce sync.Once
@@ -1321,62 +1854,82 @@ func file_v3_proto_file_proto_rawDescGZIP() []byte {
 }
 
 var file_v3_proto_file_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_v3_proto_file_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_v3_proto_file_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_v3_proto_file_proto_goTypes = []any{
-	(AssetVisibility)(0),             // 0: file.AssetVisibility
-	(AssetStatus)(0),                 // 1: file.AssetStatus
-	(*PingRequest)(nil),              // 2: file.PingRequest
-	(*PingResponse)(nil),             // 3: file.PingResponse
-	(*Asset)(nil),                    // 4: file.Asset
-	(*CreateUploadRequest)(nil),      // 5: file.CreateUploadRequest
-	(*CreateUploadResponse)(nil),     // 6: file.CreateUploadResponse
-	(*CompleteUploadRequest)(nil),    // 7: file.CompleteUploadRequest
-	(*ListAssetsRequest)(nil),        // 8: file.ListAssetsRequest
-	(*GetAssetRequest)(nil),          // 9: file.GetAssetRequest
-	(*AssetResponse)(nil),            // 10: file.AssetResponse
-	(*ListAssetsResponse)(nil),       // 11: file.ListAssetsResponse
-	(*DeleteAssetRequest)(nil),       // 12: file.DeleteAssetRequest
-	(*DeleteAssetResponse)(nil),      // 13: file.DeleteAssetResponse
-	(*FileConfig)(nil),               // 14: file.FileConfig
-	(*GetFileConfigRequest)(nil),     // 15: file.GetFileConfigRequest
-	(*GetFileConfigResponse)(nil),    // 16: file.GetFileConfigResponse
-	(*UpdateFileConfigRequest)(nil),  // 17: file.UpdateFileConfigRequest
-	(*UpdateFileConfigResponse)(nil), // 18: file.UpdateFileConfigResponse
-	nil,                              // 19: file.CreateUploadResponse.HeadersEntry
+	(AssetVisibility)(0),                        // 0: file.AssetVisibility
+	(AssetStatus)(0),                            // 1: file.AssetStatus
+	(*PingRequest)(nil),                         // 2: file.PingRequest
+	(*PingResponse)(nil),                        // 3: file.PingResponse
+	(*Asset)(nil),                               // 4: file.Asset
+	(*CreateUploadRequest)(nil),                 // 5: file.CreateUploadRequest
+	(*CreateUploadResponse)(nil),                // 6: file.CreateUploadResponse
+	(*CompleteUploadRequest)(nil),               // 7: file.CompleteUploadRequest
+	(*ListAssetsRequest)(nil),                   // 8: file.ListAssetsRequest
+	(*GetAssetRequest)(nil),                     // 9: file.GetAssetRequest
+	(*AssetResponse)(nil),                       // 10: file.AssetResponse
+	(*ListAssetsResponse)(nil),                  // 11: file.ListAssetsResponse
+	(*DeleteAssetRequest)(nil),                  // 12: file.DeleteAssetRequest
+	(*DeleteAssetResponse)(nil),                 // 13: file.DeleteAssetResponse
+	(*FileConfig)(nil),                          // 14: file.FileConfig
+	(*GetFileConfigRequest)(nil),                // 15: file.GetFileConfigRequest
+	(*GetFileConfigResponse)(nil),               // 16: file.GetFileConfigResponse
+	(*UpdateFileConfigRequest)(nil),             // 17: file.UpdateFileConfigRequest
+	(*UpdateFileConfigResponse)(nil),            // 18: file.UpdateFileConfigResponse
+	(*FileCategory)(nil),                        // 19: file.FileCategory
+	(*ListFileCategoriesRequest)(nil),           // 20: file.ListFileCategoriesRequest
+	(*ListFileCategoriesResponse)(nil),          // 21: file.ListFileCategoriesResponse
+	(*CreateFileCategoryRequest)(nil),           // 22: file.CreateFileCategoryRequest
+	(*UpdateFileCategoryRequest)(nil),           // 23: file.UpdateFileCategoryRequest
+	(*UpdateFileCategoryExtensionsRequest)(nil), // 24: file.UpdateFileCategoryExtensionsRequest
+	(*SetDefaultFileCategoryRequest)(nil),       // 25: file.SetDefaultFileCategoryRequest
+	(*FileCategoryResponse)(nil),                // 26: file.FileCategoryResponse
+	nil,                                         // 27: file.CreateUploadResponse.HeadersEntry
 }
 var file_v3_proto_file_proto_depIdxs = []int32{
 	0,  // 0: file.Asset.visibility:type_name -> file.AssetVisibility
 	1,  // 1: file.Asset.status:type_name -> file.AssetStatus
 	0,  // 2: file.CreateUploadRequest.visibility:type_name -> file.AssetVisibility
 	4,  // 3: file.CreateUploadResponse.asset:type_name -> file.Asset
-	19, // 4: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
+	27, // 4: file.CreateUploadResponse.headers:type_name -> file.CreateUploadResponse.HeadersEntry
 	1,  // 5: file.ListAssetsRequest.status:type_name -> file.AssetStatus
 	0,  // 6: file.ListAssetsRequest.visibility:type_name -> file.AssetVisibility
 	4,  // 7: file.AssetResponse.asset:type_name -> file.Asset
 	4,  // 8: file.ListAssetsResponse.items:type_name -> file.Asset
 	14, // 9: file.GetFileConfigResponse.config:type_name -> file.FileConfig
 	14, // 10: file.UpdateFileConfigResponse.config:type_name -> file.FileConfig
-	2,  // 11: file.FileService.Ping:input_type -> file.PingRequest
-	5,  // 12: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
-	7,  // 13: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
-	8,  // 14: file.FileService.ListAssets:input_type -> file.ListAssetsRequest
-	9,  // 15: file.FileService.GetAsset:input_type -> file.GetAssetRequest
-	12, // 16: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
-	15, // 17: file.FileService.GetFileConfig:input_type -> file.GetFileConfigRequest
-	17, // 18: file.FileService.UpdateFileConfig:input_type -> file.UpdateFileConfigRequest
-	3,  // 19: file.FileService.Ping:output_type -> file.PingResponse
-	6,  // 20: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
-	10, // 21: file.FileService.CompleteUpload:output_type -> file.AssetResponse
-	11, // 22: file.FileService.ListAssets:output_type -> file.ListAssetsResponse
-	10, // 23: file.FileService.GetAsset:output_type -> file.AssetResponse
-	13, // 24: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
-	16, // 25: file.FileService.GetFileConfig:output_type -> file.GetFileConfigResponse
-	18, // 26: file.FileService.UpdateFileConfig:output_type -> file.UpdateFileConfigResponse
-	19, // [19:27] is the sub-list for method output_type
-	11, // [11:19] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	19, // 11: file.ListFileCategoriesResponse.items:type_name -> file.FileCategory
+	19, // 12: file.FileCategoryResponse.category:type_name -> file.FileCategory
+	2,  // 13: file.FileService.Ping:input_type -> file.PingRequest
+	5,  // 14: file.FileService.CreateUpload:input_type -> file.CreateUploadRequest
+	7,  // 15: file.FileService.CompleteUpload:input_type -> file.CompleteUploadRequest
+	8,  // 16: file.FileService.ListAssets:input_type -> file.ListAssetsRequest
+	9,  // 17: file.FileService.GetAsset:input_type -> file.GetAssetRequest
+	12, // 18: file.FileService.DeleteAsset:input_type -> file.DeleteAssetRequest
+	15, // 19: file.FileService.GetFileConfig:input_type -> file.GetFileConfigRequest
+	17, // 20: file.FileService.UpdateFileConfig:input_type -> file.UpdateFileConfigRequest
+	20, // 21: file.FileService.ListFileCategories:input_type -> file.ListFileCategoriesRequest
+	22, // 22: file.FileService.CreateFileCategory:input_type -> file.CreateFileCategoryRequest
+	23, // 23: file.FileService.UpdateFileCategory:input_type -> file.UpdateFileCategoryRequest
+	24, // 24: file.FileService.UpdateFileCategoryExtensions:input_type -> file.UpdateFileCategoryExtensionsRequest
+	25, // 25: file.FileService.SetDefaultFileCategory:input_type -> file.SetDefaultFileCategoryRequest
+	3,  // 26: file.FileService.Ping:output_type -> file.PingResponse
+	6,  // 27: file.FileService.CreateUpload:output_type -> file.CreateUploadResponse
+	10, // 28: file.FileService.CompleteUpload:output_type -> file.AssetResponse
+	11, // 29: file.FileService.ListAssets:output_type -> file.ListAssetsResponse
+	10, // 30: file.FileService.GetAsset:output_type -> file.AssetResponse
+	13, // 31: file.FileService.DeleteAsset:output_type -> file.DeleteAssetResponse
+	16, // 32: file.FileService.GetFileConfig:output_type -> file.GetFileConfigResponse
+	18, // 33: file.FileService.UpdateFileConfig:output_type -> file.UpdateFileConfigResponse
+	21, // 34: file.FileService.ListFileCategories:output_type -> file.ListFileCategoriesResponse
+	26, // 35: file.FileService.CreateFileCategory:output_type -> file.FileCategoryResponse
+	26, // 36: file.FileService.UpdateFileCategory:output_type -> file.FileCategoryResponse
+	26, // 37: file.FileService.UpdateFileCategoryExtensions:output_type -> file.FileCategoryResponse
+	26, // 38: file.FileService.SetDefaultFileCategory:output_type -> file.FileCategoryResponse
+	26, // [26:39] is the sub-list for method output_type
+	13, // [13:26] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_v3_proto_file_proto_init() }
@@ -1390,7 +1943,7 @@ func file_v3_proto_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v3_proto_file_proto_rawDesc), len(file_v3_proto_file_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   18,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

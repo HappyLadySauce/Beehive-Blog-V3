@@ -89,7 +89,7 @@ func toProtoAsset(asset *fileservice.AssetView) *pb.Asset {
 		AssetId:     asset.AssetID,
 		UploadId:    asset.UploadID,
 		OwnerUserId: asset.OwnerUserID,
-		Namespace:   asset.Namespace,
+		CategoryKey: asset.CategoryKey,
 		Visibility:  toProtoVisibility(asset.Visibility),
 		Status:      toProtoStatus(asset.Status),
 		Bucket:      asset.Bucket,
@@ -102,6 +102,23 @@ func toProtoAsset(asset *fileservice.AssetView) *pb.Asset {
 		ExpiresAt:   unix(asset.ExpiresAt),
 		UploadedAt:  unixPtr(asset.UploadedAt),
 		DeletedAt:   unixPtr(asset.DeletedAt),
+	}
+}
+
+func toProtoFileCategory(category *fileservice.FileCategoryView) *pb.FileCategory {
+	if category == nil {
+		return nil
+	}
+	return &pb.FileCategory{
+		CategoryKey:       category.CategoryKey,
+		DisplayName:       category.DisplayName,
+		Description:       category.Description,
+		Enabled:           category.Enabled,
+		IsDefault:         category.IsDefault,
+		SortOrder:         category.SortOrder,
+		AllowedExtensions: append([]string(nil), category.AllowedExtensions...),
+		CreatedAt:         unix(category.CreatedAt),
+		UpdatedAt:         unix(category.UpdatedAt),
 	}
 }
 

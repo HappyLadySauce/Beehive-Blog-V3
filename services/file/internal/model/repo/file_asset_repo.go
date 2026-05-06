@@ -16,7 +16,7 @@ type AssetRepository struct {
 
 type AssetListFilter struct {
 	OwnerUserID int64
-	Namespace   string
+	CategoryKey string
 	Status      string
 	Visibility  string
 	Keyword     string
@@ -61,8 +61,8 @@ func (r *AssetRepository) List(ctx context.Context, filter AssetListFilter) ([]e
 	page, pageSize := normalizePagination(filter.Page, filter.PageSize)
 	query := r.db.WithContext(ctx).Model(&entity.FileAsset{}).Where("owner_user_id = ?", filter.OwnerUserID)
 
-	if namespace := strings.TrimSpace(filter.Namespace); namespace != "" {
-		query = query.Where("scope = ?", namespace)
+	if categoryKey := strings.TrimSpace(filter.CategoryKey); categoryKey != "" {
+		query = query.Where("category_key = ?", categoryKey)
 	}
 	if status := strings.TrimSpace(filter.Status); status != "" {
 		query = query.Where("status = ?", status)

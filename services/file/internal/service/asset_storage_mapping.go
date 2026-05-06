@@ -8,12 +8,12 @@ import (
 	"github.com/google/uuid"
 )
 
-func objectKey(namespace string, ownerUserID int64, fileName string, contentType string) string {
-	prefix := strings.ToLower(strings.TrimSpace(namespace))
+func objectKey(categoryKey string, ownerUserID int64, extension string) string {
+	prefix := strings.ToLower(strings.TrimSpace(categoryKey))
 	if prefix == "" {
-		prefix = "files"
+		prefix = "default"
 	}
-	return prefix + "/" + strconv.FormatInt(ownerUserID, 10) + "/" + uuid.NewString() + extensionFor(fileName, contentType)
+	return prefix + "/" + strconv.FormatInt(ownerUserID, 10) + "/" + uuid.NewString() + normalizeExtension(extension)
 }
 
 func storageBucket(conf config.StorageConf) string {

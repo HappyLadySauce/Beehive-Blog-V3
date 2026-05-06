@@ -270,7 +270,7 @@ type FileAssetView struct {
 	AssetId     string `json:"asset_id,example=asset_01J8FILEEXAMPLE"`
 	UploadId    string `json:"upload_id,example=upload_01J8FILEEXAMPLE"`
 	OwnerUserId string `json:"owner_user_id,example=1"`
-	Namespace   string `json:"namespace,example=avatar"`
+	CategoryKey string `json:"category_key,example=default"`
 	Visibility  string `json:"visibility,options=public|private,example=public"`
 	Status      string `json:"status,options=pending|uploaded|deleted,example=pending"`
 	Bucket      string `json:"bucket,example=beehive"`
@@ -287,9 +287,9 @@ type FileAssetView struct {
 
 type FileUploadCreateReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-	Namespace    string `json:"namespace,example=avatar" validate:"required"`
-	FileName     string `json:"file_name,example=avatar.png" validate:"required,min=1,max=255"`
-	ContentType   string `json:"content_type,example=image/png" validate:"required,max=128"`
+	CategoryKey   string `json:"category_key,example=default" validate:"required"`
+	FileName      string `json:"file_name,example=avatar.png" validate:"required,min=1,max=255"`
+	ContentType   string `json:"content_type,optional,example=image/png" validate:"omitempty,max=128"`
 	ByteSize      int64  `json:"byte_size,example=153600" validate:"required,min=1"`
 	Visibility    string `json:"visibility,optional,options=public|private,default=public,example=public"`
 }
@@ -309,8 +309,8 @@ type FileUploadCompleteReq struct {
 
 type FileAssetListReq struct {
 	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-	Namespace    string `form:"namespace,optional,example=avatar" validate:"omitempty"`
-	Status       string `form:"status,optional,options=pending|uploaded|deleted,example=uploaded" validate:"omitempty"`
+	CategoryKey   string `form:"category_key,optional,example=default" validate:"omitempty"`
+	Status        string `form:"status,optional,options=pending|uploaded|deleted,example=uploaded" validate:"omitempty"`
 	Visibility    string `form:"visibility,optional,options=public|private,example=public" validate:"omitempty"`
 	OwnerUserId   string `form:"owner_user_id,optional,example=1" validate:"omitempty"`
 	Keyword       string `form:"keyword,optional,example=avatar" validate:"omitempty,max=255"`
@@ -339,9 +339,8 @@ type FileAssetDeleteResp struct {
 }
 
 type FileConfigView struct {
-	MaxUploadBytes      int64    `json:"max_upload_bytes,example=20971520"`
-	AllowedContentTypes []string `json:"allowed_content_types,example=image/png"`
-	PresignTtlSeconds   int32    `json:"presign_ttl_seconds,example=300"`
+	MaxUploadBytes    int64 `json:"max_upload_bytes,example=2147483648"`
+	PresignTtlSeconds int32 `json:"presign_ttl_seconds,example=300"`
 }
 
 type FileConfigGetResp struct {
@@ -349,14 +348,64 @@ type FileConfigGetResp struct {
 }
 
 type FileConfigUpdateReq struct {
-	Authorization      string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
-	MaxUploadBytes     int64    `json:"max_upload_bytes,optional,example=20971520"`
-	AllowedContentTypes []string `json:"allowed_content_types,optional,example=image/png"`
-	PresignTtlSeconds   int32   `json:"presign_ttl_seconds,optional,example=300"`
+	Authorization    string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	MaxUploadBytes   int64  `json:"max_upload_bytes,optional,example=2147483648"`
+	PresignTtlSeconds int32 `json:"presign_ttl_seconds,optional,example=300"`
 }
 
 type FileConfigUpdateResp struct {
 	Config FileConfigView `json:"config"`
+}
+
+type FileCategoryView struct {
+	CategoryKey       string   `json:"category_key,example=default"`
+	DisplayName       string   `json:"display_name,example=默认类型"`
+	Description       string   `json:"description,optional,example=System default file category."`
+	Enabled           bool     `json:"enabled,example=true"`
+	IsDefault         bool     `json:"is_default,example=true"`
+	SortOrder         int32    `json:"sort_order,example=0"`
+	AllowedExtensions []string `json:"allowed_extensions,example=[\".png\",\".jpg\"]"`
+	CreatedAt         int64    `json:"created_at,example=1713772800"`
+	UpdatedAt         int64    `json:"updated_at,example=1713776400"`
+}
+
+type FileCategoryListResp struct {
+	Items []FileCategoryView `json:"items"`
+}
+
+type FileCategoryCreateReq struct {
+	Authorization     string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	CategoryKey       string   `json:"category_key,example=default" validate:"required"`
+	DisplayName       string   `json:"display_name,example=默认类型" validate:"required,min=1,max=128"`
+	Description       string   `json:"description,optional,example=System default file category." validate:"omitempty,max=2048"`
+	Enabled           bool     `json:"enabled,optional,example=true"`
+	IsDefault         bool     `json:"is_default,optional,example=false"`
+	SortOrder         int32    `json:"sort_order,optional,example=0"`
+	AllowedExtensions []string `json:"allowed_extensions,example=[\".png\",\".jpg\"]" validate:"required,min=1"`
+}
+
+type FileCategoryUpdateReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	CategoryKey   string `path:"category_key,example=default" validate:"required"`
+	DisplayName   string `json:"display_name,example=默认类型" validate:"required,min=1,max=128"`
+	Description   string `json:"description,optional,example=System default file category." validate:"omitempty,max=2048"`
+	Enabled       bool   `json:"enabled,optional,example=true"`
+	SortOrder     int32  `json:"sort_order,optional,example=0"`
+}
+
+type FileCategoryExtensionsUpdateReq struct {
+	Authorization     string   `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	CategoryKey       string   `path:"category_key,example=default" validate:"required"`
+	AllowedExtensions []string `json:"allowed_extensions,example=[\".png\",\".jpg\"]" validate:"required,min=1"`
+}
+
+type FileCategoryDefaultSetReq struct {
+	Authorization string `header:"Authorization,example=Bearer eyJhbGciOi..." validate:"required"`
+	CategoryKey   string `path:"category_key,example=default" validate:"required"`
+}
+
+type FileCategoryResp struct {
+	Category FileCategoryView `json:"category"`
 }
 
 type ContentArchiveResp struct {

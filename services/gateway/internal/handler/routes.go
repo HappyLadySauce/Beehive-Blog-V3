@@ -82,6 +82,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	fileRoutes := []rest.Route{
 		{
 			Method:  http.MethodGet,
+			Path:    "/categories",
+			Handler: file.FileCategoryListHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodGet,
 			Path:    "/assets",
 			Handler: file.FileAssetListHandler(serverCtx),
 		},
@@ -117,6 +122,31 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			Method:  http.MethodPut,
 			Path:    "/file/config",
 			Handler: file.FileConfigUpdateHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/file/categories",
+			Handler: file.StudioFileCategoryListHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/file/categories",
+			Handler: file.FileCategoryCreateHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/file/categories/:category_key",
+			Handler: file.FileCategoryUpdateHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/file/categories/:category_key/extensions",
+			Handler: file.FileCategoryExtensionsUpdateHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/file/categories/:category_key/default",
+			Handler: file.FileCategoryDefaultSetHandler(serverCtx),
 		},
 	}
 	studioIdentityRoutes := []rest.Route{

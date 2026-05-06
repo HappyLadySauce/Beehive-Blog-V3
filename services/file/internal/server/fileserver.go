@@ -56,3 +56,28 @@ func (s *FileServer) UpdateFileConfig(ctx context.Context, in *pb.UpdateFileConf
 	l := logic.NewUpdateFileConfigLogic(ctx, s.svcCtx)
 	return l.UpdateFileConfig(in)
 }
+
+func (s *FileServer) ListFileCategories(ctx context.Context, in *pb.ListFileCategoriesRequest) (*pb.ListFileCategoriesResponse, error) {
+	l := logic.NewListFileCategoriesLogic(ctx, s.svcCtx)
+	return l.ListFileCategories(in)
+}
+
+func (s *FileServer) CreateFileCategory(ctx context.Context, in *pb.CreateFileCategoryRequest) (*pb.FileCategoryResponse, error) {
+	l := logic.NewCreateFileCategoryLogic(ctx, s.svcCtx)
+	return l.CreateFileCategory(in)
+}
+
+func (s *FileServer) UpdateFileCategory(ctx context.Context, in *pb.UpdateFileCategoryRequest) (*pb.FileCategoryResponse, error) {
+	l := logic.NewUpdateFileCategoryLogic(ctx, s.svcCtx)
+	return l.UpdateFileCategory(in)
+}
+
+func (s *FileServer) UpdateFileCategoryExtensions(ctx context.Context, in *pb.UpdateFileCategoryExtensionsRequest) (*pb.FileCategoryResponse, error) {
+	l := logic.NewUpdateFileCategoryExtensionsLogic(ctx, s.svcCtx)
+	return l.UpdateFileCategoryExtensions(in)
+}
+
+func (s *FileServer) SetDefaultFileCategory(ctx context.Context, in *pb.SetDefaultFileCategoryRequest) (*pb.FileCategoryResponse, error) {
+	l := logic.NewSetDefaultFileCategoryLogic(ctx, s.svcCtx)
+	return l.SetDefaultFileCategory(in)
+}

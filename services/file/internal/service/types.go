@@ -13,7 +13,7 @@ const (
 
 type CreateUploadInput struct {
 	ActorUserID string
-	Namespace   string
+	CategoryKey string
 	FileName    string
 	ContentType string
 	ByteSize    int64
@@ -30,7 +30,7 @@ type CreateUploadResult struct {
 
 type ListAssetsInput struct {
 	ActorUserID string
-	Namespace   string
+	CategoryKey string
 	Status      string
 	Visibility  string
 	OwnerUserID string
@@ -50,7 +50,7 @@ type AssetView struct {
 	AssetID     string
 	UploadID    string
 	OwnerUserID string
-	Namespace   string
+	CategoryKey string
 	Visibility  string
 	Status      string
 	Bucket      string
@@ -63,4 +63,43 @@ type AssetView struct {
 	ExpiresAt   time.Time
 	UploadedAt  *time.Time
 	DeletedAt   *time.Time
+}
+
+type FileCategoryView struct {
+	CategoryKey       string
+	DisplayName       string
+	Description       string
+	Enabled           bool
+	IsDefault         bool
+	SortOrder         int32
+	AllowedExtensions []string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+type ListFileCategoriesInput struct {
+	IncludeDisabled bool
+}
+
+type CreateFileCategoryInput struct {
+	CategoryKey       string
+	DisplayName       string
+	Description       string
+	Enabled           bool
+	IsDefault         bool
+	SortOrder         int32
+	AllowedExtensions []string
+}
+
+type UpdateFileCategoryInput struct {
+	CategoryKey string
+	DisplayName string
+	Description string
+	Enabled     bool
+	SortOrder   int32
+}
+
+type UpdateFileCategoryExtensionsInput struct {
+	CategoryKey       string
+	AllowedExtensions []string
 }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"strings"
 	"sync"
@@ -14,9 +13,8 @@ import (
 const etcdConfigPrefix = "/configs/file/"
 
 type DynamicConfig struct {
-	MaxUploadBytes      int64    `json:"max_upload_bytes"`
-	AllowedContentTypes []string `json:"allowed_content_types"`
-	PresignTTLSeconds   int      `json:"presign_ttl_seconds"`
+	MaxUploadBytes    int64 `json:"max_upload_bytes"`
+	PresignTTLSeconds int   `json:"presign_ttl_seconds"`
 }
 
 type ConfigCache struct {
@@ -33,9 +31,8 @@ func NewConfigCache(client *clientv3.Client, fallback StorageConf) *ConfigCache 
 		fallback: fallback,
 	}
 	c.cfg = DynamicConfig{
-		MaxUploadBytes:      fallback.MaxUploadBytes,
-		AllowedContentTypes: fallback.AllowedContentTypes,
-		PresignTTLSeconds:   fallback.PresignTTLSeconds,
+		MaxUploadBytes:    fallback.MaxUploadBytes,
+		PresignTTLSeconds: fallback.PresignTTLSeconds,
 	}
 	return c
 }
@@ -47,15 +44,6 @@ func (c *ConfigCache) MaxUploadBytes() int64 {
 		return c.cfg.MaxUploadBytes
 	}
 	return c.fallback.MaxUploadBytes
-}
-
-func (c *ConfigCache) AllowedContentTypes() []string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	if len(c.cfg.AllowedContentTypes) > 0 {
-		return append([]string(nil), c.cfg.AllowedContentTypes...)
-	}
-	return append([]string(nil), c.fallback.AllowedContentTypes...)
 }
 
 func (c *ConfigCache) PresignTTLSeconds() int {
@@ -127,11 +115,6 @@ func (c *ConfigCache) applyKV(key, value string) {
 		if v, err := strconv.ParseInt(strings.TrimSpace(value), 10, 64); err == nil && v > 0 {
 			c.cfg.MaxUploadBytes = v
 		}
-	case strings.HasSuffix(key, "allowed_content_types"):
-		var types []string
-		if err := json.Unmarshal([]byte(value), &types); err == nil {
-			c.cfg.AllowedContentTypes = types
-		}
 	case strings.HasSuffix(key, "presign_ttl_seconds"):
 		if v, err := strconv.Atoi(strings.TrimSpace(value)); err == nil && v > 0 {
 			c.cfg.PresignTTLSeconds = v
@@ -171,7 +154,5 @@ func (c *ConfigCache) applyKVAtRevision(key, value string, revision int64) {
 }
 
 func (c *ConfigCache) snapshotLocked() DynamicConfig {
-	snapshot := c.cfg
-	snapshot.AllowedContentTypes = append([]string(nil), c.cfg.AllowedContentTypes...)
-	return snapshot
+	return c.cfg
 }

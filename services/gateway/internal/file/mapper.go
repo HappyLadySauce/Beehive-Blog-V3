@@ -8,7 +8,7 @@ import (
 func BuildCreateUploadRequest(actorUserID string, req *types.FileUploadCreateReq) *filepb.CreateUploadRequest {
 	return &filepb.CreateUploadRequest{
 		ActorUserId: actorUserID,
-		Namespace:   req.Namespace,
+		CategoryKey: req.CategoryKey,
 		FileName:    req.FileName,
 		ContentType: req.ContentType,
 		ByteSize:    req.ByteSize,
@@ -26,7 +26,7 @@ func BuildCompleteUploadRequest(actorUserID string, req *types.FileUploadComplet
 func BuildListAssetsRequest(actorUserID string, req *types.FileAssetListReq) *filepb.ListAssetsRequest {
 	return &filepb.ListAssetsRequest{
 		ActorUserId: actorUserID,
-		Namespace:   req.Namespace,
+		CategoryKey: req.CategoryKey,
 		Status:      StatusToProto(req.Status),
 		Visibility:  VisibilityToProtoOptional(req.Visibility),
 		OwnerUserId: req.OwnerUserId,
@@ -52,9 +52,8 @@ func BuildDeleteAssetRequest(actorUserID string, req *types.FileAssetIdReq) *fil
 
 func BuildUpdateFileConfigRequest(req *types.FileConfigUpdateReq) *filepb.UpdateFileConfigRequest {
 	return &filepb.UpdateFileConfigRequest{
-		MaxUploadBytes:      req.MaxUploadBytes,
-		AllowedContentTypes: req.AllowedContentTypes,
-		PresignTtlSeconds:   req.PresignTtlSeconds,
+		MaxUploadBytes:    req.MaxUploadBytes,
+		PresignTtlSeconds: req.PresignTtlSeconds,
 	}
 }
 
@@ -63,9 +62,8 @@ func ToFileConfigView(config *filepb.FileConfig) types.FileConfigView {
 		return types.FileConfigView{}
 	}
 	return types.FileConfigView{
-		MaxUploadBytes:      config.GetMaxUploadBytes(),
-		AllowedContentTypes: config.GetAllowedContentTypes(),
-		PresignTtlSeconds:   config.GetPresignTtlSeconds(),
+		MaxUploadBytes:    config.GetMaxUploadBytes(),
+		PresignTtlSeconds: config.GetPresignTtlSeconds(),
 	}
 }
 
@@ -127,7 +125,7 @@ func ToAssetView(asset *filepb.Asset) types.FileAssetView {
 		AssetId:     asset.GetAssetId(),
 		UploadId:    asset.GetUploadId(),
 		OwnerUserId: asset.GetOwnerUserId(),
-		Namespace:   asset.GetNamespace(),
+		CategoryKey: asset.GetCategoryKey(),
 		Visibility:  VisibilityFromProto(asset.GetVisibility()),
 		Status:      StatusFromProto(asset.GetStatus()),
 		Bucket:      asset.GetBucket(),
@@ -141,4 +139,74 @@ func ToAssetView(asset *filepb.Asset) types.FileAssetView {
 		UploadedAt:  asset.GetUploadedAt(),
 		DeletedAt:   asset.GetDeletedAt(),
 	}
+}
+
+func BuildCreateFileCategoryRequest(req *types.FileCategoryCreateReq) *filepb.CreateFileCategoryRequest {
+	return &filepb.CreateFileCategoryRequest{
+		CategoryKey:       req.CategoryKey,
+		DisplayName:       req.DisplayName,
+		Description:       req.Description,
+		Enabled:           req.Enabled,
+		IsDefault:         req.IsDefault,
+		SortOrder:         req.SortOrder,
+		AllowedExtensions: req.AllowedExtensions,
+	}
+}
+
+func BuildUpdateFileCategoryRequest(req *types.FileCategoryUpdateReq) *filepb.UpdateFileCategoryRequest {
+	return &filepb.UpdateFileCategoryRequest{
+		CategoryKey: req.CategoryKey,
+		DisplayName: req.DisplayName,
+		Description: req.Description,
+		Enabled:     req.Enabled,
+		SortOrder:   req.SortOrder,
+	}
+}
+
+func BuildUpdateFileCategoryExtensionsRequest(req *types.FileCategoryExtensionsUpdateReq) *filepb.UpdateFileCategoryExtensionsRequest {
+	return &filepb.UpdateFileCategoryExtensionsRequest{
+		CategoryKey:       req.CategoryKey,
+		AllowedExtensions: req.AllowedExtensions,
+	}
+}
+
+func BuildSetDefaultFileCategoryRequest(req *types.FileCategoryDefaultSetReq) *filepb.SetDefaultFileCategoryRequest {
+	return &filepb.SetDefaultFileCategoryRequest{
+		CategoryKey: req.CategoryKey,
+	}
+}
+
+func ToFileCategoryView(category *filepb.FileCategory) types.FileCategoryView {
+	if category == nil {
+		return types.FileCategoryView{}
+	}
+	return types.FileCategoryView{
+		CategoryKey:       category.GetCategoryKey(),
+		DisplayName:       category.GetDisplayName(),
+		Description:       category.GetDescription(),
+		Enabled:           category.GetEnabled(),
+		IsDefault:         category.GetIsDefault(),
+		SortOrder:         category.GetSortOrder(),
+		AllowedExtensions: append([]string(nil), category.GetAllowedExtensions()...),
+		CreatedAt:         category.GetCreatedAt(),
+		UpdatedAt:         category.GetUpdatedAt(),
+	}
+}
+
+func ToFileCategoryResp(resp *filepb.FileCategoryResponse) *types.FileCategoryResp {
+	if resp == nil {
+		return &types.FileCategoryResp{}
+	}
+	return &types.FileCategoryResp{Category: ToFileCategoryView(resp.GetCategory())}
+}
+
+func ToFileCategoryListResp(resp *filepb.ListFileCategoriesResponse) *types.FileCategoryListResp {
+	if resp == nil {
+		return &types.FileCategoryListResp{}
+	}
+	items := make([]types.FileCategoryView, 0, len(resp.GetItems()))
+	for _, item := range resp.GetItems() {
+		items = append(items, ToFileCategoryView(item))
+	}
+	return &types.FileCategoryListResp{Items: items}
 }

@@ -13,6 +13,11 @@ service FileService {
   rpc DeleteAsset(DeleteAssetRequest) returns (DeleteAssetResponse);
   rpc GetFileConfig(GetFileConfigRequest) returns (GetFileConfigResponse);
   rpc UpdateFileConfig(UpdateFileConfigRequest) returns (UpdateFileConfigResponse);
+  rpc ListFileCategories(ListFileCategoriesRequest) returns (ListFileCategoriesResponse);
+  rpc CreateFileCategory(CreateFileCategoryRequest) returns (FileCategoryResponse);
+  rpc UpdateFileCategory(UpdateFileCategoryRequest) returns (FileCategoryResponse);
+  rpc UpdateFileCategoryExtensions(UpdateFileCategoryExtensionsRequest) returns (FileCategoryResponse);
+  rpc SetDefaultFileCategory(SetDefaultFileCategoryRequest) returns (FileCategoryResponse);
 }
 
 enum AssetVisibility {
@@ -39,7 +44,7 @@ message Asset {
   string asset_id = 1;
   string upload_id = 2;
   string owner_user_id = 3;
-  string namespace = 4;
+  string category_key = 4;
   AssetVisibility visibility = 5;
   AssetStatus status = 6;
   string bucket = 7;
@@ -56,7 +61,7 @@ message Asset {
 
 message CreateUploadRequest {
   string actor_user_id = 1;
-  string namespace = 2;
+  string category_key = 2;
   string file_name = 3;
   string content_type = 4;
   int64 byte_size = 5;
@@ -78,7 +83,7 @@ message CompleteUploadRequest {
 
 message ListAssetsRequest {
   string actor_user_id = 1;
-  string namespace = 2;
+  string category_key = 2;
   AssetStatus status = 3;
   AssetVisibility visibility = 4;
   string owner_user_id = 5;
@@ -114,8 +119,7 @@ message DeleteAssetResponse {
 
 message FileConfig {
   int64 max_upload_bytes = 1;
-  repeated string allowed_content_types = 2;
-  int32 presign_ttl_seconds = 3;
+  int32 presign_ttl_seconds = 2;
 }
 
 message GetFileConfigRequest {}
@@ -126,10 +130,60 @@ message GetFileConfigResponse {
 
 message UpdateFileConfigRequest {
   int64 max_upload_bytes = 1;
-  repeated string allowed_content_types = 2;
-  int32 presign_ttl_seconds = 3;
+  int32 presign_ttl_seconds = 2;
 }
 
 message UpdateFileConfigResponse {
   FileConfig config = 1;
+}
+
+message FileCategory {
+  string category_key = 1;
+  string display_name = 2;
+  string description = 3;
+  bool enabled = 4;
+  bool is_default = 5;
+  int32 sort_order = 6;
+  repeated string allowed_extensions = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+message ListFileCategoriesRequest {
+  bool include_disabled = 1;
+}
+
+message ListFileCategoriesResponse {
+  repeated FileCategory items = 1;
+}
+
+message CreateFileCategoryRequest {
+  string category_key = 1;
+  string display_name = 2;
+  string description = 3;
+  bool enabled = 4;
+  bool is_default = 5;
+  int32 sort_order = 6;
+  repeated string allowed_extensions = 7;
+}
+
+message UpdateFileCategoryRequest {
+  string category_key = 1;
+  string display_name = 2;
+  string description = 3;
+  bool enabled = 4;
+  int32 sort_order = 5;
+}
+
+message UpdateFileCategoryExtensionsRequest {
+  string category_key = 1;
+  repeated string allowed_extensions = 2;
+}
+
+message SetDefaultFileCategoryRequest {
+  string category_key = 1;
+}
+
+message FileCategoryResponse {
+  FileCategory category = 1;
 }

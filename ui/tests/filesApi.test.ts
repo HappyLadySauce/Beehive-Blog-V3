@@ -18,7 +18,7 @@ describe('files api', () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ asset: { asset_id: 'asset_1' } }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
     vi.stubGlobal('fetch', fetcher)
-    const { deleteFileAsset, getFileAsset, listFileAssets } = await import('@/features/files/api')
+    const { deleteFileAsset, getFileAsset, listFileAssets } = await import('@/features/file-manager/api')
 
     await listFileAssets({ keyword: 'avatar', status: 'uploaded', page: 2, page_size: 10 }, { accessToken: 'access-token' })
     await getFileAsset('asset_1', { accessToken: 'access-token' })
@@ -37,11 +37,11 @@ describe('files api', () => {
       value: vi.fn(() => 'blob:studio-file'),
     })
 
-    const { useFileUpload } = await import('@/features/uploads/useFileUpload')
-    const { deleteFileAsset, getFileAsset, listFileAssets } = await import('@/features/files/api')
+    const { useFileUpload } = await import('@/features/file-manager/useFileUpload')
+    const { deleteFileAsset, getFileAsset, listFileAssets } = await import('@/features/file-manager/api')
     const { uploadFile } = useFileUpload()
 
-    await uploadFile(imageFile(), undefined, 'content_image')
+    await uploadFile(imageFile(), undefined, 'default')
     const uploaded = await listFileAssets({ status: 'uploaded' })
 
     expect(uploaded.total).toBe(1)

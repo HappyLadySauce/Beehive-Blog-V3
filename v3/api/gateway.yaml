@@ -938,7 +938,7 @@ paths:
   /api/v3/files/assets:
     get:
       description: 100201-authorization required<br>100203-access token invalid<br>130101-invalid
-        argument<br>130102-invalid scope<br>130301-access forbidden<br>100604-file
+        argument<br>130102-invalid file category<br>130301-access forbidden<br>100604-file
         service unavailable<br>139901-file internal error
       operationId: fileFileAssetList
       parameters:
@@ -947,14 +947,9 @@ paths:
         name: Authorization
         type: string
       - allowEmptyValue: true
-        enum:
-        - avatar
-        - content_cover
-        - content_image
-        - attachment
-        example: avatar
+        example: default
         in: query
-        name: scope
+        name: category_key
         type: string
       - allowEmptyValue: true
         enum:
@@ -1014,6 +1009,9 @@ paths:
                     byte_size:
                       example: 153600
                       type: integer
+                    category_key:
+                      example: default
+                      type: string
                     content_type:
                       example: image/png
                       type: string
@@ -1038,14 +1036,6 @@ paths:
                     public_url:
                       example: https://cdn.example.com/avatars/1/01J8AVATAR.png
                       type: string
-                    scope:
-                      enum:
-                      - avatar
-                      - content_cover
-                      - content_image
-                      - attachment
-                      example: avatar
-                      type: string
                     status:
                       enum:
                       - pending
@@ -1069,7 +1059,7 @@ paths:
                   - asset_id
                   - upload_id
                   - owner_user_id
-                  - scope
+                  - category_key
                   - visibility
                   - status
                   - bucket
@@ -1168,6 +1158,9 @@ paths:
                   byte_size:
                     example: 153600
                     type: integer
+                  category_key:
+                    example: default
+                    type: string
                   content_type:
                     example: image/png
                     type: string
@@ -1192,14 +1185,6 @@ paths:
                   public_url:
                     example: https://cdn.example.com/avatars/1/01J8AVATAR.png
                     type: string
-                  scope:
-                    enum:
-                    - avatar
-                    - content_cover
-                    - content_image
-                    - attachment
-                    example: avatar
-                    type: string
                   status:
                     enum:
                     - pending
@@ -1223,7 +1208,7 @@ paths:
                 - asset_id
                 - upload_id
                 - owner_user_id
-                - scope
+                - category_key
                 - visibility
                 - status
                 - bucket
@@ -1243,13 +1228,77 @@ paths:
       summary: Get file asset
       tags:
       - Files
+  /api/v3/files/categories:
+    get:
+      description: 100201-authorization required<br>100203-access token invalid<br>100604-file
+        service unavailable<br>139901-file internal error
+      operationId: fileFileCategoryList
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    allowed_extensions:
+                      example: '[".png"'
+                      items:
+                        type: string
+                      type: array
+                    category_key:
+                      example: default
+                      type: string
+                    created_at:
+                      example: 1713772800
+                      type: integer
+                    description:
+                      example: System default file category.
+                      type: string
+                    display_name:
+                      example: 默认类型
+                      type: string
+                    enabled:
+                      example: true
+                      type: boolean
+                    is_default:
+                      example: true
+                      type: boolean
+                    sort_order:
+                      example: 0
+                      type: integer
+                    updated_at:
+                      example: 1713776400
+                      type: integer
+                  required:
+                  - category_key
+                  - display_name
+                  - enabled
+                  - is_default
+                  - sort_order
+                  - allowed_extensions
+                  - created_at
+                  - updated_at
+                  type: object
+                type: array
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List enabled file categories
+      tags:
+      - Files
   /api/v3/files/uploads:
     post:
       consumes:
       - application/json
       description: 100201-authorization required<br>100203-access token invalid<br>130101-invalid
-        argument<br>130102-invalid scope<br>130103-invalid content type<br>130104-file
-        too large<br>100604-file service unavailable<br>139901-file internal error
+        argument<br>130102-invalid file category<br>130104-file too large<br>130105-invalid
+        extension<br>130503-file category not found<br>100604-file service unavailable<br>139901-file
+        internal error
       operationId: fileFileUploadCreate
       parameters:
       - example: Bearer eyJhbGciOi...
@@ -1264,19 +1313,14 @@ paths:
             byte_size:
               example: 153600
               type: integer
+            category_key:
+              example: default
+              type: string
             content_type:
               example: image/png
               type: string
             file_name:
               example: avatar.png
-              type: string
-            scope:
-              enum:
-              - avatar
-              - content_cover
-              - content_image
-              - attachment
-              example: avatar
               type: string
             visibility:
               default: public
@@ -1286,9 +1330,8 @@ paths:
               example: public
               type: string
           required:
-          - scope
+          - category_key
           - file_name
-          - content_type
           - byte_size
           type: object
       produces:
@@ -1309,6 +1352,9 @@ paths:
                   byte_size:
                     example: 153600
                     type: integer
+                  category_key:
+                    example: default
+                    type: string
                   content_type:
                     example: image/png
                     type: string
@@ -1333,14 +1379,6 @@ paths:
                   public_url:
                     example: https://cdn.example.com/avatars/1/01J8AVATAR.png
                     type: string
-                  scope:
-                    enum:
-                    - avatar
-                    - content_cover
-                    - content_image
-                    - attachment
-                    example: avatar
-                    type: string
                   status:
                     enum:
                     - pending
@@ -1364,7 +1402,7 @@ paths:
                 - asset_id
                 - upload_id
                 - owner_user_id
-                - scope
+                - category_key
                 - visibility
                 - status
                 - bucket
@@ -1433,6 +1471,9 @@ paths:
                   byte_size:
                     example: 153600
                     type: integer
+                  category_key:
+                    example: default
+                    type: string
                   content_type:
                     example: image/png
                     type: string
@@ -1457,14 +1498,6 @@ paths:
                   public_url:
                     example: https://cdn.example.com/avatars/1/01J8AVATAR.png
                     type: string
-                  scope:
-                    enum:
-                    - avatar
-                    - content_cover
-                    - content_image
-                    - attachment
-                    example: avatar
-                    type: string
                   status:
                     enum:
                     - pending
@@ -1488,7 +1521,7 @@ paths:
                 - asset_id
                 - upload_id
                 - owner_user_id
-                - scope
+                - category_key
                 - visibility
                 - status
                 - bucket
@@ -3649,6 +3682,509 @@ paths:
       summary: Update content tag
       tags:
       - Studio Content
+  /api/v3/studio/file/categories:
+    get:
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>100604-file service unavailable<br>139901-file internal error
+      operationId: fileStudioFileCategoryList
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              items:
+                items:
+                  properties:
+                    allowed_extensions:
+                      example: '[".png"'
+                      items:
+                        type: string
+                      type: array
+                    category_key:
+                      example: default
+                      type: string
+                    created_at:
+                      example: 1713772800
+                      type: integer
+                    description:
+                      example: System default file category.
+                      type: string
+                    display_name:
+                      example: 默认类型
+                      type: string
+                    enabled:
+                      example: true
+                      type: boolean
+                    is_default:
+                      example: true
+                      type: boolean
+                    sort_order:
+                      example: 0
+                      type: integer
+                    updated_at:
+                      example: 1713776400
+                      type: integer
+                  required:
+                  - category_key
+                  - display_name
+                  - enabled
+                  - is_default
+                  - sort_order
+                  - allowed_extensions
+                  - created_at
+                  - updated_at
+                  type: object
+                type: array
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: List studio file categories
+      tags:
+      - Studio Files
+    post:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>130101-invalid argument<br>130105-invalid extension<br>100604-file
+        service unavailable<br>139901-file internal error
+      operationId: fileFileCategoryCreate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            allowed_extensions:
+              example: '[".png"'
+              items:
+                type: string
+              type: array
+            category_key:
+              example: default
+              type: string
+            description:
+              example: System default file category.
+              type: string
+            display_name:
+              example: 默认类型
+              type: string
+            enabled:
+              example: true
+              type: boolean
+            is_default:
+              example: false
+              type: boolean
+            sort_order:
+              example: 0
+              type: integer
+          required:
+          - category_key
+          - display_name
+          - allowed_extensions
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              category:
+                properties:
+                  allowed_extensions:
+                    example: '[".png"'
+                    items:
+                      type: string
+                    type: array
+                  category_key:
+                    example: default
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  description:
+                    example: System default file category.
+                    type: string
+                  display_name:
+                    example: 默认类型
+                    type: string
+                  enabled:
+                    example: true
+                    type: boolean
+                  is_default:
+                    example: true
+                    type: boolean
+                  sort_order:
+                    example: 0
+                    type: integer
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                required:
+                - category_key
+                - display_name
+                - enabled
+                - is_default
+                - sort_order
+                - allowed_extensions
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Create file category
+      tags:
+      - Studio Files
+  /api/v3/studio/file/categories/{category_key}:
+    put:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>130101-invalid argument<br>130503-file category not found<br>100604-file
+        service unavailable<br>139901-file internal error
+      operationId: fileFileCategoryUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: default
+        in: path
+        name: category_key
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            description:
+              example: System default file category.
+              type: string
+            display_name:
+              example: 默认类型
+              type: string
+            enabled:
+              example: true
+              type: boolean
+            sort_order:
+              example: 0
+              type: integer
+          required:
+          - display_name
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              category:
+                properties:
+                  allowed_extensions:
+                    example: '[".png"'
+                    items:
+                      type: string
+                    type: array
+                  category_key:
+                    example: default
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  description:
+                    example: System default file category.
+                    type: string
+                  display_name:
+                    example: 默认类型
+                    type: string
+                  enabled:
+                    example: true
+                    type: boolean
+                  is_default:
+                    example: true
+                    type: boolean
+                  sort_order:
+                    example: 0
+                    type: integer
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                required:
+                - category_key
+                - display_name
+                - enabled
+                - is_default
+                - sort_order
+                - allowed_extensions
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update file category
+      tags:
+      - Studio Files
+  /api/v3/studio/file/categories/{category_key}/default:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>130102-invalid file category<br>130503-file category not found<br>100604-file
+        service unavailable<br>139901-file internal error
+      operationId: fileFileCategoryDefaultSet
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: default
+        in: path
+        name: category_key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              category:
+                properties:
+                  allowed_extensions:
+                    example: '[".png"'
+                    items:
+                      type: string
+                    type: array
+                  category_key:
+                    example: default
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  description:
+                    example: System default file category.
+                    type: string
+                  display_name:
+                    example: 默认类型
+                    type: string
+                  enabled:
+                    example: true
+                    type: boolean
+                  is_default:
+                    example: true
+                    type: boolean
+                  sort_order:
+                    example: 0
+                    type: integer
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                required:
+                - category_key
+                - display_name
+                - enabled
+                - is_default
+                - sort_order
+                - allowed_extensions
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Set default file category
+      tags:
+      - Studio Files
+  /api/v3/studio/file/categories/{category_key}/extensions:
+    put:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>130101-invalid argument<br>130105-invalid extension<br>130503-file
+        category not found<br>100604-file service unavailable<br>139901-file internal
+        error
+      operationId: fileFileCategoryExtensionsUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - example: default
+        in: path
+        name: category_key
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            allowed_extensions:
+              example: '[".png"'
+              items:
+                type: string
+              type: array
+          required:
+          - allowed_extensions
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              category:
+                properties:
+                  allowed_extensions:
+                    example: '[".png"'
+                    items:
+                      type: string
+                    type: array
+                  category_key:
+                    example: default
+                    type: string
+                  created_at:
+                    example: 1713772800
+                    type: integer
+                  description:
+                    example: System default file category.
+                    type: string
+                  display_name:
+                    example: 默认类型
+                    type: string
+                  enabled:
+                    example: true
+                    type: boolean
+                  is_default:
+                    example: true
+                    type: boolean
+                  sort_order:
+                    example: 0
+                    type: integer
+                  updated_at:
+                    example: 1713776400
+                    type: integer
+                required:
+                - category_key
+                - display_name
+                - enabled
+                - is_default
+                - sort_order
+                - allowed_extensions
+                - created_at
+                - updated_at
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Replace file category extensions
+      tags:
+      - Studio Files
+  /api/v3/studio/file/config:
+    get:
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>100604-file service unavailable<br>139901-file internal error
+      operationId: fileFileConfigGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              config:
+                properties:
+                  max_upload_bytes:
+                    example: 2147483648
+                    type: integer
+                  presign_ttl_seconds:
+                    example: 300
+                    type: integer
+                required:
+                - max_upload_bytes
+                - presign_ttl_seconds
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Get file upload config
+      tags:
+      - Studio Files
+    put:
+      consumes:
+      - application/json
+      description: 100201-authorization required<br>100203-access token invalid<br>100301-access
+        forbidden<br>130101-invalid argument<br>100604-file service unavailable<br>139901-file
+        internal error
+      operationId: fileFileConfigUpdate
+      parameters:
+      - example: Bearer eyJhbGciOi...
+        in: header
+        name: Authorization
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            max_upload_bytes:
+              example: 2147483648
+              type: integer
+            presign_ttl_seconds:
+              example: 300
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              config:
+                properties:
+                  max_upload_bytes:
+                    example: 2147483648
+                    type: integer
+                  presign_ttl_seconds:
+                    example: 300
+                    type: integer
+                required:
+                - max_upload_bytes
+                - presign_ttl_seconds
+                type: object
+            type: object
+      schemes:
+      - https
+      security:
+      - bearerAuth: []
+      summary: Update file upload config
+      tags:
+      - Studio Files
   /api/v3/studio/users:
     get:
       description: 100201-authorization required<br>100203-access token invalid<br>100301-access
@@ -4241,7 +4777,7 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 swagger: "2.0"
-x-date: "2026-04-30 14:49:32"
+x-date: "2026-05-06 17:46:26"
 x-description: This is a goctl generated swagger file.
 x-github: https://github.com/zeromicro/go-zero
 x-go-zero-doc: https://go-zero.dev/

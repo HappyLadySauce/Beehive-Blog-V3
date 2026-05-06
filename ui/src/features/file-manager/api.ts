@@ -3,12 +3,17 @@ import { appConfig } from '@/shared/config/env'
 
 import {
   completeMockUpload,
+  createMockCategory,
   createMockUpload,
+  listMockCategories,
   deleteMockAsset,
   getMockAsset,
   getMockUpload,
   listMockAssets,
   setMockUploadPublicUrl,
+  setMockDefaultCategory,
+  updateMockCategory,
+  updateMockCategoryExtensions,
 } from './mockStore'
 
 import type {
@@ -17,12 +22,24 @@ import type {
   FileAssetListParams,
   FileAssetListResponse,
   FileAssetResponse,
+  FileCategoryCreateRequest,
+  FileCategoryExtensionsUpdateRequest,
+  FileCategoryListResponse,
+  FileCategoryResponse,
+  FileCategoryUpdateRequest,
+  FileConfig,
+  FileConfigResponse,
   FileUploadCreateRequest,
   FileUploadCreateResponse,
 } from './types'
 
 const fileBasePath = '/api/v3/files'
+const studioFileBasePath = '/api/v3/studio/file'
 let activeCompletedMockObjectUrl = ''
+let mockFileConfig: FileConfig = {
+  max_upload_bytes: 2 * 1024 * 1024 * 1024,
+  presign_ttl_seconds: 300,
+}
 
 // ---- Upload operations ----
 
@@ -38,7 +55,7 @@ export async function createFileUpload(
       upload_url: '',
       headers: {},
       expires_at: now + 300,
-      max_bytes: 5 * 1024 * 1024,
+      max_bytes: mockFileConfig.max_upload_bytes,
     }
   }
 
@@ -102,6 +119,121 @@ export async function putFileUploadObject(upload: FileUploadCreateResponse, file
 }
 
 // ---- Asset management operations ----
+
+export async function listFileCategories(options: { accessToken?: string } = {}): Promise<FileCategoryListResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return { items: listMockCategories(false) }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileCategoryListResponse>(`${fileBasePath}/categories`, {
+    method: 'GET',
+    accessToken: options.accessToken,
+  })
+}
+
+export async function listStudioFileCategories(options: { accessToken?: string } = {}): Promise<FileCategoryListResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return { items: listMockCategories(true) }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileCategoryListResponse>(`${studioFileBasePath}/categories`, {
+    method: 'GET',
+    accessToken: options.accessToken,
+  })
+}
+
+export async function getStudioFileConfig(options: { accessToken?: string } = {}): Promise<FileConfigResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return { config: mockFileConfig }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileConfigResponse>(`${studioFileBasePath}/config`, {
+    method: 'GET',
+    accessToken: options.accessToken,
+  })
+}
+
+export async function updateStudioFileConfig(
+  payload: Partial<FileConfig>,
+  options: { accessToken?: string } = {},
+): Promise<FileConfigResponse> {
+  if (appConfig.apiMode === 'mock') {
+    mockFileConfig = {
+      max_upload_bytes: payload.max_upload_bytes ?? mockFileConfig.max_upload_bytes,
+      presign_ttl_seconds: payload.presign_ttl_seconds ?? mockFileConfig.presign_ttl_seconds,
+    }
+    return {
+      config: mockFileConfig,
+    }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileConfigResponse>(`${studioFileBasePath}/config`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    accessToken: options.accessToken,
+  })
+}
+
+export async function createStudioFileCategory(
+  payload: FileCategoryCreateRequest,
+  options: { accessToken?: string } = {},
+): Promise<FileCategoryResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return { category: createMockCategory(payload) }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileCategoryResponse>(`${studioFileBasePath}/categories`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    accessToken: options.accessToken,
+  })
+}
+
+export async function updateStudioFileCategory(
+  categoryKey: string,
+  payload: FileCategoryUpdateRequest,
+  options: { accessToken?: string } = {},
+): Promise<FileCategoryResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return { category: updateMockCategory(categoryKey, payload) }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileCategoryResponse>(`${studioFileBasePath}/categories/${encodeURIComponent(categoryKey)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    accessToken: options.accessToken,
+  })
+}
+
+export async function updateStudioFileCategoryExtensions(
+  categoryKey: string,
+  payload: FileCategoryExtensionsUpdateRequest,
+  options: { accessToken?: string } = {},
+): Promise<FileCategoryResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return { category: updateMockCategoryExtensions(categoryKey, payload) }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileCategoryResponse>(`${studioFileBasePath}/categories/${encodeURIComponent(categoryKey)}/extensions`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    accessToken: options.accessToken,
+  })
+}
+
+export async function setStudioDefaultFileCategory(
+  categoryKey: string,
+  options: { accessToken?: string } = {},
+): Promise<FileCategoryResponse> {
+  if (appConfig.apiMode === 'mock') {
+    return { category: setMockDefaultCategory(categoryKey) }
+  }
+  requireLiveAccessToken(options.accessToken)
+  return requestJson<FileCategoryResponse>(`${studioFileBasePath}/categories/${encodeURIComponent(categoryKey)}/default`, {
+    method: 'POST',
+    accessToken: options.accessToken,
+  })
+}
 
 function withQuery(path: string, params?: Record<string, string | number | boolean | undefined>): string {
   const searchParams = new URLSearchParams()

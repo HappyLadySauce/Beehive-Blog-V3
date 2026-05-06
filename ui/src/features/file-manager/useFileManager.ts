@@ -4,8 +4,15 @@ import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useConfirm, useProgressiveQuery, useToast } from '@/shared/composables'
 
 import { deleteFileAsset, getFileAsset, listFileAssets } from './api'
-import type { FileAssetListParams, FileAssetSummary, FileUploadNamespace } from './types'
+import { DEFAULT_FILE_CATEGORY_KEY, DEFAULT_FILE_MAX_UPLOAD_BYTES } from './constants'
+import type { FileAssetListParams, FileAssetSummary, FileCategoryKey } from './types'
 import { useFileUpload } from './useFileUpload'
+
+export interface UploadSelection {
+  categoryKey: FileCategoryKey
+  allowedExtensions: string[]
+  maxUploadBytes: number
+}
 
 export function useFileManager() {
   const authStore = useAuthStore()
@@ -15,7 +22,7 @@ export function useFileManager() {
 
   const filters = reactive<FileAssetListParams>({
     keyword: '',
-    namespace: '',
+    category_key: '',
     status: 'uploaded',
     visibility: '',
     owner_user_id: '',
@@ -24,7 +31,11 @@ export function useFileManager() {
   })
   const selectedAssetId = shallowRef('')
   const isDeleting = shallowRef(false)
-  const uploadNamespace = shallowRef<FileUploadNamespace>('content_image')
+  const uploadSelection = reactive<UploadSelection>({
+    categoryKey: DEFAULT_FILE_CATEGORY_KEY,
+    allowedExtensions: [],
+    maxUploadBytes: DEFAULT_FILE_MAX_UPLOAD_BYTES,
+  })
 
   const listQuery = useProgressiveQuery({
     queryKey: computed(() => ['studio-files', { ...filters }]),
@@ -44,7 +55,7 @@ export function useFileManager() {
   const pageSize = computed(() => listQuery.data.value?.page_size ?? Number(filters.page_size ?? 20))
 
   watch(
-    () => [filters.keyword, filters.namespace, filters.status, filters.visibility, filters.owner_user_id],
+    () => [filters.keyword, filters.category_key, filters.status, filters.visibility, filters.owner_user_id],
     () => {
       filters.page = 1
     },
@@ -67,9 +78,15 @@ export function useFileManager() {
     selectedAssetId.value = ''
   }
 
+  function updateUploadSelection(patch: Partial<UploadSelection>): void {
+    Object.assign(uploadSelection, patch)
+  }
+
   async function uploadSelectedFile(file: File): Promise<void> {
-    const namespace = uploadNamespace.value
-    await uploadFile(file, authStore.accessToken, namespace)
+    await uploadFile(file, authStore.accessToken, uploadSelection.categoryKey, {
+      allowedExtensions: uploadSelection.allowedExtensions,
+      maxUploadBytes: uploadSelection.maxUploadBytes,
+    })
     pushToast({
       tone: 'success',
       title: 'File uploaded',
@@ -121,7 +138,7 @@ export function useFileManager() {
     pageSize,
     selectedAssetId,
     selectedAsset,
-    uploadNamespace,
+    uploadSelection,
     isUploading,
     uploadErrorMessage: errorMessage,
     isDeleting,
@@ -131,6 +148,7 @@ export function useFileManager() {
     setPageSize,
     openAsset,
     closeAsset,
+    updateUploadSelection,
     uploadSelectedFile,
     removeAsset,
   }

@@ -9,10 +9,10 @@ import (
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/config"
 )
 
-func TestNormalizeNamespace(t *testing.T) {
+func TestNormalizeCategoryKey(t *testing.T) {
 	t.Parallel()
 
-	ns, err := normalizeNamespace("content_cover")
+	ns, err := normalizeCategoryKey("content_cover")
 	if err != nil {
 		t.Fatalf("expected content_cover to pass, got %v", err)
 	}
@@ -20,23 +20,23 @@ func TestNormalizeNamespace(t *testing.T) {
 		t.Fatalf("expected content_cover, got %s", ns)
 	}
 
-	// Empty namespace
-	if _, err := normalizeNamespace(""); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
-		t.Fatalf("expected empty namespace error, got %v", err)
+	// Empty category key
+	if _, err := normalizeCategoryKey(""); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
+		t.Fatalf("expected empty category key error, got %v", err)
 	}
 
-	// Too long namespace
-	if _, err := normalizeNamespace(strings.Repeat("a", 65)); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
-		t.Fatalf("expected too-long namespace error, got %v", err)
+	// Too long category key
+	if _, err := normalizeCategoryKey(strings.Repeat("a", 65)); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
+		t.Fatalf("expected too-long category key error, got %v", err)
 	}
 
 	// Invalid characters
-	if _, err := normalizeNamespace("bad namespace!"); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
+	if _, err := normalizeCategoryKey("bad category!"); !errors.Is(err, errs.E(errs.CodeFileInvalidScope)) {
 		t.Fatalf("expected invalid char error, got %v", err)
 	}
 
 	// Valid: any alphanumeric + separator string passes
-	ns2, err := normalizeNamespace("banner_homepage:en")
+	ns2, err := normalizeCategoryKey("banner_homepage:en")
 	if err != nil {
 		t.Fatalf("expected banner_homepage:en to pass, got %v", err)
 	}
@@ -48,38 +48,41 @@ func TestNormalizeNamespace(t *testing.T) {
 func TestValidateUploadFile(t *testing.T) {
 	t.Parallel()
 
-	allowedTypes := []string{"image/png", "image/jpeg"}
+	allowedExtensions := []string{".png", ".jpg"}
 	maxUploadBytes := int64(128)
 
-	contentType, maxBytes, err := validateUploadFile(allowedTypes, maxUploadBytes, "avatar.png", "image/png", 100)
+	contentType, extension, maxBytes, err := validateUploadFile(allowedExtensions, maxUploadBytes, "avatar.png", "image/png", 100)
 	if err != nil {
 		t.Fatalf("expected upload file validation to pass, got %v", err)
 	}
-	if contentType != "image/png" || maxBytes != 128 {
-		t.Fatalf("unexpected normalized values: contentType=%s maxBytes=%d", contentType, maxBytes)
+	if contentType != "image/png" || extension != ".png" || maxBytes != 128 {
+		t.Fatalf("unexpected normalized values: contentType=%s extension=%s maxBytes=%d", contentType, extension, maxBytes)
 	}
 
-	if _, _, err := validateUploadFile(allowedTypes, maxUploadBytes, "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidContentType)) {
-		t.Fatalf("expected invalid content type error, got %v", err)
+	if _, _, _, err := validateUploadFile(allowedExtensions, maxUploadBytes, "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidExtension)) {
+		t.Fatalf("expected invalid extension error, got %v", err)
 	}
-	if _, _, err := validateUploadFile(allowedTypes, maxUploadBytes, "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
+	if _, _, _, err := validateUploadFile(allowedExtensions, maxUploadBytes, "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
 		t.Fatalf("expected file too large error, got %v", err)
 	}
 
-	// Empty lists use hardcoded fallback
-	_, fallbackMaxBytes, err := validateUploadFile(nil, 0, "file.pdf", "application/pdf", 100)
+	// Missing content type should fall back to extension inference.
+	contentType, extension, maxBytes, err = validateUploadFile([]string{".pdf"}, 0, "file.pdf", "", 100)
 	if err != nil {
-		t.Fatalf("expected PDF to pass with hardcoded fallback, got %v", err)
+		t.Fatalf("expected PDF to pass with extension inference, got %v", err)
 	}
-	if fallbackMaxBytes != hardcodedMaxBytes {
-		t.Fatalf("expected hardcoded max bytes %d, got %d", hardcodedMaxBytes, fallbackMaxBytes)
+	if contentType != "application/pdf" || extension != ".pdf" {
+		t.Fatalf("expected inferred pdf values, got contentType=%s extension=%s", contentType, extension)
+	}
+	if maxBytes != hardcodedMaxBytes {
+		t.Fatalf("expected hardcoded max bytes %d, got %d", hardcodedMaxBytes, maxBytes)
 	}
 }
 
-func TestObjectKeyUsesNamespaceAsPrefix(t *testing.T) {
+func TestObjectKeyUsesCategoryKeyAsPrefix(t *testing.T) {
 	t.Parallel()
 
-	key := objectKey("content_image", 42, "cover.jpeg", "image/jpeg")
+	key := objectKey("content_image", 42, ".jpg")
 	if !strings.HasPrefix(key, "content_image/42/") {
 		t.Fatalf("expected content_image prefix, got %s", key)
 	}
@@ -87,16 +90,16 @@ func TestObjectKeyUsesNamespaceAsPrefix(t *testing.T) {
 		t.Fatalf("expected jpeg extension normalization, got %s", key)
 	}
 
-	// Any namespace string becomes the path prefix
-	key2 := objectKey("banner", 42, "hero.png", "image/png")
+	// Any category key becomes the path prefix.
+	key2 := objectKey("banner", 42, ".png")
 	if !strings.HasPrefix(key2, "banner/42/") {
 		t.Fatalf("expected banner prefix, got %s", key2)
 	}
 
-	// Empty namespace defaults to "files"
-	key3 := objectKey("", 42, "file.txt", "application/pdf")
-	if !strings.HasPrefix(key3, "files/42/") {
-		t.Fatalf("expected files prefix for empty namespace, got %s", key3)
+	// Empty category key falls back to default.
+	key3 := objectKey("", 42, ".pdf")
+	if !strings.HasPrefix(key3, "default/42/") {
+		t.Fatalf("expected default prefix for empty category key, got %s", key3)
 	}
 }
 

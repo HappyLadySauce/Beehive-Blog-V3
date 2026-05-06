@@ -19,14 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FileService_Ping_FullMethodName             = "/file.FileService/Ping"
-	FileService_CreateUpload_FullMethodName     = "/file.FileService/CreateUpload"
-	FileService_CompleteUpload_FullMethodName   = "/file.FileService/CompleteUpload"
-	FileService_ListAssets_FullMethodName       = "/file.FileService/ListAssets"
-	FileService_GetAsset_FullMethodName         = "/file.FileService/GetAsset"
-	FileService_DeleteAsset_FullMethodName      = "/file.FileService/DeleteAsset"
-	FileService_GetFileConfig_FullMethodName    = "/file.FileService/GetFileConfig"
-	FileService_UpdateFileConfig_FullMethodName = "/file.FileService/UpdateFileConfig"
+	FileService_Ping_FullMethodName                         = "/file.FileService/Ping"
+	FileService_CreateUpload_FullMethodName                 = "/file.FileService/CreateUpload"
+	FileService_CompleteUpload_FullMethodName               = "/file.FileService/CompleteUpload"
+	FileService_ListAssets_FullMethodName                   = "/file.FileService/ListAssets"
+	FileService_GetAsset_FullMethodName                     = "/file.FileService/GetAsset"
+	FileService_DeleteAsset_FullMethodName                  = "/file.FileService/DeleteAsset"
+	FileService_GetFileConfig_FullMethodName                = "/file.FileService/GetFileConfig"
+	FileService_UpdateFileConfig_FullMethodName             = "/file.FileService/UpdateFileConfig"
+	FileService_ListFileCategories_FullMethodName           = "/file.FileService/ListFileCategories"
+	FileService_CreateFileCategory_FullMethodName           = "/file.FileService/CreateFileCategory"
+	FileService_UpdateFileCategory_FullMethodName           = "/file.FileService/UpdateFileCategory"
+	FileService_UpdateFileCategoryExtensions_FullMethodName = "/file.FileService/UpdateFileCategoryExtensions"
+	FileService_SetDefaultFileCategory_FullMethodName       = "/file.FileService/SetDefaultFileCategory"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -41,6 +46,11 @@ type FileServiceClient interface {
 	DeleteAsset(ctx context.Context, in *DeleteAssetRequest, opts ...grpc.CallOption) (*DeleteAssetResponse, error)
 	GetFileConfig(ctx context.Context, in *GetFileConfigRequest, opts ...grpc.CallOption) (*GetFileConfigResponse, error)
 	UpdateFileConfig(ctx context.Context, in *UpdateFileConfigRequest, opts ...grpc.CallOption) (*UpdateFileConfigResponse, error)
+	ListFileCategories(ctx context.Context, in *ListFileCategoriesRequest, opts ...grpc.CallOption) (*ListFileCategoriesResponse, error)
+	CreateFileCategory(ctx context.Context, in *CreateFileCategoryRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error)
+	UpdateFileCategory(ctx context.Context, in *UpdateFileCategoryRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error)
+	UpdateFileCategoryExtensions(ctx context.Context, in *UpdateFileCategoryExtensionsRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error)
+	SetDefaultFileCategory(ctx context.Context, in *SetDefaultFileCategoryRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error)
 }
 
 type fileServiceClient struct {
@@ -131,6 +141,56 @@ func (c *fileServiceClient) UpdateFileConfig(ctx context.Context, in *UpdateFile
 	return out, nil
 }
 
+func (c *fileServiceClient) ListFileCategories(ctx context.Context, in *ListFileCategoriesRequest, opts ...grpc.CallOption) (*ListFileCategoriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFileCategoriesResponse)
+	err := c.cc.Invoke(ctx, FileService_ListFileCategories_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) CreateFileCategory(ctx context.Context, in *CreateFileCategoryRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FileCategoryResponse)
+	err := c.cc.Invoke(ctx, FileService_CreateFileCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) UpdateFileCategory(ctx context.Context, in *UpdateFileCategoryRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FileCategoryResponse)
+	err := c.cc.Invoke(ctx, FileService_UpdateFileCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) UpdateFileCategoryExtensions(ctx context.Context, in *UpdateFileCategoryExtensionsRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FileCategoryResponse)
+	err := c.cc.Invoke(ctx, FileService_UpdateFileCategoryExtensions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) SetDefaultFileCategory(ctx context.Context, in *SetDefaultFileCategoryRequest, opts ...grpc.CallOption) (*FileCategoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FileCategoryResponse)
+	err := c.cc.Invoke(ctx, FileService_SetDefaultFileCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -143,6 +203,11 @@ type FileServiceServer interface {
 	DeleteAsset(context.Context, *DeleteAssetRequest) (*DeleteAssetResponse, error)
 	GetFileConfig(context.Context, *GetFileConfigRequest) (*GetFileConfigResponse, error)
 	UpdateFileConfig(context.Context, *UpdateFileConfigRequest) (*UpdateFileConfigResponse, error)
+	ListFileCategories(context.Context, *ListFileCategoriesRequest) (*ListFileCategoriesResponse, error)
+	CreateFileCategory(context.Context, *CreateFileCategoryRequest) (*FileCategoryResponse, error)
+	UpdateFileCategory(context.Context, *UpdateFileCategoryRequest) (*FileCategoryResponse, error)
+	UpdateFileCategoryExtensions(context.Context, *UpdateFileCategoryExtensionsRequest) (*FileCategoryResponse, error)
+	SetDefaultFileCategory(context.Context, *SetDefaultFileCategoryRequest) (*FileCategoryResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -176,6 +241,21 @@ func (UnimplementedFileServiceServer) GetFileConfig(context.Context, *GetFileCon
 }
 func (UnimplementedFileServiceServer) UpdateFileConfig(context.Context, *UpdateFileConfigRequest) (*UpdateFileConfigResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateFileConfig not implemented")
+}
+func (UnimplementedFileServiceServer) ListFileCategories(context.Context, *ListFileCategoriesRequest) (*ListFileCategoriesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListFileCategories not implemented")
+}
+func (UnimplementedFileServiceServer) CreateFileCategory(context.Context, *CreateFileCategoryRequest) (*FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateFileCategory not implemented")
+}
+func (UnimplementedFileServiceServer) UpdateFileCategory(context.Context, *UpdateFileCategoryRequest) (*FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateFileCategory not implemented")
+}
+func (UnimplementedFileServiceServer) UpdateFileCategoryExtensions(context.Context, *UpdateFileCategoryExtensionsRequest) (*FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateFileCategoryExtensions not implemented")
+}
+func (UnimplementedFileServiceServer) SetDefaultFileCategory(context.Context, *SetDefaultFileCategoryRequest) (*FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetDefaultFileCategory not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -342,6 +422,96 @@ func _FileService_UpdateFileConfig_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_ListFileCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFileCategoriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).ListFileCategories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_ListFileCategories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).ListFileCategories(ctx, req.(*ListFileCategoriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_CreateFileCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateFileCategoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).CreateFileCategory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_CreateFileCategory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).CreateFileCategory(ctx, req.(*CreateFileCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_UpdateFileCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateFileCategoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).UpdateFileCategory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_UpdateFileCategory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).UpdateFileCategory(ctx, req.(*UpdateFileCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_UpdateFileCategoryExtensions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateFileCategoryExtensionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).UpdateFileCategoryExtensions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_UpdateFileCategoryExtensions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).UpdateFileCategoryExtensions(ctx, req.(*UpdateFileCategoryExtensionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_SetDefaultFileCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetDefaultFileCategoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).SetDefaultFileCategory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_SetDefaultFileCategory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).SetDefaultFileCategory(ctx, req.(*SetDefaultFileCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +550,26 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateFileConfig",
 			Handler:    _FileService_UpdateFileConfig_Handler,
+		},
+		{
+			MethodName: "ListFileCategories",
+			Handler:    _FileService_ListFileCategories_Handler,
+		},
+		{
+			MethodName: "CreateFileCategory",
+			Handler:    _FileService_CreateFileCategory_Handler,
+		},
+		{
+			MethodName: "UpdateFileCategory",
+			Handler:    _FileService_UpdateFileCategory_Handler,
+		},
+		{
+			MethodName: "UpdateFileCategoryExtensions",
+			Handler:    _FileService_UpdateFileCategoryExtensions_Handler,
+		},
+		{
+			MethodName: "SetDefaultFileCategory",
+			Handler:    _FileService_SetDefaultFileCategory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

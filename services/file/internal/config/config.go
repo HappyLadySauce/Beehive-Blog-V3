@@ -32,13 +32,12 @@ type PostgresConf struct {
 }
 
 type StorageConf struct {
-	Driver              string           `json:"Driver"`
-	PublicBaseURL       string           `json:"PublicBaseURL"`
-	PresignTTLSeconds   int              `json:"PresignTTLSeconds"`
-	MaxUploadBytes      int64            `json:"MaxUploadBytes"`
-	AllowedContentTypes []string         `json:"AllowedContentTypes"`
-	Local               LocalStorageConf `json:"Local"`
-	S3                  S3StorageConf    `json:"S3"`
+	Driver            string           `json:"Driver"`
+	PublicBaseURL     string           `json:"PublicBaseURL"`
+	PresignTTLSeconds int              `json:"PresignTTLSeconds"`
+	MaxUploadBytes    int64            `json:"MaxUploadBytes"`
+	Local             LocalStorageConf `json:"Local"`
+	S3                S3StorageConf    `json:"S3"`
 }
 
 type LocalStorageConf struct {

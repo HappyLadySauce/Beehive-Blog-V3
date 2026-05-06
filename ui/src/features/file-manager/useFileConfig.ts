@@ -1,44 +1,29 @@
 import { shallowRef } from 'vue'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import { requestJson } from '@/shared/api/httpClient'
 
-export interface FileConfigData {
-  max_upload_bytes: number
-  allowed_content_types: string[]
-  presign_ttl_seconds: number
-}
+import { getStudioFileConfig, updateStudioFileConfig } from './api'
+import type { FileConfig } from './types'
 
 export function useFileConfig() {
   const authStore = useAuthStore()
-  const config = shallowRef<FileConfigData>({
+  const config = shallowRef<FileConfig>({
     max_upload_bytes: 0,
-    allowed_content_types: [],
     presign_ttl_seconds: 0,
   })
   const isSaving = shallowRef(false)
   const errorMessage = shallowRef('')
 
   async function loadConfig(): Promise<void> {
-    const data = await requestJson<{ config: FileConfigData }>(
-      '/api/v3/studio/file/config',
-      { method: 'GET', accessToken: authStore.accessToken },
-    )
+    const data = await getStudioFileConfig({ accessToken: authStore.accessToken })
     config.value = data.config
   }
 
-  async function saveConfig(patch: Partial<FileConfigData>): Promise<void> {
+  async function saveConfig(patch: Partial<FileConfig>): Promise<void> {
     isSaving.value = true
     errorMessage.value = ''
     try {
-      const data = await requestJson<{ config: FileConfigData }>(
-        '/api/v3/studio/file/config',
-        {
-          method: 'PUT',
-          body: JSON.stringify(patch),
-          accessToken: authStore.accessToken,
-        },
-      )
+      const data = await updateStudioFileConfig(patch, { accessToken: authStore.accessToken })
       config.value = data.config
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : 'Failed to save file config.'

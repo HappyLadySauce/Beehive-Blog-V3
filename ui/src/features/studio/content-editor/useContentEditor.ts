@@ -504,7 +504,7 @@ async function uploadAndInsertImages(
   editor: Editor | null,
   files: File[],
   accessToken: string | undefined,
-  uploader: (file: File, accessToken: string | undefined, scope: 'content_image') => Promise<string>,
+  uploader: (file: File, accessToken: string | undefined, categoryKey?: string) => Promise<string>,
 ): Promise<void> {
   if (!editor || editor.isDestroyed) return
 
@@ -512,7 +512,7 @@ async function uploadAndInsertImages(
     const blobUrl = URL.createObjectURL(file)
     editor.chain().focus().setImage({ src: blobUrl, alt: file.name }).run()
     try {
-      const remoteUrl = await uploader(file, accessToken, 'content_image')
+      const remoteUrl = await uploader(file, accessToken, 'default')
       const html = editor.getHTML()
       if (html.includes(blobUrl)) {
         editor.commands.setContent(html.replaceAll(blobUrl, remoteUrl), false)

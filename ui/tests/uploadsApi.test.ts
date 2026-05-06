@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { FileUploadCreateResponse } from '@/features/uploads/types'
+import type { FileUploadCreateResponse } from '@/features/file-manager/types'
 
 function imageFile(): File {
   return new File(['data'], 'avatar.png', { type: 'image/png' })
@@ -12,11 +12,11 @@ function uploadResponse(): FileUploadCreateResponse {
       asset_id: 'asset_1',
       upload_id: 'upload_1',
       owner_user_id: 'user_1',
-      scope: 'avatar',
+      category_key: 'default',
       visibility: 'public',
       status: 'pending',
       bucket: 'local',
-      object_key: 'avatars/user_1/avatar.png',
+      object_key: 'default/user_1/avatar.png',
       public_url: '',
       file_name: 'avatar.png',
       content_type: 'image/png',
@@ -50,7 +50,7 @@ describe('uploads api', () => {
       configurable: true,
       value: vi.fn(() => 'blob:mock-avatar'),
     })
-    const { useAvatarUpload } = await import('@/features/uploads/useAvatarUpload')
+    const { useAvatarUpload } = await import('@/features/file-manager/useAvatarUpload')
 
     const { uploadAvatar } = useAvatarUpload()
     const publicUrl = await uploadAvatar(imageFile())
@@ -73,10 +73,10 @@ describe('uploads api', () => {
       configurable: true,
       value: revokeObjectURL,
     })
-    const { completeFileUpload, createFileUpload, putFileUploadObject } = await import('@/features/uploads/api')
+    const { completeFileUpload, createFileUpload, putFileUploadObject } = await import('@/features/file-manager/api')
 
     const firstUpload = await createFileUpload({
-      scope: 'avatar',
+      category_key: 'default',
       file_name: 'first.png',
       content_type: 'image/png',
       byte_size: 4,
@@ -90,7 +90,7 @@ describe('uploads api', () => {
     expect(repeatedFirst.asset.public_url).not.toBe('blob:first-avatar')
 
     const secondUpload = await createFileUpload({
-      scope: 'avatar',
+      category_key: 'default',
       file_name: 'second.png',
       content_type: 'image/png',
       byte_size: 4,
@@ -110,7 +110,7 @@ describe('uploads api', () => {
     vi.stubEnv('VITE_API_MODE', 'live')
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }))
     vi.stubGlobal('fetch', fetcher)
-    const { putFileUploadObject } = await import('@/features/uploads/api')
+    const { putFileUploadObject } = await import('@/features/file-manager/api')
 
     await putFileUploadObject(uploadResponse(), imageFile())
 
@@ -133,7 +133,7 @@ describe('uploads api', () => {
       })
     }))
     vi.stubGlobal('fetch', fetcher)
-    const { putFileUploadObject } = await import('@/features/uploads/api')
+    const { putFileUploadObject } = await import('@/features/file-manager/api')
 
     const uploadPromise = expect(putFileUploadObject(uploadResponse(), imageFile())).rejects.toThrow('File upload timed out.')
     await vi.advanceTimersByTimeAsync(60_000)

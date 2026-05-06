@@ -60,6 +60,26 @@ func (f *fakeFileClient) UpdateFileConfig(ctx context.Context, in *filepb.Update
 	return f.updateFileConfigFn(ctx, in, opts...)
 }
 
+func (f *fakeFileClient) ListFileCategories(context.Context, *filepb.ListFileCategoriesRequest, ...grpc.CallOption) (*filepb.ListFileCategoriesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeFileClient) CreateFileCategory(context.Context, *filepb.CreateFileCategoryRequest, ...grpc.CallOption) (*filepb.FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeFileClient) UpdateFileCategory(context.Context, *filepb.UpdateFileCategoryRequest, ...grpc.CallOption) (*filepb.FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeFileClient) UpdateFileCategoryExtensions(context.Context, *filepb.UpdateFileCategoryExtensionsRequest, ...grpc.CallOption) (*filepb.FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeFileClient) SetDefaultFileCategory(context.Context, *filepb.SetDefaultFileCategoryRequest, ...grpc.CallOption) (*filepb.FileCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func TestFileConfigGetRequiresAdmin(t *testing.T) {
 	t.Parallel()
 
@@ -90,9 +110,8 @@ func TestFileConfigUpdatePassesThroughForAdmin(t *testing.T) {
 			}
 			return &filepb.UpdateFileConfigResponse{
 				Config: &filepb.FileConfig{
-					MaxUploadBytes:      1024,
-					AllowedContentTypes: []string{"image/png"},
-					PresignTtlSeconds:   300,
+					MaxUploadBytes:    1024,
+					PresignTtlSeconds: 300,
 				},
 			}, nil
 		},

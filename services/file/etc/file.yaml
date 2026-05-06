@@ -29,12 +29,6 @@ Storage:
   PublicBaseURL: ""
   PresignTTLSeconds: 300
   MaxUploadBytes: 2147483648
-  AllowedContentTypes:
-    - image/png
-    - image/jpeg
-    - image/webp
-    - image/avif
-    - application/pdf
   Local:
     RootDir: "var/file/assets"
     TempDir: "var/file/pending"

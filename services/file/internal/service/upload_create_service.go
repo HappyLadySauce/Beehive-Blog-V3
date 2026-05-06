@@ -7,6 +7,7 @@ import (
 
 	"github.com/HappyLadySauce/Beehive-Blog-V3/pkg/errs"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/model/entity"
+	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/model/repo"
 	"github.com/HappyLadySauce/Beehive-Blog-V3/services/file/internal/storage"
 	"github.com/google/uuid"
 )
@@ -19,7 +20,7 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 	if err != nil {
 		return nil, err
 	}
-	namespace, err := normalizeNamespace(in.Namespace)
+	categoryKey, err := normalizeCategoryKey(in.CategoryKey)
 	if err != nil {
 		return nil, err
 	}
@@ -28,9 +29,19 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 		return nil, err
 	}
 
-	allowedTypes := m.configCache.AllowedContentTypes()
+	category, err := m.store.Categories.FindByKey(ctx, categoryKey)
+	if err != nil {
+		if repo.IsNotFound(err) {
+			return nil, errs.New(errs.CodeFileCategoryNotFound, "file category not found")
+		}
+		return nil, errs.Wrap(err, errs.CodeFileInternal, "get file category failed")
+	}
+	if !category.Enabled {
+		return nil, errs.New(errs.CodeFileInvalidScope, "file category is disabled")
+	}
+
 	maxUploadBytes := m.configCache.MaxUploadBytes()
-	contentType, maxBytes, err := validateUploadFile(allowedTypes, maxUploadBytes, in.FileName, in.ContentType, in.ByteSize)
+	contentType, extension, maxBytes, err := validateUploadFile(category.AllowedExtensions, maxUploadBytes, in.FileName, in.ContentType, in.ByteSize)
 	if err != nil {
 		return nil, err
 	}
@@ -40,14 +51,14 @@ func (m *Manager) CreateUpload(ctx context.Context, in CreateUploadInput) (*Crea
 		ttl = 5 * time.Minute
 	}
 	now := time.Now().UTC()
-	objectKey := objectKey(namespace, ownerUserID, in.FileName, contentType)
+	objectKey := objectKey(categoryKey, ownerUserID, extension)
 	assetID := "asset_" + uuid.NewString()
 	publicURL := publicURLForVisibility(m.conf.Storage, visibility, assetID, objectKey)
 	asset := &entity.FileAsset{
 		AssetID:     assetID,
 		UploadID:    "upload_" + uuid.NewString(),
 		OwnerUserID: ownerUserID,
-		Namespace:   namespace,
+		CategoryKey: categoryKey,
 		Visibility:  visibility,
 		Status:      StatusPending,
 		Bucket:      storageBucket(m.conf.Storage),

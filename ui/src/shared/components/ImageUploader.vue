@@ -5,22 +5,23 @@ import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useAvatarUpload } from '@/features/file-manager/useAvatarUpload'
-import type { FileUploadNamespace } from '@/features/file-manager/types'
+import { DEFAULT_FILE_CATEGORY_KEY, IMAGE_FILE_EXTENSIONS, buildAcceptAttribute } from '@/features/file-manager/constants'
+import type { FileCategoryKey } from '@/features/file-manager/types'
 
 import BaseButton from './BaseButton.vue'
 
 const props = withDefaults(
   defineProps<{
     modelValue?: string
-    namespace?: FileUploadNamespace
+    categoryKey?: FileCategoryKey
     label?: string
     hint?: string
   }>(),
   {
     modelValue: '',
-    namespace: 'content_cover',
+    categoryKey: DEFAULT_FILE_CATEGORY_KEY,
     label: 'Upload image',
-    hint: 'PNG, JPEG, WebP, or AVIF. Max 5MB.',
+    hint: 'PNG, JPEG, WebP, or AVIF. Max 2GB.',
   },
 )
 
@@ -50,7 +51,9 @@ async function handleFileChange(event: Event): Promise<void> {
     return
   }
   try {
-    const publicURL = await uploadImage(input.files[0], authStore.accessToken, props.namespace)
+    const publicURL = await uploadImage(input.files[0], authStore.accessToken, props.categoryKey, {
+      allowedExtensions: IMAGE_FILE_EXTENSIONS,
+    })
     emit('update:modelValue', publicURL)
   }
   catch {
@@ -87,7 +90,7 @@ async function handleFileChange(event: Event): Promise<void> {
       ref="fileInput"
       class="image-uploader__input"
       type="file"
-      accept="image/png,image/jpeg,image/webp,image/avif"
+      :accept="buildAcceptAttribute(IMAGE_FILE_EXTENSIONS)"
       @change="handleFileChange"
     >
   </div>

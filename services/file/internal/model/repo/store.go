@@ -5,13 +5,15 @@ import "gorm.io/gorm"
 type Store struct {
 	db *gorm.DB
 
-	Assets *AssetRepository
+	Assets     *AssetRepository
+	Categories *FileCategoryRepository
 }
 
 func NewStore(db *gorm.DB) *Store {
 	return &Store{
-		db:     db,
-		Assets: &AssetRepository{db: db},
+		db:         db,
+		Assets:     &AssetRepository{db: db},
+		Categories: &FileCategoryRepository{db: db},
 	}
 }
 

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { studioApi } from '@/features/studio'
 import StudioProfilePage from '@/pages/studio/StudioProfilePage.vue'
+import { DEFAULT_FILE_MAX_UPLOAD_BYTES } from '@/features/file-manager/constants'
 import ImageUploader from '@/shared/components/ImageUploader.vue'
 import { i18n, setLocale } from '@/shared/i18n'
 
@@ -68,7 +69,7 @@ const ImageUploaderHost = defineComponent({
   },
   template: `
     <form>
-      <ImageUploader v-model="coverUrl" scope="content_cover" />
+      <ImageUploader v-model="coverUrl" category-key="default" />
       <output data-testid="cover-url">{{ coverUrl }}</output>
     </form>
   `,
@@ -202,7 +203,12 @@ describe('upload flows', () => {
   it('shows a size error when a content cover exceeds the allowed limit', async () => {
     const wrapper = await mountImageUploaderHost()
     const input = wrapper.get('.image-uploader__input').element as HTMLInputElement
-    attachFiles(input, [imageFile('cover.png', 5 * 1024 * 1024 + 1)])
+    const oversized = imageFile('cover.png')
+    Object.defineProperty(oversized, 'size', {
+      configurable: true,
+      value: DEFAULT_FILE_MAX_UPLOAD_BYTES + 1,
+    })
+    attachFiles(input, [oversized])
 
     await wrapper.get('.image-uploader__input').trigger('change')
     await flushPromises()

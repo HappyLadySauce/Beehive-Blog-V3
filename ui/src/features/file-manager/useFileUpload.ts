@@ -3,37 +3,48 @@ import { shallowRef } from 'vue'
 import { i18n } from '@/shared/i18n'
 
 import { completeFileUpload, createFileUpload, putFileUploadObject } from './api'
-import type { FileUploadCreateRequest, FileUploadNamespace } from './types'
-
-const imageContentTypes = [
-  'image/avif',
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-] as const
-
-const genericAllowedContentTypes: readonly string[] = [...imageContentTypes, 'application/pdf']
+import {
+  DEFAULT_FILE_CATEGORY_EXTENSIONS,
+  DEFAULT_FILE_CATEGORY_KEY,
+  DEFAULT_FILE_MAX_UPLOAD_BYTES,
+  normalizeFileExtension,
+} from './constants'
+import type { FileCategoryKey, FileUploadCreateRequest, FileUploadVisibility } from './types'
 
 const contentTypesByExtension: Record<string, string> = {
-  avif: 'image/avif',
-  jpeg: 'image/jpeg',
-  jpg: 'image/jpeg',
-  pdf: 'application/pdf',
-  png: 'image/png',
-  webp: 'image/webp',
+  '.avif': 'image/avif',
+  '.jpeg': 'image/jpeg',
+  '.jpg': 'image/jpeg',
+  '.pdf': 'application/pdf',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+}
+
+export interface UploadFileOptions {
+  allowedExtensions?: readonly string[]
+  maxUploadBytes?: number
+  visibility?: FileUploadVisibility
 }
 
 export function useFileUpload() {
   const isUploading = shallowRef(false)
   const errorMessage = shallowRef('')
 
-  async function uploadFile(file: File, accessToken: string | undefined, namespace: FileUploadNamespace): Promise<string> {
+  async function uploadFile(
+    file: File,
+    accessToken: string | undefined,
+    categoryKey: FileCategoryKey = DEFAULT_FILE_CATEGORY_KEY,
+    options: UploadFileOptions = {},
+  ): Promise<string> {
     errorMessage.value = ''
     isUploading.value = true
     try {
       const contentType = normalizeContentType(file)
-      validateFile(file, contentType)
-      const upload = await createFileUpload(createUploadPayload(file, namespace, contentType), { accessToken })
+      validateFile(file, {
+        allowedExtensions: options.allowedExtensions ?? DEFAULT_FILE_CATEGORY_EXTENSIONS,
+        maxUploadBytes: options.maxUploadBytes ?? DEFAULT_FILE_MAX_UPLOAD_BYTES,
+      })
+      const upload = await createFileUpload(createUploadPayload(file, categoryKey, contentType, options.visibility), { accessToken })
       await putFileUploadObject(upload, file)
       const completed = await completeFileUpload(upload.asset.upload_id, { accessToken })
       return completed.asset.public_url || upload.asset.public_url
@@ -46,11 +57,18 @@ export function useFileUpload() {
   }
 
   async function uploadAvatar(file: File, accessToken?: string): Promise<string> {
-    return uploadFile(file, accessToken, 'avatar')
+    return uploadFile(file, accessToken, DEFAULT_FILE_CATEGORY_KEY, {
+      allowedExtensions: DEFAULT_FILE_CATEGORY_EXTENSIONS,
+    })
   }
 
-  async function uploadImage(file: File, accessToken: string | undefined, namespace: FileUploadNamespace): Promise<string> {
-    return uploadFile(file, accessToken, namespace)
+  async function uploadImage(
+    file: File,
+    accessToken: string | undefined,
+    categoryKey: FileCategoryKey = DEFAULT_FILE_CATEGORY_KEY,
+    options: UploadFileOptions = {},
+  ): Promise<string> {
+    return uploadFile(file, accessToken, categoryKey, options)
   }
 
   return {
@@ -67,34 +85,42 @@ function normalizeContentType(file: File): string {
   if (explicitType) {
     return explicitType
   }
-  const extension = file.name.split('.').pop()?.trim().toLowerCase() ?? ''
-  return contentTypesByExtension[extension] ?? ''
+  return contentTypesByExtension[normalizeFileExtension(file.name)] ?? 'application/octet-stream'
 }
 
-function validateFile(file: File, contentType: string): void {
+function validateFile(
+  file: File,
+  options: Required<Pick<UploadFileOptions, 'allowedExtensions' | 'maxUploadBytes'>>,
+): void {
   if (file.name.trim() === '') {
     throw new Error(String(i18n.global.t('uploads.fileNameRequired')))
   }
-  if (contentType === '') {
+
+  const extension = normalizeFileExtension(file.name)
+  if (extension === '' || !options.allowedExtensions.map((item) => item.toLowerCase()).includes(extension)) {
     throw new Error(String(i18n.global.t('uploads.fileTypeUnsupported')))
   }
-  if (!genericAllowedContentTypes.includes(contentType)) {
-    throw new Error(String(i18n.global.t('uploads.fileTypeUnsupported')))
-  }
+
   if (file.size <= 0) {
     throw new Error(String(i18n.global.t('uploads.fileEmpty')))
   }
-  if (file.size > 20 * 1024 * 1024) {
+
+  if (file.size > options.maxUploadBytes) {
     throw new Error(String(i18n.global.t('uploads.fileTooLarge')))
   }
 }
 
-function createUploadPayload(file: File, namespace: FileUploadNamespace, contentType: string): FileUploadCreateRequest {
+function createUploadPayload(
+  file: File,
+  categoryKey: FileCategoryKey,
+  contentType: string,
+  visibility: FileUploadVisibility = 'public',
+): FileUploadCreateRequest {
   return {
-    namespace,
+    category_key: categoryKey,
     file_name: file.name,
     content_type: contentType,
     byte_size: file.size,
-    visibility: 'public',
+    visibility,
   }
 }
