@@ -127,6 +127,38 @@ summary {
   gap: 20px;
 }
 
+.studio-workspace-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.studio-workspace-tabs {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--bb-color-line);
+  border-radius: 8px;
+  padding: 4px;
+  background: var(--bb-color-surface);
+}
+
+.studio-workspace-tabs button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 14px;
+  color: var(--bb-color-muted);
+  background: transparent;
+  font-weight: 700;
+}
+
+.studio-workspace-tabs button.active {
+  color: var(--bb-color-primary);
+  background: var(--bb-color-primary-soft);
+}
+
 .studio-list-toolbar {
   display: flex;
   justify-content: flex-end;

@@ -377,8 +377,8 @@ function readTabQuery(value: unknown): StudioTab {
 
 <template>
   <section class="content-page">
-    <div class="content-page__toolbar">
-      <div class="content-page__tabs" role="tablist" aria-label="Content workspace">
+    <div class="studio-workspace-toolbar">
+      <div class="studio-workspace-tabs" role="tablist" aria-label="Content workspace">
         <button type="button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">{{ t('content.tabs.content') }}</button>
         <button type="button" :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'">{{ t('content.tabs.tags') }}</button>
       </div>
@@ -387,96 +387,98 @@ function readTabQuery(value: unknown): StudioTab {
     </div>
 
     <template v-if="activeTab === 'content'">
-      <div class="content-page__filters">
-        <FormField :label="t('common.search')" for-id="content-search">
-          <BaseInput id="content-search" v-model="filters.keyword" :placeholder="t('content.searchPlaceholder')" />
-        </FormField>
-        <FormField :label="t('content.columns.type')" for-id="content-type-filter">
-          <BaseSelect id="content-type-filter" v-model="filters.type" :options="typeOptions" :aria-label="t('content.columns.type')" />
-        </FormField>
-        <FormField :label="t('content.columns.status')" for-id="content-status-filter">
-          <BaseSelect id="content-status-filter" v-model="filters.status" :options="statusOptions" :aria-label="t('content.columns.status')" />
-        </FormField>
-        <FormField :label="t('content.columns.visibility')" for-id="content-visibility-filter">
-          <BaseSelect id="content-visibility-filter" v-model="filters.visibility" :options="visibilityOptions" :aria-label="t('content.columns.visibility')" />
-        </FormField>
-      </div>
-
-      <StatusAlert v-if="contentErrorMessage && !hasContents" tone="danger" :title="t('content.unavailableTitle')">{{ contentErrorMessage }}</StatusAlert>
-      <PageLoadingState v-else-if="contentQuery.showBlockingLoading.value && !hasContents" :title="t('content.loadingTitle')" :rows="5" />
-
-      <div v-else-if="contentQuery.hasResolvedOnce.value" class="content-page__table" role="region" aria-label="Studio content" tabindex="0">
-        <div v-if="contentQuery.showRefreshingHint.value && hasContents" class="content-page__refreshing">
-          <InlineLoadingState />
+      <div class="studio-list-shell">
+        <div class="studio-list-filters content-page__filters">
+          <FormField :label="t('common.search')" for-id="content-search">
+            <BaseInput id="content-search" v-model="filters.keyword" :placeholder="t('content.searchPlaceholder')" />
+          </FormField>
+          <FormField :label="t('content.columns.type')" for-id="content-type-filter">
+            <BaseSelect id="content-type-filter" v-model="filters.type" :options="typeOptions" :aria-label="t('content.columns.type')" />
+          </FormField>
+          <FormField :label="t('content.columns.status')" for-id="content-status-filter">
+            <BaseSelect id="content-status-filter" v-model="filters.status" :options="statusOptions" :aria-label="t('content.columns.status')" />
+          </FormField>
+          <FormField :label="t('content.columns.visibility')" for-id="content-visibility-filter">
+            <BaseSelect id="content-visibility-filter" v-model="filters.visibility" :options="visibilityOptions" :aria-label="t('content.columns.visibility')" />
+          </FormField>
         </div>
-        <table class="content-page__grid">
-          <thead>
-            <tr>
-              <th scope="col">{{ t('content.columns.title') }}</th>
-              <th scope="col">{{ t('content.columns.type') }}</th>
-              <th scope="col">{{ t('content.columns.status') }}</th>
-              <th scope="col">{{ t('content.columns.visibility') }}</th>
-              <th scope="col">{{ t('content.columns.updated') }}</th>
-              <th scope="col">{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-          <tbody v-if="contents.length > 0">
-            <tr v-for="content in contents" :key="content.content_id">
-              <td>
-                <strong>{{ content.title }}</strong>
-                <span>{{ content.slug }}</span>
-              </td>
-              <td><StatusBadge :value="content.type" /></td>
-              <td><StatusBadge :value="content.status" /></td>
-              <td><StatusBadge :value="content.visibility" /></td>
-              <td>{{ formatUnixTime(content.updated_at) }}</td>
-              <td>
-                <div class="content-page__actions">
-                  <IconActionButton :aria-label="t('content.actions.view', { title: content.title })" :title="t('content.actions.view', { title: content.title })" @click="viewContent(content)">
-                    <Eye :size="17" aria-hidden="true" />
-                  </IconActionButton>
-                  <IconActionButton tone="primary" :aria-label="t('content.actions.edit', { title: content.title })" :title="t('content.actions.edit', { title: content.title })" @click="editContent(content)">
-                    <Pencil :size="17" aria-hidden="true" />
-                  </IconActionButton>
-                  <IconActionButton
-                    tone="danger"
-                    :disabled="content.status === 'archived' || isMutating"
-                    :aria-label="t('content.actions.archive', { title: content.title })"
-                    :title="t('content.actions.archive', { title: content.title })"
-                    @click="archiveContent(content)"
-                  >
-                    <Archive :size="17" aria-hidden="true" />
-                  </IconActionButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div v-if="contents.length === 0" class="content-page__empty-panel">
-          <EmptyState
-            class="content-page__empty-state"
-            align="center"
-            :title="t('content.empty')"
-            :description="t('content.emptyDescription')"
-          >
-            <template #visual>
-              <PackageOpen :size="52" aria-hidden="true" />
-            </template>
-            <BaseButton class="content-page__empty-action" @click="openNewDraft">
-              {{ t('content.emptyAction') }}
-            </BaseButton>
-          </EmptyState>
+
+        <StatusAlert v-if="contentErrorMessage && !hasContents" tone="danger" :title="t('content.unavailableTitle')">{{ contentErrorMessage }}</StatusAlert>
+        <PageLoadingState v-else-if="contentQuery.showBlockingLoading.value && !hasContents" :title="t('content.loadingTitle')" :rows="5" />
+
+        <div v-else-if="contentQuery.hasResolvedOnce.value" class="studio-list-table content-page__content-table" role="region" aria-label="Studio content" tabindex="0">
+          <div v-if="contentQuery.showRefreshingHint.value && hasContents" class="content-page__refreshing">
+            <InlineLoadingState />
+          </div>
+          <table class="studio-list-grid content-page__content-grid">
+            <thead>
+              <tr>
+                <th scope="col">{{ t('content.columns.title') }}</th>
+                <th scope="col">{{ t('content.columns.type') }}</th>
+                <th scope="col">{{ t('content.columns.status') }}</th>
+                <th scope="col">{{ t('content.columns.visibility') }}</th>
+                <th scope="col">{{ t('content.columns.updated') }}</th>
+                <th scope="col">{{ t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody v-if="contents.length > 0">
+              <tr v-for="content in contents" :key="content.content_id">
+                <td>
+                  <strong>{{ content.title }}</strong>
+                  <span>{{ content.slug }}</span>
+                </td>
+                <td><StatusBadge :value="content.type" /></td>
+                <td><StatusBadge :value="content.status" /></td>
+                <td><StatusBadge :value="content.visibility" /></td>
+                <td>{{ formatUnixTime(content.updated_at) }}</td>
+                <td>
+                  <div class="content-page__actions">
+                    <IconActionButton :aria-label="t('content.actions.view', { title: content.title })" :title="t('content.actions.view', { title: content.title })" @click="viewContent(content)">
+                      <Eye :size="17" aria-hidden="true" />
+                    </IconActionButton>
+                    <IconActionButton tone="primary" :aria-label="t('content.actions.edit', { title: content.title })" :title="t('content.actions.edit', { title: content.title })" @click="editContent(content)">
+                      <Pencil :size="17" aria-hidden="true" />
+                    </IconActionButton>
+                    <IconActionButton
+                      tone="danger"
+                      :disabled="content.status === 'archived' || isMutating"
+                      :aria-label="t('content.actions.archive', { title: content.title })"
+                      :title="t('content.actions.archive', { title: content.title })"
+                      @click="archiveContent(content)"
+                    >
+                      <Archive :size="17" aria-hidden="true" />
+                    </IconActionButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="contents.length === 0" class="studio-list-empty-panel">
+            <EmptyState
+              class="studio-list-empty-state content-page__empty-state"
+              align="center"
+              :title="t('content.empty')"
+              :description="t('content.emptyDescription')"
+            >
+              <template #visual>
+                <PackageOpen :size="52" aria-hidden="true" />
+              </template>
+              <BaseButton class="content-page__empty-action" @click="openNewDraft">
+                {{ t('content.emptyAction') }}
+              </BaseButton>
+            </EmptyState>
+          </div>
         </div>
-      </div>
-      <div v-if="contentQuery.data.value" class="studio-list-footer">
-        <TablePagination
-          :page="contentPagination.page.value"
-          :page-size="contentPagination.pageSize.value"
-          :total="contentTotal"
-          :disabled="contentQuery.isFetching.value"
-          @update:page="contentPagination.setPage"
-          @update:page-size="contentPagination.setPageSize"
-        />
+        <div v-if="contentQuery.data.value" class="studio-list-footer">
+          <TablePagination
+            :page="contentPagination.page.value"
+            :page-size="contentPagination.pageSize.value"
+            :total="contentTotal"
+            :disabled="contentQuery.isFetching.value"
+            @update:page="contentPagination.setPage"
+            @update:page-size="contentPagination.setPageSize"
+          />
+        </div>
       </div>
     </template>
 
@@ -632,56 +634,12 @@ function readTabQuery(value: unknown): StudioTab {
   gap: 20px;
 }
 
-.content-page__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.content-page__tabs {
-  display: inline-flex;
-  width: fit-content;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 8px;
-  padding: 4px;
-  background: var(--bb-color-surface);
-}
-
-.content-page__tabs button {
-  min-height: 36px;
-  border: 0;
-  border-radius: 6px;
-  padding: 0 14px;
-  color: var(--bb-color-muted);
-  background: transparent;
-  font-weight: 700;
-}
-
-.content-page__tabs button.active {
-  color: var(--bb-color-primary);
-  background: var(--bb-color-primary-soft);
-}
-
 .content-page__filters {
-  display: grid;
   grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(140px, 170px));
-  align-items: end;
-  gap: 12px;
 }
 
-.content-page__table:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--bb-color-focus);
-}
-
-.content-page__table {
+.content-page__content-table {
   overflow-x: auto;
-  border: 1px solid var(--bb-color-line);
-  border-radius: 10px;
-  background: var(--bb-color-surface);
-  box-shadow: var(--bb-shadow-soft);
 }
 
 .content-page__refreshing {
@@ -690,75 +648,22 @@ function readTabQuery(value: unknown): StudioTab {
   padding: 12px 12px 0;
 }
 
-.content-page__grid {
-  width: 100%;
+.content-page__content-grid {
   min-width: 920px;
-  border-collapse: collapse;
-}
-
-.content-page__table th,
-.content-page__table td {
-  border-bottom: 1px solid var(--bb-color-line);
-  padding: 10px 12px;
-  text-align: left;
-  vertical-align: middle;
-}
-
-.content-page__table th {
-  color: var(--bb-color-muted);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  background: var(--bb-color-surface);
-}
-
-.content-page__table tbody tr:nth-child(even) {
-  background: var(--bb-color-subtle);
-}
-
-.content-page__table tbody tr:hover {
-  background: var(--bb-color-primary-soft);
-}
-
-.content-page__empty-panel {
-  min-width: 920px;
-  border-top: 1px solid var(--bb-color-line);
-}
-
-.content-page__empty-state {
-  min-height: 200px;
-  justify-items: center;
-  text-align: center;
-  border: 0;
-  border-radius: 0;
-  padding: 24px 20px;
-  background: transparent;
-  box-shadow: none;
 }
 
 .content-page__empty-action {
   margin-top: 4px;
 }
 
-.content-page__table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.content-page__table td:first-child {
+.content-page__content-table td:first-child {
   display: grid;
   gap: 3px;
 }
 
-.content-page__table td:first-child span,
+.content-page__content-table td:first-child span,
 .content-page__count {
   color: var(--bb-color-muted);
-}
-
-.content-page__empty-state :deep(.empty-state__visual) {
-  color: var(--bb-color-muted);
-}
-
-.content-page__empty-state :deep(.empty-state__actions) {
-  justify-content: center;
 }
 
 .content-page__actions {
@@ -769,8 +674,8 @@ function readTabQuery(value: unknown): StudioTab {
   align-items: center;
 }
 
-.content-page__table td:last-child,
-.content-page__table th:last-child {
+.content-page__content-table td:last-child,
+.content-page__content-table th:last-child {
   text-align: right;
 }
 
