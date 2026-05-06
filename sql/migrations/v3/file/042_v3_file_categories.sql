@@ -67,13 +67,3 @@ ALTER TABLE file_assets
 
 DROP INDEX IF EXISTS idx_file_assets_owner_scope_status;
 CREATE INDEX IF NOT EXISTS idx_file_assets_owner_category_status ON file_assets (owner_user_id, category_key, status);
-
--- +migrate Down
-
-DROP INDEX IF EXISTS idx_file_assets_owner_category_status;
-ALTER TABLE file_assets DROP CONSTRAINT IF EXISTS fk_file_assets_category_key;
-DROP TABLE IF EXISTS file_category_extensions;
-DROP INDEX IF EXISTS idx_file_categories_default_true;
-DROP TABLE IF EXISTS file_categories;
-ALTER TABLE file_assets RENAME COLUMN category_key TO scope;
-CREATE INDEX IF NOT EXISTS idx_file_assets_owner_scope_status ON file_assets (owner_user_id, scope, status);

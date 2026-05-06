@@ -18,6 +18,7 @@ import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import BaseSelect, { type BaseSelectOption } from '@/shared/components/BaseSelect.vue'
 import FormField from '@/shared/components/FormField.vue'
+import PageLoadingState from '@/shared/components/PageLoadingState.vue'
 import StatusAlert from '@/shared/components/StatusAlert.vue'
 
 type FileSizeUnit = 'B' | 'KB' | 'MB' | 'GB'
@@ -42,6 +43,10 @@ const authStore = useAuthStore()
 const { pushToast } = useToast()
 const { config, isSaving, errorMessage, loadConfig, saveConfig } = useFileConfig()
 const categoriesQuery = useFileCategories({ studio: true })
+const categoryItems = computed(() => categoriesQuery.items.value)
+const categoryOptions = computed<BaseSelectOption[]>(() => (
+  categoryItems.value.map((item) => ({ value: item.category_key, label: item.display_name }))
+))
 const categoryDrafts = reactive<Record<string, CategoryDraft>>({})
 const categoryActionError = shallowRef('')
 const activeCategoryKey = shallowRef('')
@@ -76,7 +81,7 @@ watch(
 )
 
 watch(
-  () => categoriesQuery.items.value,
+  categoryItems,
   (items) => {
     syncCategoryDrafts(items)
     if (!activeCategoryKey.value || !items.some((item) => item.category_key === activeCategoryKey.value)) {
@@ -87,7 +92,7 @@ watch(
 )
 
 const activeCategory = computed(() => (
-  categoriesQuery.items.value.find((item) => item.category_key === activeCategoryKey.value) ?? null
+  categoryItems.value.find((item) => item.category_key === activeCategoryKey.value) ?? null
 ))
 
 const activeDraft = computed(() => (
@@ -385,11 +390,11 @@ function joinFileSize(amount: number, unit: FileSizeUnit): number {
 
       <div class="settings-page__inline-grid settings-page__inline-grid--categories">
         <FormField :label="t('settings.fileCategories.activeCategory')" for-id="active-category">
-          <BaseSelect id="active-category" v-model="activeCategoryKey" :options="categoriesQuery.items.map((item) => ({ value: item.category_key, label: item.display_name }))" />
+          <BaseSelect id="active-category" v-model="activeCategoryKey" :options="categoryOptions" />
         </FormField>
       </div>
 
-      <PageLoadingState v-if="categoriesQuery.showBlockingLoading && categoriesQuery.items.length === 0" :title="t('settings.fileCategories.loadingTitle')" :rows="4" />
+      <PageLoadingState v-if="categoriesQuery.showBlockingLoading.value && categoryItems.length === 0" :title="t('settings.fileCategories.loadingTitle')" :rows="4" />
 
       <div v-else-if="activeCategory && activeDraft" class="settings-page__category-editor">
         <div class="settings-page__category-meta">
