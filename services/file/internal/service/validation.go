@@ -14,6 +14,22 @@ import (
 const hardcodedMaxBytes int64 = 20 * 1024 * 1024
 
 var validCategoryKeyRE = regexp.MustCompile(`^[a-z0-9_:.-]+$`)
+var canonicalContentTypesByExtension = map[string][]string{
+	".avif": {"image/avif"},
+	".gif":  {"image/gif"},
+	".htm":  {"text/html"},
+	".html": {"text/html"},
+	".jpeg": {"image/jpeg"},
+	".jpg":  {"image/jpeg"},
+	".json": {"application/json"},
+	".md":   {"text/markdown"},
+	".pdf":  {"application/pdf"},
+	".png":  {"image/png"},
+	".svg":  {"image/svg+xml"},
+	".txt":  {"text/plain"},
+	".webp": {"image/webp"},
+	".xml":  {"application/xml", "text/xml"},
+}
 
 func parseActorUserID(actorUserID string) (int64, error) {
 	value, err := strconv.ParseInt(strings.TrimSpace(actorUserID), 10, 64)
@@ -133,7 +149,10 @@ func validateUploadFile(allowedExtensions []string, maxUploadBytes int64, fileNa
 		return "", "", 0, errs.New(errs.CodeFileInvalidExtension, "file extension is not allowed")
 	}
 
-	normalizedContentType := resolveContentType(contentType, extension)
+	normalizedContentType, err := resolveContentType(contentType, extension)
+	if err != nil {
+		return "", "", 0, err
+	}
 	if len(normalizedContentType) > 128 {
 		return "", "", 0, invalidArgument("content_type is invalid")
 	}
@@ -158,15 +177,51 @@ func extensionFor(fileName string, contentType string) string {
 	return ext
 }
 
-func resolveContentType(contentType string, extension string) string {
+func resolveContentType(contentType string, extension string) (string, error) {
 	normalized := normalizeContentType(contentType)
+	allowedContentTypes := allowedContentTypesForExtension(extension)
 	if normalized != "" {
-		return normalized
+		if slices.Contains(allowedContentTypes, normalized) {
+			return normalized, nil
+		}
+		if len(allowedContentTypes) == 0 && normalized == "application/octet-stream" {
+			return normalized, nil
+		}
+		return "", invalidArgument("content_type does not match file extension")
 	}
-	if inferred := normalizeContentType(mime.TypeByExtension(extension)); inferred != "" {
-		return inferred
+	if len(allowedContentTypes) > 0 {
+		return allowedContentTypes[0], nil
 	}
-	return "application/octet-stream"
+	return "application/octet-stream", nil
+}
+
+func allowedContentTypesForExtension(extension string) []string {
+	normalizedExtension := normalizeExtension(extension)
+	if normalizedExtension == "" {
+		return nil
+	}
+
+	seen := make(map[string]struct{}, 4)
+	allowed := make([]string, 0, 4)
+	appendAllowed := func(values []string) {
+		for _, value := range values {
+			normalizedValue := normalizeContentType(value)
+			if normalizedValue == "" {
+				continue
+			}
+			if _, exists := seen[normalizedValue]; exists {
+				continue
+			}
+			seen[normalizedValue] = struct{}{}
+			allowed = append(allowed, normalizedValue)
+		}
+	}
+
+	appendAllowed(canonicalContentTypesByExtension[normalizedExtension])
+	if inferred := normalizeContentType(mime.TypeByExtension(normalizedExtension)); inferred != "" {
+		appendAllowed([]string{inferred})
+	}
+	return allowed
 }
 
 func normalizeDisplayName(displayName string) (string, error) {

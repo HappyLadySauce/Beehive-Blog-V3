@@ -62,6 +62,9 @@ func TestValidateUploadFile(t *testing.T) {
 	if _, _, _, err := validateUploadFile(allowedExtensions, maxUploadBytes, "avatar.gif", "image/gif", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidExtension)) {
 		t.Fatalf("expected invalid extension error, got %v", err)
 	}
+	if _, _, _, err := validateUploadFile(allowedExtensions, maxUploadBytes, "avatar.png", "text/html", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidArgument)) {
+		t.Fatalf("expected mismatched content type error, got %v", err)
+	}
 	if _, _, _, err := validateUploadFile(allowedExtensions, maxUploadBytes, "avatar.png", "image/png", 129); !errors.Is(err, errs.E(errs.CodeFileTooLarge)) {
 		t.Fatalf("expected file too large error, got %v", err)
 	}
@@ -76,6 +79,18 @@ func TestValidateUploadFile(t *testing.T) {
 	}
 	if maxBytes != hardcodedMaxBytes {
 		t.Fatalf("expected hardcoded max bytes %d, got %d", hardcodedMaxBytes, maxBytes)
+	}
+
+	// Unknown extensions only accept octet-stream metadata to prevent arbitrary MIME publication.
+	contentType, extension, _, err = validateUploadFile([]string{".bin"}, maxUploadBytes, "archive.bin", "application/octet-stream", 100)
+	if err != nil {
+		t.Fatalf("expected octet-stream to pass for unknown extension, got %v", err)
+	}
+	if contentType != "application/octet-stream" || extension != ".bin" {
+		t.Fatalf("expected octet-stream values, got contentType=%s extension=%s", contentType, extension)
+	}
+	if _, _, _, err := validateUploadFile([]string{".bin"}, maxUploadBytes, "archive.bin", "text/plain", 100); !errors.Is(err, errs.E(errs.CodeFileInvalidArgument)) {
+		t.Fatalf("expected invalid argument for arbitrary unknown-extension content type, got %v", err)
 	}
 }
 

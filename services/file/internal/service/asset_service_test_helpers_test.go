@@ -20,9 +20,13 @@ import (
 type fakeObjectStorage struct {
 	deleteErrors []error
 	deleteCalls  int
+	presignCalls int
+	lastPresign  storage.PresignPutInput
 }
 
-func (s *fakeObjectStorage) PresignPut(context.Context, storage.PresignPutInput) (*storage.PresignPutOutput, error) {
+func (s *fakeObjectStorage) PresignPut(_ context.Context, input storage.PresignPutInput) (*storage.PresignPutOutput, error) {
+	s.presignCalls++
+	s.lastPresign = input
 	return &storage.PresignPutOutput{UploadURL: "https://upload.example.com", Headers: map[string]string{}}, nil
 }
 
